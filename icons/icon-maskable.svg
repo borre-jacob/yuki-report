@@ -4,9 +4,8 @@
   <g transform="translate(256 256) scale(0.74) translate(-256 -242)">
     <path d="M239.4 165.9 A60 60 0 0 1 328.6 165.9" fill="none" stroke="#6ea3ff" stroke-width="22" stroke-linecap="round"/>
     <path d="M200.8 131.1 A112 112 0 0 1 367.2 131.1" fill="none" stroke="#6ea3ff" stroke-width="22" stroke-linecap="round" opacity=".6"/>
-    <g transform="translate(343.4 111) scale(.75) translate(-343.4 -111)">
-      <circle cx="343.4" cy="111.0" r="31" fill="#14213a"/>
-      <path d="M343.4 86.0 L343.4 136.0 M365.1 98.5 L321.7 123.5 M365.1 123.5 L321.7 98.5 M343.4 126.5 L350.3 132.3 M343.4 126.5 L336.5 132.3 M330.0 118.8 L328.4 127.6 M330.0 118.8 L321.5 115.7 M330.0 103.2 L321.5 106.3 M330.0 103.2 L328.4 94.4 M343.4 95.5 L336.5 89.7 M343.4 95.5 L350.3 89.7 M356.8 103.2 L358.4 94.4 M356.8 103.2 L365.3 106.3 M356.8 118.8 L365.3 115.7 M356.8 118.8 L358.4 127.6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+    <g transform="translate(343.4 111) scale(.44) translate(-343.4 -111)">
+      <path d="M343.4 86.0 L343.4 136.0 M365.1 98.5 L321.7 123.5 M365.1 123.5 L321.7 98.5" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round"/>
     </g>
     <path d="M60 400 L176 270 L222 318 L284 206 L452 400" fill="none" stroke="#ffffff" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
     <path d="M284 206 L356.7 290 L330.5 280 L309.0 298 L285.2 280 L261.3 296 L237.5 290 ZM176 270 L214.3 310 L198.0 300 L184.7 318 L169.9 300 L155.1 316 L140.3 310 Z" fill="#ffffff" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
