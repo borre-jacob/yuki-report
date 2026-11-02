@@ -5,7 +5,7 @@ Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidr
 - **Startsidan** har ett val mellan Japan och Skandinavien och rankar orterna efter hur mycket snö som fallit de senaste 3 dygnen, eller hur mycket som väntas de kommande 3 dygnen.
 - **Varje ort** har en detaljerad prognos (topp och dal, timme för timme, nollgradersgräns) och en karta med liftar, onsen, toaletter, michi-no-eki och andra ställplatser, med vägbeskrivning i Google Maps.
 
-Allt ligger i `index.html`. Öppna filen i en webbläsare, eller publicera repot med GitHub Pages för att använda appen i mobilen.
+Appen är `index.html`, med platsdata per ort i `data/osm/places/`. Kör den med en lokal webbserver (`python3 -m http.server`) eller publicera repot med GitHub Pages. Direkt från filen fungerar inte, eftersom platsdatan hämtas med fetch.
 
 ## Installera som app
 
@@ -22,7 +22,7 @@ Service workern ligger i `sw.js`. Höj `VERSION` där när `sw.js`, ikonerna ell
 - Lavinprognos Norge: [Varsom](https://www.varsom.no/) (NVE), hämtas live i appen.
 - Lavinprognos Sverige: [lavinprognoser.se](https://www.lavinprognoser.se/) (Naturvårdsverket), hämtas varje morgon tillsammans med JAN.
 - Lavinprognos Japan: [Japan Avalanche Network](https://data.nadare.jp/avalanche_informations?locale=en). Hämtas varje morgon av GitHub Actions (`.github/workflows/avalanche.yml`) och byggs in i `index.html`.
-- Liftar, onsen, toaletter och parkering: [OpenStreetMap](https://www.openstreetmap.org/copyright) via Overpass API. Datan är inbyggd i `index.html` så att den fungerar utan täckning.
+- Liftar, onsen, toaletter och parkering: [OpenStreetMap](https://www.openstreetmap.org/copyright) via Overpass API. Datan ligger i en fil per ort i `data/osm/places/` som appen hämtar när man öppnar orten. Service workern sparar orterna för användning utan täckning: små områden automatiskt, större med knappen "Spara offline".
 - Karta: [OpenFreeMap](https://openfreemap.org/), eller Google Maps om du lägger in en egen API-nyckel under "Kartinställning" längst ner på sidan.
 
 ## Lägga till orter
@@ -37,9 +37,8 @@ python3 tools/refine_resorts.py data/scandinavia_approx.json data/osm/scandinavi
 
 ```bash
 python3 tools/fetch_pois.py index.html data/osm/pois.json
-python3 tools/inject.py index.html data/osm/pois.json
 python3 tools/fetch_lifts.py index.html data/osm/lifts.json
-python3 tools/inject_lifts.py index.html data/osm/lifts.json
+python3 tools/build_places.py data/osm/pois.json data/osm/lifts.json data/osm/places
 python3 tools/fetch_avalanche.py data/avalanche.json
 python3 tools/inject_avalanche.py index.html data/avalanche.json
 ```
@@ -51,7 +50,7 @@ python3 tools/inject_avalanche.py index.html data/avalanche.json
 © 2026 Jacob Borre.
 
 - **Koden** (HTML, CSS, JavaScript, `sw.js`, skripten i `tools/`, ikonerna) är licensierad under [MIT](LICENSE).
-- **OpenStreetMap-data** (orter, liftar, onsen, toaletter, parkering) ligger i [`data/osm/`](data/osm/) och är också inbyggd i `index.html`. Den är © OpenStreetMap-bidragsgivare och licensierad under [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), inte MIT. Se [data/osm/README.md](data/osm/README.md).
+- **OpenStreetMap-data** (orter, liftar, onsen, toaletter, parkering) ligger i [`data/osm/`](data/osm/) (källfiler och en fil per ort i `places/`). Den är © OpenStreetMap-bidragsgivare och licensierad under [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), inte MIT. Se [data/osm/README.md](data/osm/README.md).
 - **Väder** från [Open-Meteo](https://open-meteo.com/) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - **Kartstil och kartrutor** från [OpenFreeMap](https://openfreemap.org/) (© OpenMapTiles, © OpenStreetMap-bidragsgivare).
 - **Lavinprognoser** från Japan Avalanche Network, Varsom (NVE) och Naturvårdsverket (lavinprognoser.se). Texterna tillhör respektive utgivare.

@@ -22,6 +22,6 @@ SOFTWARE.
 
 ---
 
-The MIT License covers the code only. Data from OpenStreetMap (in data/osm/ and
-the copy built into index.html) is © OpenStreetMap contributors and licensed
+The MIT License covers the code only. Data from OpenStreetMap (in data/osm/,
+including the per-resort files in data/osm/places/) is © OpenStreetMap contributors and licensed
 under the Open Database License (ODbL) 1.0. See data/osm/README.md.

@@ -1,6 +1,8 @@
 /* Yuki Radar service worker: makes the app work offline.
-   - App files (index.html with all resort/OSM data built in, manifest, icons) and the map libraries
-     are precached. The page itself is network-first so the daily avalanche update is picked up.
+   - App files (index.html, manifest, icons) and the map libraries are precached. The page itself is
+     network-first so the daily avalanche update is picked up.
+   - Lifts and facilities per resort (data/osm/places/): stale-while-revalidate. A resort is kept once it
+     has been opened, and the app's "Spara offline" button fetches a whole area.
    - Open-Meteo and Varsom: network-first, falling back to the last cached answer.
    - Overpass (OpenStreetMap): stale-while-revalidate.
    - OpenFreeMap: style, fonts and sprites stale-while-revalidate; visited map tiles are kept,
@@ -14,7 +16,8 @@ const DATA = "yuki-data";
 const MAPMETA = "yuki-map-meta";
 const TILES = "yuki-tiles";
 const FONTS = "yuki-fonts";
-const KEEP = [SHELL, LIBS, DATA, MAPMETA, TILES, FONTS];
+const PLACES = "yuki-places";
+const KEEP = [SHELL, LIBS, DATA, MAPMETA, TILES, FONTS, PLACES];
 const TILE_MAX = 1500;
 const NET_TIMEOUT = 8000;
 
@@ -27,6 +30,8 @@ const SHELL_FILES = [
 const LIB_FILES = [
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js",
   "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css",
   "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js",
   "https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js",
@@ -66,6 +71,7 @@ self.addEventListener("fetch", e => {
   if (isGoogleMaps(h)) return;
 
   if (req.mode === "navigate") return e.respondWith(page(req));
+  if (url.origin === location.origin && url.pathname.includes("/data/osm/places/")) return e.respondWith(staleWhileRevalidate(req, PLACES));
   if (url.origin === location.origin) return e.respondWith(cacheFirst(req, SHELL));
   if (h === "api.open-meteo.com" || h === "api01.nve.no") return e.respondWith(networkFirst(req, DATA));
   if (/overpass/.test(h) || url.pathname.includes("/overpass/")) return e.respondWith(staleWhileRevalidate(req, DATA));
