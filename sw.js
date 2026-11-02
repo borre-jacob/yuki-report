@@ -20,7 +20,7 @@ const NET_TIMEOUT = 8000;
 
 const SHELL_FILES = [
   "./", "index.html", "manifest.webmanifest",
-  "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png",
+  "icons/icon.svg", "icons/logo.svg", "icons/icon-192.png", "icons/icon-512.png",
   "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png",
 ];
 // Versioned URLs, so they never change: cache-first
