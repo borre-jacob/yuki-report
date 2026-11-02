@@ -3,6 +3,8 @@
 Usage: python3 tools/fetch_avalanche.py data/avalanche.json
 Writes {areaId: {date, url, levels:[alpine, treeline, belowTreeline], advice, problems:[...], summary:{...}}}.
 Levels: 0 = no rating, 1 = low ... 5 = extreme.
+Each problem can have grid: three rings (alpine/kalfjäll, treeline, below treeline) of eight aspects
+(N, NE, E, SE, S, SW, W, NW), 0 = not exposed, 1 = exposed, 2 = most exposed.
 """
 import html, json, re, subprocess, sys, time
 
@@ -35,6 +37,26 @@ def section(L, start, stops):
     return out
 
 
+ASPECTS = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
+BANDS = ["alp", "tl", "btl"]
+
+
+def jan_grids(page):
+    """Aspect/elevation rose per problem. JAN draws it as one image layer per highlighted sector:
+    info2_<band>_<aspect>_<a|b>.png, where a = darker (most exposed) and b = lighter (exposed)."""
+    start, end = re.search(r">\s*Avalanche Problem\s*<", page), re.search(r">\s*概要\s*<", page)
+    sec = page[start.end() if start else 0:end.start() if end else len(page)]
+    grids, cur = {}, None
+    for m in re.finditer(r"<h[1-6][^>]*>(.*?)</h[1-6]>|/assets/info2_(alp|tl|btl)_(n|ne|e|se|s|sw|w|nw)_([ab])-", sec, re.S):
+        if m.group(1) is not None:
+            cur = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()
+            grids[cur] = [[0] * 8 for _ in BANDS]
+        elif cur:
+            band, asp, ab = m.group(2, 3, 4)
+            grids[cur][BANDS.index(band)][ASPECTS.index(asp)] = 2 if ab == "a" else 1
+    return {k: g for k, g in grids.items() if any(map(any, g))}
+
+
 def latest(area):
     page = get(f"{BASE}/avalanche_informations?area_id={area}&locale=en")
     row = re.search(r'href="/avalanche_informations/(\d+)">\s*([\d/]+ [\d:]+)\s*</a>.*?<td>([^<]+)</td>(.*?)</tr>', page, re.S)
@@ -43,7 +65,8 @@ def latest(area):
     bid, date, name, cells = row.groups()
     levels = [LEVEL.get(a, 0) for a in re.findall(r'alt="([^"]+)"', cells)][:3]
 
-    L = lines(get(f"{BASE}/avalanche_informations/{bid}?locale=en"))
+    page = get(f"{BASE}/avalanche_informations/{bid}?locale=en")
+    L = lines(page)
     advice = " ".join(section(L, "Travel and Terrain Advice", {"Avalanche Problem", "概要"}))
     problems, cur = [], None
     for l in section(L, "Avalanche Problem", {"概要"}):
@@ -57,6 +80,10 @@ def latest(area):
                 continue
         if cur is not None and cur["text"] is None:
             cur["text"] = l
+    grids = jan_grids(page)
+    for p in problems:
+        if p["name"] in grids:
+            p["grid"] = grids[p["name"]]
     summary = {k: " ".join(section(L, k, {"Avalanche", "Snowpack", "Weather", "Print/PDF"})) for k in ("Avalanche", "Snowpack", "Weather")}
     return {"name": name.strip(), "date": date.replace("/", "-"), "url": f"{BASE}/avalanche_informations/{bid}?locale=en",
             "levels": levels, "advice": advice, "problems": problems, "summary": summary}
@@ -78,14 +105,45 @@ def se_time(text):
     return datetime(y, mo, d, h, mi, tzinfo=ZoneInfo("Europe/Stockholm")).isoformat()
 
 
-def sweden(slug):
-    """Latest Naturvårdsverket forecast: level 0-5, published/valid times and the main message."""
-    L = lines(get(SE_BASE + slug + "/"))
+SE_DIRS = ["northPanel", "northEastPanel", "eastPanel", "southEastPanel", "southPanel", "southWestPanel", "westPanel", "northWestPanel"]
+SE_RINGS = ["altitudeMeterAboveTreeline", "altitudeMeterTreeline", "altitudeMeterBelowTreeline"]
+
+
+def se_problems(page):
+    """Avalanche problems from the JSON the page embeds for its React app: name, rose and metres."""
+    i = page.find('"avalancheProblem":')
+    if i < 0:
+        return []
+    try:
+        data, _ = json.JSONDecoder().raw_decode(page, i + len('"avalancheProblem":'))
+    except ValueError:
+        return []
+    out = []
+    for p in data.get("problems") or []:
+        alt, d = p.get("altitude") or {}, p.get("direction") or {}
+        aspects = [1 if (d.get(k) or {}).get("state") else 0 for k in SE_DIRS]
+        grid = [aspects if (alt.get(k) or {}).get("state") else [0] * 8 for k in SE_RINGS]
+        name = ((p.get("symbol") or {}).get("image") or {}).get("alt") or (p.get("description") or {}).get("title") or ""
+        row = {"name": name}
+        if any(map(any, grid)):
+            row["grid"] = grid
+        if alt.get("metersAbove") or alt.get("metersBelow"):
+            row["meters"] = [alt.get("metersAbove"), alt.get("metersBelow")]
+        out.append(row)
+    return out
+
+
+def sweden(slug, date=None):
+    """Latest Naturvårdsverket forecast: level 0-5, published/valid times, main message and problems.
+    date (YYYY-MM-DD) fetches an old forecast instead, for testing outside the season."""
+    page = get(SE_BASE + slug + "/" + (f"?forecast_date={date}" if date else ""))
+    L = lines(page)
     after = lambda key: L[L.index(key) + 1] if key in L and L.index(key) + 1 < len(L) else ""
     level = next((int(l[9:-1]) for l in L if re.fullmatch(r"\[IMG:Risk \d\]", l)), 0)
     msg = section(L, "Hoppa över karta", {"Se tidigare prognoser", "calendar", "Så här läser du lavinprognosen"})
     return {"level": level, "label": after("Lavinfara"), "published": se_time(after("Publicerad:")),
-            "validTo": se_time(after("Gäller till:")), "message": " ".join(msg)[:800], "url": SE_BASE + slug + "/"}
+            "validTo": se_time(after("Gäller till:")), "message": " ".join(msg)[:800], "url": SE_BASE + slug + "/",
+            "problems": se_problems(page)}
 
 
 def main(out):

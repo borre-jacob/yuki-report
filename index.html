@@ -29,6 +29,7 @@
   --bg:#f3f6f9; --surface:#ffffff; --ink:#14213a; --muted:#5b6b82; --line:#d9e1ea;
   --snow:#2f6fd6; --snow-soft:#cfe0fa; --future:#7c5cd6; --future-soft:#e3dafa;
   --onsen:#c2410c; --toilet:#0f766e; --park:#334155; --lift:#be123c; --warn:#b45309;
+  --rose0:#e6ebf1; --rose1:#f4a6c0; --rose2:#d61f69;
   --display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -37,11 +38,13 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
   --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
-  --onsen:#fb923c; --toilet:#2dd4bf; --park:#cbd5e1; --lift:#fb7185; --warn:#fbbf24; color-scheme:dark}}
+  --onsen:#fb923c; --toilet:#2dd4bf; --park:#cbd5e1; --lift:#fb7185; --warn:#fbbf24;
+  --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
   --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
-  --onsen:#fb923c; --toilet:#2dd4bf; --park:#cbd5e1; --lift:#fb7185; --warn:#fbbf24; color-scheme:dark}
+  --onsen:#fb923c; --toilet:#2dd4bf; --park:#cbd5e1; --lift:#fb7185; --warn:#fbbf24;
+  --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f; color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -179,6 +182,21 @@ footer .copy{color:var(--ink);font-weight:600}
 details.prob{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 details.prob summary{cursor:pointer;font-weight:600;font-size:14px}
 details.prob p{margin:6px 0 0;font-size:14px;color:var(--muted);max-width:70ch}
+.prob.rosed{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.rosebox{display:flex;align-items:flex-end;gap:6px}
+.rose{width:104px;height:104px;display:block}
+.rose path{fill:var(--rose0);stroke:var(--surface);stroke-width:1.5}
+.rose path.e1{fill:var(--rose1)} .rose path.e2{fill:var(--rose2)}
+.rose text{font:700 11px var(--body);fill:var(--muted);text-anchor:middle;dominant-baseline:central}
+.hpic{width:46px;height:40px;display:block}
+.hpic .base{fill:var(--rose0)} .hpic .on{fill:var(--rose2)}
+.pbody{min-width:0}
+.pbody b{font-size:14px}
+.pbody .exp{margin:3px 0 0;font-size:13px}
+.pbody .exp span{color:var(--muted)}
+.pbody details{margin-top:6px} .pbody summary{cursor:pointer;font-size:13px;color:var(--snow)}
+.pbody details p{margin:4px 0 0;font-size:14px;color:var(--muted);max-width:70ch}
+@media (max-width:420px){.rose{width:88px;height:88px}}
 .en{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
 #avalsignals{display:flex;flex-direction:column;gap:10px}
 .sigs{display:flex;flex-direction:column;border-top:1px solid var(--line)}
@@ -933,7 +951,61 @@ const VARSOM_PROBLEM = {
 const EXPO = ["N","NO","O","SO","S","SV","V","NV"];
 
 // Shared danger card: big level, optional per-height levels, problems and advice.
-function dangerCard({top, levels, area, near, issued, source, problems = [], advice, adviceLabel, links}){
+// Aspect rose like the official bulletins. grid = rings of 8 sectors (N, NO, O, SO, S, SV, V, NV),
+// 0 = not exposed, 1 = exposed, 2 = most exposed. With three rings the centre is the highest terrain
+// (alpine / kalfjäll) and the outer ring the lowest (below the treeline); one ring = all heights.
+function aspectRose(grid){
+  const R = grid.length === 1 ? [12, 50] : [8, 22, 36, 50];
+  const pt = (r, deg) => { const a = deg * Math.PI / 180; return `${(60 + r * Math.sin(a)).toFixed(2)} ${(60 - r * Math.cos(a)).toFixed(2)}`; };
+  const paths = grid.flatMap((ring, k) => ring.map((v, i) => {
+    const a0 = i * 45 - 22.5, a1 = i * 45 + 22.5, ri = R[k], ro = R[k + 1];
+    return `<path class="e${v}" d="M${pt(ro, a0)} A${ro} ${ro} 0 0 1 ${pt(ro, a1)} L${pt(ri, a1)} A${ri} ${ri} 0 0 0 ${pt(ri, a0)} Z"/>`;
+  }));
+  const labels = [["N", 0], ["O", 90], ["S", 180], ["V", 270]].map(([t, d]) => `<text x="${pt(59, d).split(" ")[0]}" y="${pt(59, d).split(" ")[1]}">${t}</text>`);
+  return `<svg class="rose" viewBox="-6 -6 132 132" role="img" aria-label="Utsatta sluttningsriktningar">${paths.join("")}${labels.join("")}</svg>`;
+}
+// Varsom's height limits: fill 1 = above h1, 2 = below h1, 3 = above the higher and below the lower, 4 = between
+function heightInfo({fill, h1, h2}){
+  const hi = Math.max(h1, h2 || h1), lo = Math.min(h1, h2 || h1);
+  const text = {1: `över ${h1} m`, 2: `under ${h1} m`, 3: `över ${hi} m och under ${lo} m`, 4: `mellan ${lo} och ${hi} m`}[fill];
+  if (!text) return null;
+  const band = (y0, y1) => `<rect class="on" x="0" y="${y0}" width="46" height="${y1 - y0}"/>`;
+  const on = {1: band(0, 22), 2: band(22, 40), 3: band(0, 15) + band(29, 40), 4: band(15, 29)}[fill];
+  const pic = `<svg class="hpic" viewBox="0 0 46 40" aria-hidden="true"><clipPath id="hp${fill}"><path d="M1 39 L23 2 L45 39 Z"/></clipPath>
+    <path class="base" d="M1 39 L23 2 L45 39 Z"/><g clip-path="url(#hp${fill})">${on}</g></svg>`;
+  return {text, pic};
+}
+const EXPO_NAMES = grid => ({
+  any: EXPO.filter((_, i) => grid.some(r => r[i])),
+  most: EXPO.filter((_, i) => grid.some(r => r[i] === 2)),
+});
+function problemHtml(p, ringLabels){
+  const head = `${esc(p.sv || p.name)}${p.sv && p.sv !== p.name ? ` <span class="en">${esc(p.name)}</span>` : ""}`;
+  if (!p.grid){
+    return `<details class="prob"><summary>${head}</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text || "")}</p></details>`;
+  }
+  const {any, most} = EXPO_NAMES(p.grid);
+  const dirs = list => list.length === 8 ? "alla väderstreck" : list.join(", ");
+  const ringsOn = labels => p.grid.map((r, k) => r.some(v => v) ? labels[k] : null).filter(Boolean);
+  let where = "";
+  if (p.grid.length === 3){
+    const on = ringsOn(ringLabels);
+    where = on.length === 3 ? "alla höjder" : on.join(" och ").toLowerCase();
+  }
+  const h = p.height ? heightInfo(p.height) : null;
+  if (h) where = h.text;
+  if (p.meters) where = [p.meters[0] && `över ${p.meters[0]} m`, p.meters[1] && `under ${p.meters[1]} m`].filter(Boolean).join(" och ") || where;
+  const mostRings = p.grid.length === 3 ? ringLabels.filter((_, k) => p.grid[k].includes(2)) : [];
+  return `<div class="prob rosed">
+      <div class="rosebox">${aspectRose(p.grid)}${h ? h.pic : ""}</div>
+      <div class="pbody"><b>${head}</b>
+        <p class="exp"><span>Utsatt:</span> ${dirs(any)}${where ? ` · ${esc(where)}` : ""}</p>
+        ${most.length && most.length < any.length ? `<p class="exp"><span>Mest utsatt:</span> ${dirs(most)}${mostRings.length ? ` · ${esc(mostRings.join(" och ").toLowerCase())}` : ""}</p>` : ""}
+        ${p.text ? `<details><summary>Läs mer</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text)}</p></details>` : ""}
+      </div></div>`;
+}
+
+function dangerCard({top, levels, area, near, issued, source, problems = [], advice, adviceLabel, links, ringLabels = BANDS}){
   const linkHtml = `<div class="dlinks">${links.join("")}</div>`;
   const areaHtml = `${esc(area)}${near ? ` <span class="near">${esc(near)}</span>` : ""}`;
   if (!top){
@@ -942,9 +1014,10 @@ function dangerCard({top, levels, area, near, issued, source, problems = [], adv
         <p>${issued ? `Senaste prognosen för ${areaHtml} kom ${issued}. ` : `Område: ${areaHtml}. `}Prognoser ges ut under skidsäsongen. När säsongen är igång visas dagens faronivå här med färg.</p>
       </div></div>${linkHtml}`;
   }
-  const probs = problems.map(p => `
-      <details class="prob"><summary>${esc(p.sv || p.name)}${p.sv && p.sv !== p.name ? ` <span class="en">${esc(p.name)}</span>` : ""}</summary>
-        <p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text || "")}</p></details>`).join("");
+  const probs = problems.map(p => problemHtml(p, ringLabels)).join("");
+  const roseHint = problems.some(p => p.grid?.length === 3)
+    ? `<p class="hint">Rosen visar sluttningsriktningar. Mitten är högst upp på fjället, yttre ringen under trädgränsen. Starkast färg = mest utsatt.</p>`
+    : problems.some(p => p.grid) ? `<p class="hint">Fyllda sektorer i rosen = utsatta sluttningsriktningar. Berget bredvid visar vilka höjder som är utsatta.</p>` : "";
   return `
     <div class="dcard" style="--dc:${DANGER[top].c}">
       ${dangerBox(top, true)}
@@ -954,7 +1027,7 @@ function dangerCard({top, levels, area, near, issued, source, problems = [], adv
       </div>
     </div>
     ${levels ? `<div class="bands">${levels.map((l, i) => `<div class="band">${dangerBox(l)}<span>${BANDS[i]}</span><b>${DANGER[l].n}</b></div>`).join("")}</div>` : ""}
-    ${probs ? `<div class="probs"><span class="label">Lavinproblem idag</span>${probs}</div>` : ""}
+    ${probs ? `<div class="probs"><span class="label">Lavinproblem idag</span>${probs}${roseHint}</div>` : ""}
     ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="en">${esc(advice)}</p></details>` : ""}
     ${linkHtml}`;
 }
@@ -985,7 +1058,7 @@ function avalJapan(r){
     top: fresh ? Math.max(...levels) : 0, levels, area: JAN_AREAS[v.a],
     near: v.near ? `närmaste prognosområde, täcker inte ${r.name} direkt` : "",
     issued: issued ? fmtWhen(issued, "Asia/Tokyo", !fresh) : "", source: "Japan Avalanche Network",
-    problems: (bul?.problems || []).map(p => ({name: p.name, sv: PROBLEM_SV[p.name.toLowerCase()], text: p.text, lang: "en"})),
+    problems: (bul?.problems || []).map(p => ({name: p.name, sv: PROBLEM_SV[p.name.toLowerCase()], text: p.text, lang: "en", grid: p.grid})),
     advice: bul?.advice, adviceLabel: `JAN:s råd för dagen <span class="en">på engelska</span>`, links});
 }
 
@@ -1000,8 +1073,11 @@ function avalSweden(r){
     top: fresh ? bul.level : 0, area: SE_AREAS[v.a],
     near: v.near ? `närmaste prognosområde, täcker inte ${r.name} direkt` : "",
     issued: bul?.published ? fmtWhen(new Date(bul.published), "Europe/Stockholm", !fresh) : "", source: "Naturvårdsverket",
-    problems: (bul?.problems || []).map(n => ({name: n, sv: n, text: "Läs mer om lavinproblemet i hela prognosen."})),
-    advice: bul?.message, adviceLabel: "Dagens huvudbudskap", links: [site]});
+    problems: (bul?.problems || []).map(p => typeof p === "string" ? {name: p} : p)
+      // Naturvårdsverket marks sectors on/off only: show them in the strong colour
+      .map(p => ({...p, sv: p.name, text: "Läs mer om lavinproblemet i hela prognosen.", grid: p.grid?.map(r => r.map(v => v ? 2 : 0))})),
+    advice: bul?.message, adviceLabel: "Dagens huvudbudskap", links: [site],
+    ringLabels: ["Kalfjället", "Trädgränsen", "Under trädgränsen"]});
 }
 
 async function loadVarsom(r){
@@ -1015,10 +1091,11 @@ async function loadVarsom(r){
     if (!w) throw new Error("inget varsel");
     const lvl = +w.DangerLevel || 0;
     const problems = (w.AvalancheProblems || []).map(p => {
-      const ex = (p.ValidExpositions || "").split("").map((c, i) => c === "1" ? EXPO[i] : "").filter(Boolean);
-      const h = p.ExposedHeight1 ? ` Över ca ${p.ExposedHeight1} m.` : "";
+      const aspects = (p.ValidExpositions || "").padEnd(8, "0").slice(0, 8).split("").map(c => c === "1" ? 2 : 0);  // Varsom has no "most exposed": use the strong colour
       return {name: p.AvalancheProblemTypeName, sv: VARSOM_PROBLEM[(p.AvalancheProblemTypeName || "").toLowerCase()],
-        text: `${p.AvalCauseName || ""}. ${ex.length ? `Mest utsatta väderstreck: ${ex.join(", ")}.` : ""}${h}`, lang: "en"};
+        text: p.AvalCauseName ? p.AvalCauseName + "." : "", lang: "en",
+        grid: aspects.some(v => v) ? [aspects] : null,
+        height: p.ExposedHeight1 ? {fill: +p.ExposedHeightFill || 1, h1: +p.ExposedHeight1, h2: +p.ExposedHeight2 || 0} : null};
     });
     if ($("#varsom")) $("#varsom").outerHTML = `<div id="varsom">${dangerCard({
       top: lvl, area: w.RegionName || "Norge",
