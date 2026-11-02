@@ -1,13 +1,20 @@
-"""Merge discovered resorts into data/osm/scandinavia.json and give every resort its county.
+"""Merge discovered resorts into an area file and give every resort its country and county/region.
 
 Usage: python3 tools/merge_resorts.py data/osm/scandinavia.json data/osm/scandinavia_found.json data/scandinavia_extra.json
-Every row gets: id, name, country (Sverige/Norge/Finland), region (county, from Nominatim), lat, lon, base, top.
+       python3 tools/merge_resorts.py data/osm/alps.json data/osm/alps_found.json
+Every row gets: id, name, country, region (county/state, from Nominatim), lat, lon, base, top.
+The area file is created if it does not exist; the extra file (hand-added resorts) is optional.
+Ids never clash with resorts already in index.html.
 """
-import json, re, subprocess, sys, time, unicodedata
+import json, os, re, subprocess, sys, time, unicodedata
 
 UA = "YukiRadar/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
-COUNTRY = {"no": "Norge", "se": "Sverige", "fi": "Finland"}
-SKIP = re.compile(r"hopp|skiklubb", re.I)
+COUNTRY = {"no": "Norge", "se": "Sverige", "fi": "Finland",
+           "at": "Österrike", "ch": "Schweiz", "fr": "Frankrike", "it": "Italien"}
+SKIP = re.compile(r"hopp|skiklubb|sprungschanze|tremplin|trampolino", re.I)
+# "Skigebiet Ischgl" -> "Ischgl", "Domaine skiable de Tignes" -> "Tignes"
+PREFIX = re.compile(r"^(Skigebiet|Skiregion|Skizentrum|Skiarena|Skiresort|Ski resort|Domaine skiable|Station de ski|"
+                    r"Comprensorio sciistico|Area sciistica|Comprensorio|Stazione sciistica)( (de|du|des|d'|di|del|della|dei))? ?", re.I)
 
 
 def slug(name):
@@ -29,14 +36,17 @@ def county(lat, lon):
     return None, ""
 
 
-rows = json.load(open(sys.argv[1], encoding="utf-8"))
+rows = json.load(open(sys.argv[1], encoding="utf-8")) if os.path.exists(sys.argv[1]) else []
 for r in rows:
     r.setdefault("country", r["region"])
 new = [r for r in json.load(open(sys.argv[2], encoding="utf-8")) if not SKIP.search(r["name"])]
-new += json.load(open(sys.argv[3], encoding="utf-8"))
-ids = {r["id"] for r in rows}
+if len(sys.argv) > 3:
+    new += json.load(open(sys.argv[3], encoding="utf-8"))
+taken = set(re.findall(r'\{id:"(\w+)"', open("index.html", encoding="utf-8").read())) if os.path.exists("index.html") else set()
+ids = taken | {r["id"] for r in rows}
 for r in new:
     name = r["name"].title() if r["name"].isupper() else r["name"]
+    name = PREFIX.sub("", name).strip() or name
     i = base = slug(name)
     n = 2
     while i in ids:
@@ -50,7 +60,7 @@ for r in rows:
     r["region"] = reg or r["country"]
     print(r["id"], r["country"], r["region"], file=sys.stderr)
 
-order = {"Sverige": 0, "Norge": 1, "Finland": 2}
+order = {c: i for i, c in enumerate(["Sverige", "Norge", "Finland", "Österrike", "Schweiz", "Frankrike", "Italien"])}
 rows.sort(key=lambda r: (order.get(r["country"], 9), r["region"], r["name"]))
 json.dump(rows, open(sys.argv[1], "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(len(rows), "resorts", file=sys.stderr)
