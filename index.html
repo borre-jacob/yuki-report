@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="Yuki Radar">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Yuki Radar</title>
+<script>/* Chosen light/dark theme, set before the page paints */try{var t=localStorage.getItem("yr-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -229,6 +230,7 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
     </div>
     <div class="status">
       <div class="updated" id="updated">Hämtar prognos…</div>
+      <button type="button" id="theme"></button>
       <button type="button" id="refresh">Uppdatera</button>
     </div>
   </header>
@@ -1406,6 +1408,26 @@ function setForecastAt(at){
   store.set("yr-forecast-at", at.toISOString());
   stamp();
 }
+
+// ---------- Light / dark ----------
+// Follows the phone's setting until the user picks one; the choice is kept in localStorage
+const darkMq = matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => (document.documentElement.dataset.theme || (darkMq.matches ? "dark" : "light")) === "dark";
+function showTheme(){
+  const dark = isDark();
+  $("#theme").textContent = dark ? "☀ Ljust läge" : "☾ Mörkt läge";
+  $("#theme").setAttribute("aria-label", dark ? "Byt till ljust läge" : "Byt till mörkt läge");
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = dark ? "#0b1220" : "#f3f6f9");
+}
+$("#theme").onclick = () => {
+  const t = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("yr-theme", t); } catch {}
+  showTheme();
+  route();  // charts and map markers read their colours when drawn
+};
+darkMq.addEventListener("change", () => { showTheme(); if (!document.documentElement.dataset.theme) route(); });
+showTheme();
 
 $("#refresh").onclick = async e => {
   const btn = e.currentTarget;
