@@ -941,7 +941,7 @@ state.region = store.get("yr-region-" + state.area) || "all";
 
 // ---------- Overview data (one request for all resorts in the chosen area) ----------
 async function loadOverview(){
-  const list = areaResorts(state.area);
+  const area = state.area, list = areaResorts(area);
   // Open-Meteo takes many places per request; keep each one to 100 (URL length, fair use)
   const parts = [];
   for (let i = 0; i < list.length; i += 100) parts.push(list.slice(i, i + 100));
@@ -980,6 +980,8 @@ async function loadOverview(){
   const cached = answers.map(x => x.cachedAt).filter(Boolean).sort((x, y) => x - y)[0];
   setForecastAt(cached || new Date());
   store.set("yr-overview", {at: state.fetchedAt.toISOString(), data: out});
+  // When each area was last fetched live (not from the offline cache), so a reopen within the hour skips the fetch
+  store.set("yr-area-at", {...(store.get("yr-area-at") || {}), [area]: state.fetchedAt.toISOString()});
 }
 
 // ---------- Overview view ----------
@@ -1036,8 +1038,7 @@ function setArea(a){
   state.region = store.get("yr-region-" + a) || "all";
   if (!areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
   renderOverview();
-  // Fetch the new area's snow if we have not already this session
-  if (!areaResorts(a).every(r => state.overview?.[r.id])) refreshOverview();
+  refreshOverview();
 }
 
 // No forecast to rank by (offline on first visit, or the weather service refused): still list the resorts by name
@@ -1957,7 +1958,7 @@ $("#refresh").onclick = async e => {
   btn.disabled = true;
   navigator.serviceWorker?.getRegistration().then(reg => reg?.update()).catch(() => {});
   if (location.hash) route();
-  await refreshOverview();
+  await refreshOverview(true);
   btn.disabled = false;
 };
 
@@ -1993,8 +1994,16 @@ function stamp(){
   $("#updated").textContent = state.fetchedAt
     ? "Prognos uppdaterad " + state.fetchedAt.toLocaleString("sv-SE", {weekday:"short", hour:"2-digit", minute:"2-digit"}) : "";
 }
-async function refreshOverview(){
+// Forecasts change at most hourly and every resort costs one Open-Meteo call (daily quota per user),
+// so opening the app or switching area within the hour reuses the saved data. "Uppdatera" always fetches.
+const FRESH_MS = 60 * 60e3;
+async function refreshOverview(force = false){
   const area = state.area;
+  const at = (store.get("yr-area-at") || {})[area];
+  if (!force && at && Date.now() - new Date(at) < FRESH_MS && areaResorts(area).every(r => state.overview?.[r.id])){
+    state.fetchedAt = new Date(at); stamp();
+    return;
+  }
   try { await loadOverview(); stamp(); if (!location.hash && area === state.area) fillOverview(); }
   catch (e){
     const have = areaResorts(area).some(r => state.overview?.[r.id]);
