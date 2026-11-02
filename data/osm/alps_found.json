@@ -1,0 +1,2402 @@
+[
+ {
+  "name": "Evasion Mont Blanc",
+  "lat": 45.828,
+  "lon": 6.619,
+  "base": 810,
+  "top": 1870,
+  "liftCount": 148
+ },
+ {
+  "name": "Paradiski",
+  "lat": 45.531,
+  "lon": 6.743,
+  "base": 1200,
+  "top": 2710,
+  "liftCount": 118
+ },
+ {
+  "name": "Les 3 Vallées",
+  "lat": 45.382,
+  "lon": 6.595,
+  "base": 620,
+  "top": 2770,
+  "liftCount": 103
+ },
+ {
+  "name": "Ski Arlberg",
+  "lat": 47.177,
+  "lon": 10.184,
+  "base": 1300,
+  "top": 2610,
+  "liftCount": 83
+ },
+ {
+  "name": "4 Vallées – Verbier/La Tzoumaz/Nendaz/Veysonnaz/Thyon",
+  "lat": 46.128,
+  "lon": 7.293,
+  "base": 820,
+  "top": 2900,
+  "liftCount": 70
+ },
+ {
+  "name": "Alpe d'Huez Grand Domaine",
+  "lat": 45.107,
+  "lon": 6.079,
+  "base": 720,
+  "top": 3300,
+  "liftCount": 64
+ },
+ {
+  "name": "Skicircus Saalbach-Hinterglemm Leogang Fieberbrunn",
+  "lat": 47.404,
+  "lon": 12.618,
+  "base": 810,
+  "top": 1980,
+  "liftCount": 76
+ },
+ {
+  "name": "Espace Liberté",
+  "lat": 46.26,
+  "lon": 6.837,
+  "base": 1010,
+  "top": 2090,
+  "liftCount": 71
+ },
+ {
+  "name": "SkiWelt Wilder Kaiser Brixental",
+  "lat": 47.472,
+  "lon": 12.243,
+  "base": 630,
+  "top": 1800,
+  "liftCount": 67
+ },
+ {
+  "name": "Schladming Dachstein",
+  "lat": 47.383,
+  "lon": 13.679,
+  "base": 720,
+  "top": 1840,
+  "liftCount": 65
+ },
+ {
+  "name": "Tignes - Val d'Isère",
+  "lat": 45.446,
+  "lon": 6.949,
+  "base": 1830,
+  "top": 2850,
+  "liftCount": 65
+ },
+ {
+  "name": "Zermatt - Breuil-Cervinia",
+  "lat": 45.961,
+  "lon": 7.717,
+  "base": 1860,
+  "top": 3760,
+  "liftCount": 56
+ },
+ {
+  "name": "Le Grand Massif",
+  "lat": 46.029,
+  "lon": 6.699,
+  "base": 700,
+  "top": 2480,
+  "liftCount": 56
+ },
+ {
+  "name": "Les Sybelles",
+  "lat": 45.238,
+  "lon": 6.239,
+  "base": 1500,
+  "top": 2580,
+  "liftCount": 56
+ },
+ {
+  "name": "Serre Chevalier",
+  "lat": 44.926,
+  "lon": 6.551,
+  "base": 1390,
+  "top": 2500,
+  "liftCount": 53
+ },
+ {
+  "name": "La Clusaz",
+  "lat": 45.885,
+  "lon": 6.431,
+  "base": 1040,
+  "top": 2470,
+  "liftCount": 48
+ },
+ {
+  "name": "Val Gardena",
+  "lat": 46.55,
+  "lon": 11.744,
+  "base": 1260,
+  "top": 2500,
+  "liftCount": 49
+ },
+ {
+  "name": "Alta Badia",
+  "lat": 46.555,
+  "lon": 11.886,
+  "base": 1340,
+  "top": 2210,
+  "liftCount": 52
+ },
+ {
+  "name": "KitzSki",
+  "lat": 47.397,
+  "lon": 12.376,
+  "base": 780,
+  "top": 1920,
+  "liftCount": 49
+ },
+ {
+  "name": "Zillertal Arena",
+  "lat": 47.243,
+  "lon": 12.05,
+  "base": 570,
+  "top": 2500,
+  "liftCount": 41
+ },
+ {
+  "name": "Arosa Lenzerheide",
+  "lat": 46.761,
+  "lon": 9.584,
+  "base": 1250,
+  "top": 2840,
+  "liftCount": 44
+ },
+ {
+  "name": "Mayrhofen Hippach",
+  "lat": 47.171,
+  "lon": 11.8,
+  "base": 620,
+  "top": 2470,
+  "liftCount": 41
+ },
+ {
+  "name": "Les Deux Alpes",
+  "lat": 45.006,
+  "lon": 6.157,
+  "base": 960,
+  "top": 3400,
+  "liftCount": 35
+ },
+ {
+  "name": "Ischgl-Samnaun",
+  "lat": 46.977,
+  "lon": 10.33,
+  "base": 1350,
+  "top": 2840,
+  "liftCount": 42
+ },
+ {
+  "name": "Serfaus-Fiss-Ladis",
+  "lat": 47.052,
+  "lon": 10.561,
+  "base": 1220,
+  "top": 2570,
+  "liftCount": 43
+ },
+ {
+  "name": "Snow Space Salzburg",
+  "lat": 47.326,
+  "lon": 13.31,
+  "base": 740,
+  "top": 1840,
+  "liftCount": 44
+ },
+ {
+  "name": "Andermatt+Disentis+Sedrun",
+  "lat": 46.665,
+  "lon": 8.7,
+  "base": 1230,
+  "top": 2930,
+  "liftCount": 36
+ },
+ {
+  "name": "Val Thorens",
+  "lat": 45.284,
+  "lon": 6.576,
+  "base": 880,
+  "top": 3170,
+  "liftCount": 30
+ },
+ {
+  "name": "Le Grand Domaine",
+  "lat": 45.442,
+  "lon": 6.41,
+  "base": 1260,
+  "top": 2390,
+  "liftCount": 40
+ },
+ {
+  "name": "Val di Fassa",
+  "lat": 46.466,
+  "lon": 11.755,
+  "base": 1350,
+  "top": 2420,
+  "liftCount": 40
+ },
+ {
+  "name": "Aletsch Arena",
+  "lat": 46.395,
+  "lon": 8.069,
+  "base": 830,
+  "top": 2860,
+  "liftCount": 29
+ },
+ {
+  "name": "Sölden",
+  "lat": 46.953,
+  "lon": 10.965,
+  "base": 1350,
+  "top": 3230,
+  "liftCount": 30
+ },
+ {
+  "name": "Silvretta Montafon",
+  "lat": 47.024,
+  "lon": 9.976,
+  "base": 690,
+  "top": 2360,
+  "liftCount": 32
+ },
+ {
+  "name": "Hochfügen - Zillertal",
+  "lat": 47.263,
+  "lon": 11.816,
+  "base": 550,
+  "top": 2370,
+  "liftCount": 29
+ },
+ {
+  "name": "Laax",
+  "lat": 46.845,
+  "lon": 9.224,
+  "base": 1090,
+  "top": 2800,
+  "liftCount": 29
+ },
+ {
+  "name": "Avoriaz",
+  "lat": 46.19,
+  "lon": 6.763,
+  "base": 960,
+  "top": 2220,
+  "liftCount": 33
+ },
+ {
+  "name": "Les Gets-Morzine",
+  "lat": 46.155,
+  "lon": 6.689,
+  "base": 980,
+  "top": 1950,
+  "liftCount": 35
+ },
+ {
+  "name": "Ponte di Legno - Passo Tonale",
+  "lat": 46.256,
+  "lon": 10.551,
+  "base": 1120,
+  "top": 2670,
+  "liftCount": 29
+ },
+ {
+  "name": "Vars/Risoul",
+  "lat": 44.592,
+  "lon": 6.653,
+  "base": 1630,
+  "top": 2720,
+  "liftCount": 33
+ },
+ {
+  "name": "Monterosa Ski",
+  "lat": 45.857,
+  "lon": 7.828,
+  "base": 1210,
+  "top": 3250,
+  "liftCount": 22
+ },
+ {
+  "name": "Engelberg-Titlis",
+  "lat": 46.792,
+  "lon": 8.401,
+  "base": 1000,
+  "top": 3000,
+  "liftCount": 21
+ },
+ {
+  "name": "Drei Zinnen - Tre Cime",
+  "lat": 46.696,
+  "lon": 12.336,
+  "base": 1130,
+  "top": 2220,
+  "liftCount": 30
+ },
+ {
+  "name": "Val Cenis",
+  "lat": 45.277,
+  "lon": 6.892,
+  "base": 1400,
+  "top": 2460,
+  "liftCount": 30
+ },
+ {
+  "name": "Livigno",
+  "lat": 46.53,
+  "lon": 10.128,
+  "base": 1830,
+  "top": 2780,
+  "liftCount": 31
+ },
+ {
+  "name": "Champéry – Les Crosets – Champoussin – Morgins",
+  "lat": 46.183,
+  "lon": 6.822,
+  "base": 1030,
+  "top": 2250,
+  "liftCount": 28
+ },
+ {
+  "name": "Valloire - Galibier Thabor",
+  "lat": 45.166,
+  "lon": 6.468,
+  "base": 1410,
+  "top": 2520,
+  "liftCount": 29
+ },
+ {
+  "name": "Kronplatz - Plan de Corones",
+  "lat": 46.732,
+  "lon": 11.957,
+  "base": 920,
+  "top": 2270,
+  "liftCount": 26
+ },
+ {
+  "name": "Domaine Skiable Espace Lumière",
+  "lat": 44.329,
+  "lon": 6.578,
+  "base": 1640,
+  "top": 2480,
+  "liftCount": 31
+ },
+ {
+  "name": "Hochoetz-Kühtai",
+  "lat": 47.214,
+  "lon": 10.973,
+  "base": 810,
+  "top": 2500,
+  "liftCount": 22
+ },
+ {
+  "name": "Saas Fee",
+  "lat": 46.088,
+  "lon": 7.915,
+  "base": 1780,
+  "top": 3160,
+  "liftCount": 25
+ },
+ {
+  "name": "Alpe Cimbra",
+  "lat": 45.908,
+  "lon": 11.235,
+  "base": 1180,
+  "top": 1810,
+  "liftCount": 32
+ },
+ {
+  "name": "Hintertuxer Gletscher",
+  "lat": 47.077,
+  "lon": 11.667,
+  "base": 1500,
+  "top": 3220,
+  "liftCount": 21
+ },
+ {
+  "name": "Skirama Dolomiti Adamello-Brenta",
+  "lat": 46.15,
+  "lon": 10.923,
+  "base": 190,
+  "top": 2370,
+  "liftCount": 16
+ },
+ {
+  "name": "Nassfeld",
+  "lat": 46.57,
+  "lon": 13.268,
+  "base": 610,
+  "top": 2000,
+  "liftCount": 23
+ },
+ {
+  "name": "Hochkönig",
+  "lat": 47.388,
+  "lon": 12.975,
+  "base": 830,
+  "top": 1890,
+  "liftCount": 26
+ },
+ {
+  "name": "Folgarida-Marilleva",
+  "lat": 46.29,
+  "lon": 10.831,
+  "base": 810,
+  "top": 2160,
+  "liftCount": 23
+ },
+ {
+  "name": "Mürren/Schilthorn",
+  "lat": 46.564,
+  "lon": 7.881,
+  "base": 810,
+  "top": 2940,
+  "liftCount": 15
+ },
+ {
+  "name": "Espace Diamant (Les Saisies)",
+  "lat": 45.765,
+  "lon": 6.529,
+  "base": 1240,
+  "top": 1940,
+  "liftCount": 29
+ },
+ {
+  "name": "Aiguille du Midi (Chamonix)",
+  "lat": 45.901,
+  "lon": 6.895,
+  "base": 1030,
+  "top": 3690,
+  "liftCount": 9
+ },
+ {
+  "name": "Grindelwald - Wengen",
+  "lat": 46.599,
+  "lon": 7.956,
+  "base": 940,
+  "top": 2340,
+  "liftCount": 21
+ },
+ {
+  "name": "Parsenn",
+  "lat": 46.846,
+  "lon": 9.831,
+  "base": 1190,
+  "top": 2670,
+  "liftCount": 20
+ },
+ {
+  "name": "Obergurgl-Hochgurgl",
+  "lat": 46.879,
+  "lon": 11.047,
+  "base": 1910,
+  "top": 2910,
+  "liftCount": 24
+ },
+ {
+  "name": "Stubaier Gletscher",
+  "lat": 46.99,
+  "lon": 11.12,
+  "base": 1690,
+  "top": 3190,
+  "liftCount": 19
+ },
+ {
+  "name": "Campiglio Dolomiti di Brenta",
+  "lat": 46.232,
+  "lon": 10.839,
+  "base": 1150,
+  "top": 2440,
+  "liftCount": 21
+ },
+ {
+  "name": "Ski Civetta",
+  "lat": 46.402,
+  "lon": 12.078,
+  "base": 990,
+  "top": 2070,
+  "liftCount": 23
+ },
+ {
+  "name": "Schmittenhöhe Zell am See",
+  "lat": 47.326,
+  "lon": 12.759,
+  "base": 760,
+  "top": 1940,
+  "liftCount": 22
+ },
+ {
+  "name": "La Rosière",
+  "lat": 45.645,
+  "lon": 6.867,
+  "base": 1190,
+  "top": 2450,
+  "liftCount": 21
+ },
+ {
+  "name": "Villars/Gryon/Les Diablerets",
+  "lat": 46.321,
+  "lon": 7.092,
+  "base": 1170,
+  "top": 1980,
+  "liftCount": 25
+ },
+ {
+  "name": "San Martino di Castrozza - Passo Rolle",
+  "lat": 46.265,
+  "lon": 11.781,
+  "base": 1410,
+  "top": 2610,
+  "liftCount": 21
+ },
+ {
+  "name": "Seiser Alm - Mont de Sëuc - Alpe di Siusi",
+  "lat": 46.544,
+  "lon": 11.628,
+  "base": 1020,
+  "top": 2210,
+  "liftCount": 21
+ },
+ {
+  "name": "Le Grand Bornand",
+  "lat": 45.963,
+  "lon": 6.471,
+  "base": 940,
+  "top": 2020,
+  "liftCount": 22
+ },
+ {
+  "name": "Dolomiti Superski",
+  "lat": 46.535,
+  "lon": 11.706,
+  "base": 270,
+  "top": 2250,
+  "liftCount": 13
+ },
+ {
+  "name": "Montgenèvre",
+  "lat": 44.925,
+  "lon": 6.73,
+  "base": 1810,
+  "top": 2580,
+  "liftCount": 25
+ },
+ {
+  "name": "Zinal / Grimentz",
+  "lat": 46.163,
+  "lon": 7.577,
+  "base": 1600,
+  "top": 2870,
+  "liftCount": 20
+ },
+ {
+  "name": "Crans-Montana",
+  "lat": 46.337,
+  "lon": 7.489,
+  "base": 1510,
+  "top": 2880,
+  "liftCount": 19
+ },
+ {
+  "name": "Kleinwalsertal-Oberstdorf",
+  "lat": 47.34,
+  "lon": 10.158,
+  "base": 1070,
+  "top": 2020,
+  "liftCount": 23
+ },
+ {
+  "name": "Les 7 Laux",
+  "lat": 45.258,
+  "lon": 6.021,
+  "base": 1330,
+  "top": 2370,
+  "liftCount": 22
+ },
+ {
+  "name": "Obertauern",
+  "lat": 47.253,
+  "lon": 13.554,
+  "base": 1660,
+  "top": 2190,
+  "liftCount": 27
+ },
+ {
+  "name": "Glacier 3000",
+  "lat": 46.333,
+  "lon": 7.217,
+  "base": 1350,
+  "top": 2970,
+  "liftCount": 16
+ },
+ {
+  "name": "Bad Kleinkirchheim",
+  "lat": 46.818,
+  "lon": 13.774,
+  "base": 1030,
+  "top": 2040,
+  "liftCount": 22
+ },
+ {
+  "name": "Courmayeur",
+  "lat": 45.792,
+  "lon": 6.936,
+  "base": 1200,
+  "top": 2610,
+  "liftCount": 18
+ },
+ {
+  "name": "Dévoluy",
+  "lat": 44.666,
+  "lon": 5.907,
+  "base": 1460,
+  "top": 2560,
+  "liftCount": 21
+ },
+ {
+  "name": "Cortina Tofane",
+  "lat": 46.539,
+  "lon": 12.097,
+  "base": 1210,
+  "top": 3100,
+  "liftCount": 13
+ },
+ {
+  "name": "Ski Juwel Alpbachtal Wildschönau",
+  "lat": 47.385,
+  "lon": 11.961,
+  "base": 820,
+  "top": 1870,
+  "liftCount": 21
+ },
+ {
+  "name": "Klausberg Skiarena",
+  "lat": 46.958,
+  "lon": 11.962,
+  "base": 940,
+  "top": 2470,
+  "liftCount": 16
+ },
+ {
+  "name": "Brévent/Flégère (Chamonix)",
+  "lat": 45.949,
+  "lon": 6.87,
+  "base": 1060,
+  "top": 2480,
+  "liftCount": 17
+ },
+ {
+  "name": "Meiringen-Hasliberg",
+  "lat": 46.751,
+  "lon": 8.232,
+  "base": 630,
+  "top": 2230,
+  "liftCount": 15
+ },
+ {
+  "name": "Ski Gastein - Stubnerkogel/Schlossalm",
+  "lat": 47.132,
+  "lon": 13.087,
+  "base": 840,
+  "top": 2230,
+  "liftCount": 17
+ },
+ {
+  "name": "Corviglia",
+  "lat": 46.507,
+  "lon": 9.817,
+  "base": 1750,
+  "top": 3010,
+  "liftCount": 18
+ },
+ {
+  "name": "Latemar Dolomites",
+  "lat": 46.353,
+  "lon": 11.546,
+  "base": 1060,
+  "top": 2310,
+  "liftCount": 18
+ },
+ {
+  "name": "Flumserberg",
+  "lat": 47.08,
+  "lon": 9.269,
+  "base": 660,
+  "top": 2210,
+  "liftCount": 15
+ },
+ {
+  "name": "Großarltal-Dorfgastein",
+  "lat": 47.238,
+  "lon": 13.156,
+  "base": 870,
+  "top": 2010,
+  "liftCount": 19
+ },
+ {
+  "name": "Orcières Merlette",
+  "lat": 44.709,
+  "lon": 6.324,
+  "base": 1830,
+  "top": 2720,
+  "liftCount": 21
+ },
+ {
+  "name": "Corvatsch-Furtschellas",
+  "lat": 46.432,
+  "lon": 9.807,
+  "base": 1800,
+  "top": 3290,
+  "liftCount": 15
+ },
+ {
+  "name": "Les Rousses",
+  "lat": 46.438,
+  "lon": 6.069,
+  "base": 1140,
+  "top": 1660,
+  "liftCount": 24
+ },
+ {
+  "name": "Bormio Ski",
+  "lat": 46.441,
+  "lon": 10.394,
+  "base": 1200,
+  "top": 3000,
+  "liftCount": 11
+ },
+ {
+  "name": "Wildkogel",
+  "lat": 47.28,
+  "lon": 12.284,
+  "base": 830,
+  "top": 2120,
+  "liftCount": 16
+ },
+ {
+  "name": "Sauze D'Oulx",
+  "lat": 45.0,
+  "lon": 6.87,
+  "base": 1390,
+  "top": 2680,
+  "liftCount": 16
+ },
+ {
+  "name": "Ski Area San Pellegrino - Falcade",
+  "lat": 46.371,
+  "lon": 11.807,
+  "base": 1220,
+  "top": 2510,
+  "liftCount": 16
+ },
+ {
+  "name": "Auron",
+  "lat": 44.223,
+  "lon": 6.915,
+  "base": 1160,
+  "top": 2420,
+  "liftCount": 16
+ },
+ {
+  "name": "Katschberg-Aineck",
+  "lat": 47.061,
+  "lon": 13.632,
+  "base": 1060,
+  "top": 2210,
+  "liftCount": 17
+ },
+ {
+  "name": "Sörenberg",
+  "lat": 46.812,
+  "lon": 8.03,
+  "base": 1130,
+  "top": 2280,
+  "liftCount": 17
+ },
+ {
+  "name": "Pizol Bad Ragaz",
+  "lat": 46.992,
+  "lon": 9.436,
+  "base": 490,
+  "top": 2240,
+  "liftCount": 11
+ },
+ {
+  "name": "Adelboden - Lenk",
+  "lat": 46.461,
+  "lon": 7.517,
+  "base": 1260,
+  "top": 2190,
+  "liftCount": 19
+ },
+ {
+  "name": "Großglockner Heiligenblut",
+  "lat": 47.053,
+  "lon": 12.86,
+  "base": 1310,
+  "top": 2920,
+  "liftCount": 12
+ },
+ {
+  "name": "Praz de Lys Sommand",
+  "lat": 46.15,
+  "lon": 6.575,
+  "base": 1260,
+  "top": 1960,
+  "liftCount": 21
+ },
+ {
+  "name": "Villard de Lans - Corrençon",
+  "lat": 45.025,
+  "lon": 5.556,
+  "base": 1160,
+  "top": 2060,
+  "liftCount": 19
+ },
+ {
+  "name": "Sestriere",
+  "lat": 44.959,
+  "lon": 6.894,
+  "base": 1590,
+  "top": 2590,
+  "liftCount": 18
+ },
+ {
+  "name": "Kals-Matrei",
+  "lat": 46.999,
+  "lon": 12.602,
+  "base": 930,
+  "top": 2420,
+  "liftCount": 13
+ },
+ {
+  "name": "Klewenalp - Stockhütte",
+  "lat": 46.939,
+  "lon": 8.485,
+  "base": 450,
+  "top": 1930,
+  "liftCount": 13
+ },
+ {
+  "name": "Blatten Belalp",
+  "lat": 46.38,
+  "lon": 7.977,
+  "base": 1330,
+  "top": 3100,
+  "liftCount": 10
+ },
+ {
+  "name": "Schönried - Saanenmöser - Zweisimmen - St. Stephan",
+  "lat": 46.506,
+  "lon": 7.335,
+  "base": 940,
+  "top": 2000,
+  "liftCount": 17
+ },
+ {
+  "name": "Lienzer Bergbahnen",
+  "lat": 46.848,
+  "lon": 12.769,
+  "base": 680,
+  "top": 2250,
+  "liftCount": 11
+ },
+ {
+  "name": "Les Grands Montets",
+  "lat": 45.968,
+  "lon": 6.936,
+  "base": 1220,
+  "top": 2770,
+  "liftCount": 11
+ },
+ {
+  "name": "Domaine Skiable Chamrousse",
+  "lat": 45.117,
+  "lon": 5.886,
+  "base": 1410,
+  "top": 2250,
+  "liftCount": 18
+ },
+ {
+  "name": "Skiregion Dachstein West",
+  "lat": 47.549,
+  "lon": 13.477,
+  "base": 750,
+  "top": 1570,
+  "liftCount": 18
+ },
+ {
+  "name": "Domaine skiable Valberg",
+  "lat": 44.08,
+  "lon": 6.948,
+  "base": 1420,
+  "top": 2010,
+  "liftCount": 20
+ },
+ {
+  "name": "Les Orres",
+  "lat": 44.483,
+  "lon": 6.565,
+  "base": 1560,
+  "top": 2650,
+  "liftCount": 15
+ },
+ {
+  "name": "First – Grindelwald",
+  "lat": 46.649,
+  "lon": 8.058,
+  "base": 1020,
+  "top": 2510,
+  "liftCount": 11
+ },
+ {
+  "name": "Paganella",
+  "lat": 46.153,
+  "lon": 11.02,
+  "base": 1030,
+  "top": 2110,
+  "liftCount": 15
+ },
+ {
+  "name": "Hirmentaz - Les Habères",
+  "lat": 46.24,
+  "lon": 6.495,
+  "base": 940,
+  "top": 1600,
+  "liftCount": 19
+ },
+ {
+  "name": "La Norma",
+  "lat": 45.193,
+  "lon": 6.71,
+  "base": 1360,
+  "top": 2720,
+  "liftCount": 12
+ },
+ {
+  "name": "Marmolada",
+  "lat": 46.443,
+  "lon": 11.887,
+  "base": 1450,
+  "top": 3180,
+  "liftCount": 8
+ },
+ {
+  "name": "Zauchensee-Flachauwinkl",
+  "lat": 47.29,
+  "lon": 13.447,
+  "base": 1000,
+  "top": 2100,
+  "liftCount": 14
+ },
+ {
+  "name": "Nauders am Reschenpass",
+  "lat": 46.87,
+  "lon": 10.536,
+  "base": 1350,
+  "top": 2650,
+  "liftCount": 12
+ },
+ {
+  "name": "Skigebiet Hinterstoder",
+  "lat": 47.672,
+  "lon": 14.168,
+  "base": 590,
+  "top": 1980,
+  "liftCount": 11
+ },
+ {
+  "name": "Scuol Motta Naluns",
+  "lat": 46.818,
+  "lon": 10.266,
+  "base": 1300,
+  "top": 2790,
+  "liftCount": 10
+ },
+ {
+  "name": "Kitzsteinhorn",
+  "lat": 47.202,
+  "lon": 12.684,
+  "base": 1970,
+  "top": 3030,
+  "liftCount": 14
+ },
+ {
+  "name": "Roc d'Enfer",
+  "lat": 46.211,
+  "lon": 6.608,
+  "base": 950,
+  "top": 1790,
+  "liftCount": 16
+ },
+ {
+  "name": "Tauplitz / Bad Mitterndorf",
+  "lat": 47.592,
+  "lon": 13.988,
+  "base": 920,
+  "top": 1950,
+  "liftCount": 14
+ },
+ {
+  "name": "Skiarea Valchiavenna",
+  "lat": 46.426,
+  "lon": 9.373,
+  "base": 1540,
+  "top": 2870,
+  "liftCount": 11
+ },
+ {
+  "name": "Savognin",
+  "lat": 46.577,
+  "lon": 9.545,
+  "base": 1170,
+  "top": 2690,
+  "liftCount": 9
+ },
+ {
+  "name": "Domaine Autrans - Méaudre",
+  "lat": 45.172,
+  "lon": 5.545,
+  "base": 1010,
+  "top": 1620,
+  "liftCount": 18
+ },
+ {
+  "name": "Arêches Beaufort",
+  "lat": 45.662,
+  "lon": 6.552,
+  "base": 1020,
+  "top": 2120,
+  "liftCount": 13
+ },
+ {
+  "name": "Riserva Bianca – Limone Piemonte",
+  "lat": 44.173,
+  "lon": 7.579,
+  "base": 1070,
+  "top": 2050,
+  "liftCount": 14
+ },
+ {
+  "name": "Schnalstal",
+  "lat": 46.77,
+  "lon": 10.791,
+  "base": 2010,
+  "top": 3190,
+  "liftCount": 12
+ },
+ {
+  "name": "Sulden am Ortler - Solda al Ortles",
+  "lat": 46.511,
+  "lon": 10.599,
+  "base": 1840,
+  "top": 3210,
+  "liftCount": 10
+ },
+ {
+  "name": "Grächen",
+  "lat": 46.2,
+  "lon": 7.863,
+  "base": 1620,
+  "top": 2860,
+  "liftCount": 11
+ },
+ {
+  "name": "Saint Luc - Chandolin",
+  "lat": 46.242,
+  "lon": 7.62,
+  "base": 1940,
+  "top": 2970,
+  "liftCount": 13
+ },
+ {
+  "name": "Obersaxen-Mundaun",
+  "lat": 46.741,
+  "lon": 9.13,
+  "base": 1250,
+  "top": 2260,
+  "liftCount": 13
+ },
+ {
+  "name": "Isola 2000",
+  "lat": 44.183,
+  "lon": 7.151,
+  "base": 1830,
+  "top": 2420,
+  "liftCount": 17
+ },
+ {
+  "name": "Les Houches (Chamonix)",
+  "lat": 45.883,
+  "lon": 6.763,
+  "base": 1000,
+  "top": 1890,
+  "liftCount": 14
+ },
+ {
+  "name": "Balme - Vallorcine",
+  "lat": 46.017,
+  "lon": 6.953,
+  "base": 1260,
+  "top": 2250,
+  "liftCount": 13
+ },
+ {
+  "name": "La Thuile",
+  "lat": 45.696,
+  "lon": 6.931,
+  "base": 1470,
+  "top": 2560,
+  "liftCount": 12
+ },
+ {
+  "name": "Brandnertal – Brand/​Bürserberg",
+  "lat": 47.118,
+  "lon": 9.734,
+  "base": 890,
+  "top": 1970,
+  "liftCount": 12
+ },
+ {
+  "name": "Madrisa",
+  "lat": 46.907,
+  "lon": 9.868,
+  "base": 1140,
+  "top": 2610,
+  "liftCount": 8
+ },
+ {
+  "name": "Molines-en-Queyras - Saint-Véran",
+  "lat": 44.713,
+  "lon": 6.865,
+  "base": 1740,
+  "top": 2800,
+  "liftCount": 12
+ },
+ {
+  "name": "Kreischberg",
+  "lat": 47.074,
+  "lon": 14.056,
+  "base": 860,
+  "top": 2120,
+  "liftCount": 10
+ },
+ {
+  "name": "Brixen Plose - Plose di Bressanone",
+  "lat": 46.69,
+  "lon": 11.716,
+  "base": 1040,
+  "top": 2500,
+  "liftCount": 8
+ },
+ {
+  "name": "Brunni-Holzegg-Rotenflue",
+  "lat": 47.03,
+  "lon": 8.706,
+  "base": 610,
+  "top": 1560,
+  "liftCount": 13
+ },
+ {
+  "name": "Puy-Saint-Vincent",
+  "lat": 44.812,
+  "lon": 6.478,
+  "base": 1410,
+  "top": 2660,
+  "liftCount": 10
+ },
+ {
+  "name": "Golm",
+  "lat": 47.069,
+  "lon": 9.851,
+  "base": 650,
+  "top": 2100,
+  "liftCount": 8
+ },
+ {
+  "name": "Thollon les Mémises",
+  "lat": 46.379,
+  "lon": 6.733,
+  "base": 1030,
+  "top": 1870,
+  "liftCount": 14
+ },
+ {
+  "name": "Carezza",
+  "lat": 46.419,
+  "lon": 11.596,
+  "base": 1190,
+  "top": 2330,
+  "liftCount": 11
+ },
+ {
+  "name": "Pralognan-la-Vanoise",
+  "lat": 45.385,
+  "lon": 6.729,
+  "base": 1410,
+  "top": 2340,
+  "liftCount": 13
+ },
+ {
+  "name": "Jakobshorn",
+  "lat": 46.779,
+  "lon": 9.835,
+  "base": 1530,
+  "top": 2560,
+  "liftCount": 12
+ },
+ {
+  "name": "Gerlitzen Alpe",
+  "lat": 46.696,
+  "lon": 13.913,
+  "base": 1000,
+  "top": 1910,
+  "liftCount": 13
+ },
+ {
+  "name": "Gitschberg Jochtal",
+  "lat": 46.839,
+  "lon": 11.652,
+  "base": 1300,
+  "top": 2100,
+  "liftCount": 14
+ },
+ {
+  "name": "Pinzolo",
+  "lat": 46.173,
+  "lon": 10.801,
+  "base": 790,
+  "top": 2090,
+  "liftCount": 9
+ },
+ {
+  "name": "Aprica",
+  "lat": 46.141,
+  "lon": 10.157,
+  "base": 1160,
+  "top": 2250,
+  "liftCount": 11
+ },
+ {
+  "name": "Mottarone Ski Park",
+  "lat": 45.884,
+  "lon": 8.461,
+  "base": 200,
+  "top": 1490,
+  "liftCount": 9
+ },
+ {
+  "name": "L'Alpe du Grand Serre",
+  "lat": 45.011,
+  "lon": 5.851,
+  "base": 1380,
+  "top": 2160,
+  "liftCount": 14
+ },
+ {
+  "name": "Les Karellis",
+  "lat": 45.217,
+  "lon": 6.398,
+  "base": 1600,
+  "top": 2480,
+  "liftCount": 13
+ },
+ {
+  "name": "Artesina",
+  "lat": 44.242,
+  "lon": 7.748,
+  "base": 800,
+  "top": 2080,
+  "liftCount": 9
+ },
+ {
+  "name": "Lauchernalp",
+  "lat": 46.418,
+  "lon": 7.765,
+  "base": 1400,
+  "top": 3080,
+  "liftCount": 5
+ },
+ {
+  "name": "Bardonecchia",
+  "lat": 45.054,
+  "lon": 6.697,
+  "base": 1350,
+  "top": 2220,
+  "liftCount": 13
+ },
+ {
+  "name": "Chäserrugg-Alt St. Johann",
+  "lat": 47.175,
+  "lon": 9.308,
+  "base": 890,
+  "top": 2250,
+  "liftCount": 8
+ },
+ {
+  "name": "Großeck-Speiereck",
+  "lat": 47.128,
+  "lon": 13.652,
+  "base": 1090,
+  "top": 2340,
+  "liftCount": 9
+ },
+ {
+  "name": "Macugnaga - Moro",
+  "lat": 45.99,
+  "lon": 7.976,
+  "base": 1320,
+  "top": 2870,
+  "liftCount": 6
+ },
+ {
+  "name": "Pila",
+  "lat": 45.677,
+  "lon": 7.308,
+  "base": 1770,
+  "top": 2710,
+  "liftCount": 12
+ },
+ {
+  "name": "Venet",
+  "lat": 47.15,
+  "lon": 10.615,
+  "base": 770,
+  "top": 2210,
+  "liftCount": 7
+ },
+ {
+  "name": "Pejo 3000",
+  "lat": 46.37,
+  "lon": 10.659,
+  "base": 1410,
+  "top": 2950,
+  "liftCount": 6
+ },
+ {
+  "name": "Bonneval-sur-Arc",
+  "lat": 45.366,
+  "lon": 7.059,
+  "base": 1820,
+  "top": 2950,
+  "liftCount": 10
+ },
+ {
+  "name": "Schlick 2000",
+  "lat": 47.151,
+  "lon": 11.317,
+  "base": 1010,
+  "top": 2230,
+  "liftCount": 9
+ },
+ {
+  "name": "Turracher Höhe",
+  "lat": 46.922,
+  "lon": 13.873,
+  "base": 1390,
+  "top": 2190,
+  "liftCount": 13
+ },
+ {
+  "name": "Spieljoch - Fügen",
+  "lat": 47.33,
+  "lon": 11.802,
+  "base": 640,
+  "top": 2040,
+  "liftCount": 7
+ },
+ {
+  "name": "Métabief",
+  "lat": 46.749,
+  "lon": 6.358,
+  "base": 1020,
+  "top": 1410,
+  "liftCount": 17
+ },
+ {
+  "name": "Stuhleck - Semmering",
+  "lat": 47.6,
+  "lon": 15.762,
+  "base": 780,
+  "top": 1770,
+  "liftCount": 11
+ },
+ {
+  "name": "Gstaad - Saanen - Rougemont",
+  "lat": 46.465,
+  "lon": 7.24,
+  "base": 970,
+  "top": 2150,
+  "liftCount": 9
+ },
+ {
+  "name": "Sonnenkopf",
+  "lat": 47.109,
+  "lon": 10.06,
+  "base": 1000,
+  "top": 2280,
+  "liftCount": 8
+ },
+ {
+  "name": "Alpe Cermis",
+  "lat": 46.257,
+  "lon": 11.491,
+  "base": 860,
+  "top": 2240,
+  "liftCount": 7
+ },
+ {
+  "name": "Schwemmalm",
+  "lat": 46.541,
+  "lon": 10.928,
+  "base": 1140,
+  "top": 2620,
+  "liftCount": 6
+ },
+ {
+  "name": "Chur - Brambrüesch",
+  "lat": 46.826,
+  "lon": 9.515,
+  "base": 590,
+  "top": 2170,
+  "liftCount": 5
+ },
+ {
+  "name": "Freesports Arena Dachstein Krippenstein",
+  "lat": 47.53,
+  "lon": 13.699,
+  "base": 600,
+  "top": 2060,
+  "liftCount": 6
+ },
+ {
+  "name": "Goldeck",
+  "lat": 46.77,
+  "lon": 13.452,
+  "base": 550,
+  "top": 2110,
+  "liftCount": 5
+ },
+ {
+  "name": "Valmalenco Bernina",
+  "lat": 46.292,
+  "lon": 9.871,
+  "base": 990,
+  "top": 2340,
+  "liftCount": 7
+ },
+ {
+  "name": "Kappl",
+  "lat": 47.072,
+  "lon": 10.354,
+  "base": 1180,
+  "top": 2630,
+  "liftCount": 6
+ },
+ {
+  "name": "Raurisertal",
+  "lat": 47.224,
+  "lon": 12.968,
+  "base": 930,
+  "top": 2170,
+  "liftCount": 8
+ },
+ {
+  "name": "Sansicario",
+  "lat": 44.96,
+  "lon": 6.823,
+  "base": 1360,
+  "top": 2690,
+  "liftCount": 7
+ },
+ {
+  "name": "Stoos",
+  "lat": 46.975,
+  "lon": 8.663,
+  "base": 790,
+  "top": 1910,
+  "liftCount": 9
+ },
+ {
+  "name": "Cristallo - Faloria",
+  "lat": 46.546,
+  "lon": 12.171,
+  "base": 1220,
+  "top": 2340,
+  "liftCount": 9
+ },
+ {
+  "name": "Sillian - Hochpustertal",
+  "lat": 46.77,
+  "lon": 12.403,
+  "base": 1080,
+  "top": 2390,
+  "liftCount": 7
+ },
+ {
+  "name": "Brigels Waltensburg Andiast",
+  "lat": 46.794,
+  "lon": 9.073,
+  "base": 1100,
+  "top": 2410,
+  "liftCount": 7
+ },
+ {
+  "name": "Tarvisio",
+  "lat": 46.495,
+  "lon": 13.553,
+  "base": 770,
+  "top": 1770,
+  "liftCount": 10
+ },
+ {
+  "name": "Rosswald",
+  "lat": 46.309,
+  "lon": 8.052,
+  "base": 1030,
+  "top": 2530,
+  "liftCount": 5
+ },
+ {
+  "name": "Berwang",
+  "lat": 47.416,
+  "lon": 10.747,
+  "base": 1050,
+  "top": 1740,
+  "liftCount": 13
+ },
+ {
+  "name": "Vals 3000",
+  "lat": 46.603,
+  "lon": 9.137,
+  "base": 1280,
+  "top": 2860,
+  "liftCount": 4
+ },
+ {
+  "name": "Prà Alpesina",
+  "lat": 45.768,
+  "lon": 10.863,
+  "base": 560,
+  "top": 1830,
+  "liftCount": 7
+ },
+ {
+  "name": "Saas-Grund",
+  "lat": 46.139,
+  "lon": 7.967,
+  "base": 1560,
+  "top": 3130,
+  "liftCount": 4
+ },
+ {
+  "name": "Weißsee Gletscherwelt",
+  "lat": 47.144,
+  "lon": 12.626,
+  "base": 1500,
+  "top": 2560,
+  "liftCount": 9
+ },
+ {
+  "name": "Hochkössen - Unterberghorn",
+  "lat": 47.639,
+  "lon": 12.429,
+  "base": 610,
+  "top": 1670,
+  "liftCount": 9
+ },
+ {
+  "name": "Fendels",
+  "lat": 47.049,
+  "lon": 10.683,
+  "base": 910,
+  "top": 2270,
+  "liftCount": 6
+ },
+ {
+  "name": "Jeizinen",
+  "lat": 46.333,
+  "lon": 7.725,
+  "base": 630,
+  "top": 2190,
+  "liftCount": 4
+ },
+ {
+  "name": "Anzère",
+  "lat": 46.313,
+  "lon": 7.398,
+  "base": 1550,
+  "top": 2400,
+  "liftCount": 11
+ },
+ {
+  "name": "Melchsee-Frutt",
+  "lat": 46.781,
+  "lon": 8.283,
+  "base": 1080,
+  "top": 2230,
+  "liftCount": 8
+ },
+ {
+  "name": "Valfréjus",
+  "lat": 45.158,
+  "lon": 6.662,
+  "base": 1560,
+  "top": 2710,
+  "liftCount": 8
+ },
+ {
+  "name": "Aussois",
+  "lat": 45.245,
+  "lon": 6.737,
+  "base": 1530,
+  "top": 2670,
+  "liftCount": 8
+ },
+ {
+  "name": "Schöneben - Belpiano",
+  "lat": 46.795,
+  "lon": 10.5,
+  "base": 1460,
+  "top": 2380,
+  "liftCount": 10
+ },
+ {
+  "name": "Montclar",
+  "lat": 44.401,
+  "lon": 6.382,
+  "base": 1340,
+  "top": 2460,
+  "liftCount": 8
+ },
+ {
+  "name": "Hochzeiger",
+  "lat": 47.155,
+  "lon": 10.776,
+  "base": 1460,
+  "top": 2470,
+  "liftCount": 9
+ },
+ {
+  "name": "Diedamskopf",
+  "lat": 47.334,
+  "lon": 10.029,
+  "base": 840,
+  "top": 2050,
+  "liftCount": 7
+ },
+ {
+  "name": "Eischoll",
+  "lat": 46.291,
+  "lon": 7.783,
+  "base": 640,
+  "top": 2140,
+  "liftCount": 4
+ },
+ {
+  "name": "Feuerkogel",
+  "lat": 47.814,
+  "lon": 13.723,
+  "base": 470,
+  "top": 1660,
+  "liftCount": 7
+ },
+ {
+  "name": "Ratzi – Spiringen",
+  "lat": 46.876,
+  "lon": 8.727,
+  "base": 760,
+  "top": 1840,
+  "liftCount": 8
+ },
+ {
+  "name": "Dallenwil - Wirzweli",
+  "lat": 46.911,
+  "lon": 8.372,
+  "base": 490,
+  "top": 1570,
+  "liftCount": 8
+ },
+ {
+  "name": "Arabba",
+  "lat": 46.486,
+  "lon": 11.872,
+  "base": 1610,
+  "top": 2480,
+  "liftCount": 10
+ },
+ {
+  "name": "Brunnalm / St. Jakob",
+  "lat": 46.9,
+  "lon": 12.361,
+  "base": 1400,
+  "top": 2670,
+  "liftCount": 6
+ },
+ {
+  "name": "Bellwald",
+  "lat": 46.439,
+  "lon": 8.161,
+  "base": 1180,
+  "top": 2550,
+  "liftCount": 5
+ },
+ {
+  "name": "Bernex",
+  "lat": 46.347,
+  "lon": 6.698,
+  "base": 1000,
+  "top": 1860,
+  "liftCount": 10
+ },
+ {
+  "name": "Lermoos - Grubigstein",
+  "lat": 47.391,
+  "lon": 10.868,
+  "base": 990,
+  "top": 2050,
+  "liftCount": 8
+ },
+ {
+  "name": "Zoncolan",
+  "lat": 46.505,
+  "lon": 12.935,
+  "base": 890,
+  "top": 1950,
+  "liftCount": 8
+ },
+ {
+  "name": "Piani di Bobbio - Valtorta Skiarea",
+  "lat": 45.963,
+  "lon": 9.496,
+  "base": 810,
+  "top": 1860,
+  "liftCount": 8
+ },
+ {
+  "name": "Ankogel Mallnitz",
+  "lat": 47.024,
+  "lon": 13.194,
+  "base": 1270,
+  "top": 2620,
+  "liftCount": 5
+ },
+ {
+  "name": "Glungezer",
+  "lat": 47.239,
+  "lon": 11.539,
+  "base": 940,
+  "top": 2290,
+  "liftCount": 5
+ },
+ {
+  "name": "Moosalpregion",
+  "lat": 46.261,
+  "lon": 7.825,
+  "base": 1480,
+  "top": 2520,
+  "liftCount": 8
+ },
+ {
+  "name": "Almenwelt Lofer",
+  "lat": 47.603,
+  "lon": 12.665,
+  "base": 630,
+  "top": 1660,
+  "liftCount": 8
+ },
+ {
+  "name": "St. Johann in Tirol",
+  "lat": 47.5,
+  "lon": 12.427,
+  "base": 680,
+  "top": 1600,
+  "liftCount": 9
+ },
+ {
+  "name": "Werfenweng",
+  "lat": 47.465,
+  "lon": 13.285,
+  "base": 900,
+  "top": 1820,
+  "liftCount": 9
+ },
+ {
+  "name": "Massif des Brasses",
+  "lat": 46.17,
+  "lon": 6.447,
+  "base": 880,
+  "top": 1480,
+  "liftCount": 12
+ },
+ {
+  "name": "Leukerbad (Torrent)",
+  "lat": 46.369,
+  "lon": 7.645,
+  "base": 1390,
+  "top": 2590,
+  "liftCount": 6
+ },
+ {
+  "name": "Nordkette",
+  "lat": 47.304,
+  "lon": 11.382,
+  "base": 860,
+  "top": 2260,
+  "liftCount": 4
+ },
+ {
+  "name": "Staldenried - Gspon",
+  "lat": 46.227,
+  "lon": 7.896,
+  "base": 800,
+  "top": 2200,
+  "liftCount": 4
+ },
+ {
+  "name": "Betelberg",
+  "lat": 46.444,
+  "lon": 7.423,
+  "base": 1100,
+  "top": 1990,
+  "liftCount": 9
+ },
+ {
+  "name": "Lagazuoi - 5 Torri",
+  "lat": 46.51,
+  "lon": 12.031,
+  "base": 1730,
+  "top": 2720,
+  "liftCount": 8
+ },
+ {
+  "name": "Ancelle",
+  "lat": 44.613,
+  "lon": 6.206,
+  "base": 1320,
+  "top": 1800,
+  "liftCount": 13
+ },
+ {
+  "name": "Mölltaler Gletscher",
+  "lat": 47.026,
+  "lon": 13.011,
+  "base": 2110,
+  "top": 3080,
+  "liftCount": 8
+ },
+ {
+  "name": "Ski Area Alpe Lusia",
+  "lat": 46.343,
+  "lon": 11.694,
+  "base": 1370,
+  "top": 2340,
+  "liftCount": 8
+ },
+ {
+  "name": "Airolo - Pesciüm",
+  "lat": 46.514,
+  "lon": 8.61,
+  "base": 1180,
+  "top": 2250,
+  "liftCount": 7
+ },
+ {
+  "name": "Grüsch Danusa",
+  "lat": 46.951,
+  "lon": 9.641,
+  "base": 600,
+  "top": 1770,
+  "liftCount": 6
+ },
+ {
+  "name": "Petzen",
+  "lat": 46.529,
+  "lon": 14.773,
+  "base": 640,
+  "top": 1910,
+  "liftCount": 5
+ },
+ {
+  "name": "Elsigen-Metsch",
+  "lat": 46.521,
+  "lon": 7.627,
+  "base": 1320,
+  "top": 2280,
+  "liftCount": 8
+ },
+ {
+  "name": "Santa Caterina",
+  "lat": 46.401,
+  "lon": 10.483,
+  "base": 1720,
+  "top": 2880,
+  "liftCount": 6
+ },
+ {
+  "name": "Vercorin",
+  "lat": 46.231,
+  "lon": 7.534,
+  "base": 1310,
+  "top": 2360,
+  "liftCount": 7
+ },
+ {
+  "name": "Bödele",
+  "lat": 47.413,
+  "lon": 9.817,
+  "base": 810,
+  "top": 1450,
+  "liftCount": 11
+ },
+ {
+  "name": "Rinerhorn",
+  "lat": 46.743,
+  "lon": 9.805,
+  "base": 1460,
+  "top": 2500,
+  "liftCount": 7
+ },
+ {
+  "name": "Craveggia - Piana di Vigezzo",
+  "lat": 46.164,
+  "lon": 8.48,
+  "base": 810,
+  "top": 2050,
+  "liftCount": 5
+ },
+ {
+  "name": "Kaunertaler Gletscher",
+  "lat": 46.864,
+  "lon": 10.709,
+  "base": 2180,
+  "top": 3110,
+  "liftCount": 8
+ },
+ {
+  "name": "Tannheim-Zöblen-Schattwald",
+  "lat": 47.496,
+  "lon": 10.506,
+  "base": 1080,
+  "top": 1800,
+  "liftCount": 10
+ },
+ {
+  "name": "Cima Piazzi – San Colombano",
+  "lat": 46.467,
+  "lon": 10.315,
+  "base": 1340,
+  "top": 2360,
+  "liftCount": 7
+ },
+ {
+  "name": "Rifflsee",
+  "lat": 46.966,
+  "lon": 10.857,
+  "base": 1670,
+  "top": 2790,
+  "liftCount": 6
+ },
+ {
+  "name": "Beatenberg-Niederhorn-Hohwald",
+  "lat": 46.699,
+  "lon": 7.785,
+  "base": 620,
+  "top": 1940,
+  "liftCount": 4
+ },
+ {
+  "name": "Nara – Leontica",
+  "lat": 46.464,
+  "lon": 8.891,
+  "base": 920,
+  "top": 2130,
+  "liftCount": 5
+ },
+ {
+  "name": "Loser-Altaussee",
+  "lat": 47.662,
+  "lon": 13.769,
+  "base": 860,
+  "top": 1760,
+  "liftCount": 8
+ },
+ {
+  "name": "Foppolo-Carona",
+  "lat": 46.04,
+  "lon": 9.774,
+  "base": 1160,
+  "top": 2160,
+  "liftCount": 7
+ },
+ {
+  "name": "Chabanon",
+  "lat": 44.343,
+  "lon": 6.292,
+  "base": 1540,
+  "top": 2020,
+  "liftCount": 12
+ },
+ {
+  "name": "Saint-Pierre-de-Chartreuse",
+  "lat": 45.355,
+  "lon": 5.838,
+  "base": 1090,
+  "top": 1760,
+  "liftCount": 10
+ },
+ {
+  "name": "Maiskogel",
+  "lat": 47.266,
+  "lon": 12.743,
+  "base": 760,
+  "top": 1730,
+  "liftCount": 7
+ },
+ {
+  "name": "Le Collet d'Allevard",
+  "lat": 45.395,
+  "lon": 6.127,
+  "base": 1420,
+  "top": 2080,
+  "liftCount": 10
+ },
+ {
+  "name": "Leysin",
+  "lat": 46.366,
+  "lon": 7.019,
+  "base": 1330,
+  "top": 2190,
+  "liftCount": 8
+ },
+ {
+  "name": "Ovronnaz",
+  "lat": 46.204,
+  "lon": 7.136,
+  "base": 1390,
+  "top": 2450,
+  "liftCount": 6
+ },
+ {
+  "name": "Ratschings-Jaufen",
+  "lat": 46.852,
+  "lon": 11.306,
+  "base": 1290,
+  "top": 2130,
+  "liftCount": 8
+ },
+ {
+  "name": "Evolène",
+  "lat": 46.117,
+  "lon": 7.45,
+  "base": 1400,
+  "top": 2640,
+  "liftCount": 4
+ },
+ {
+  "name": "Niederau (Wildschönau)",
+  "lat": 47.441,
+  "lon": 12.096,
+  "base": 830,
+  "top": 1560,
+  "liftCount": 9
+ },
+ {
+  "name": "Ski amadé",
+  "lat": 47.294,
+  "lon": 13.281,
+  "base": 1010,
+  "top": 1740,
+  "liftCount": 9
+ },
+ {
+  "name": "Gargellen",
+  "lat": 46.96,
+  "lon": 9.904,
+  "base": 1430,
+  "top": 2260,
+  "liftCount": 8
+ },
+ {
+  "name": "Nax",
+  "lat": 46.214,
+  "lon": 7.474,
+  "base": 1510,
+  "top": 2640,
+  "liftCount": 5
+ },
+ {
+  "name": "Brüsti – Attinghausen",
+  "lat": 46.847,
+  "lon": 8.616,
+  "base": 470,
+  "top": 1600,
+  "liftCount": 5
+ },
+ {
+  "name": "Lurisia – Monte Pigna",
+  "lat": 44.271,
+  "lon": 7.707,
+  "base": 830,
+  "top": 1750,
+  "liftCount": 7
+ },
+ {
+  "name": "Montagnes de Lans",
+  "lat": 45.114,
+  "lon": 5.613,
+  "base": 1380,
+  "top": 1790,
+  "liftCount": 12
+ },
+ {
+  "name": "Aflenzer Bürgeralm",
+  "lat": 47.572,
+  "lon": 15.229,
+  "base": 870,
+  "top": 1780,
+  "liftCount": 7
+ },
+ {
+  "name": "San Domenico di Varzo",
+  "lat": 46.26,
+  "lon": 8.201,
+  "base": 1370,
+  "top": 2480,
+  "liftCount": 5
+ },
+ {
+  "name": "Les Mosses",
+  "lat": 46.403,
+  "lon": 7.097,
+  "base": 1380,
+  "top": 1880,
+  "liftCount": 11
+ },
+ {
+  "name": "Bergün - Filisur / Darlux",
+  "lat": 46.624,
+  "lon": 9.767,
+  "base": 1370,
+  "top": 2570,
+  "liftCount": 4
+ },
+ {
+  "name": "Christlum",
+  "lat": 47.507,
+  "lon": 11.68,
+  "base": 940,
+  "top": 1730,
+  "liftCount": 8
+ },
+ {
+  "name": "Bergeralm",
+  "lat": 47.072,
+  "lon": 11.452,
+  "base": 1080,
+  "top": 2170,
+  "liftCount": 5
+ },
+ {
+  "name": "Pelvoux-Vallouise",
+  "lat": 44.861,
+  "lon": 6.476,
+  "base": 1230,
+  "top": 2210,
+  "liftCount": 6
+ },
+ {
+  "name": "Axamer Lizum",
+  "lat": 47.193,
+  "lon": 11.299,
+  "base": 1560,
+  "top": 2330,
+  "liftCount": 8
+ },
+ {
+  "name": "Hoch-Ybrig",
+  "lat": 47.014,
+  "lon": 8.784,
+  "base": 1040,
+  "top": 1810,
+  "liftCount": 8
+ },
+ {
+  "name": "Rangger Köpfl",
+  "lat": 47.24,
+  "lon": 11.215,
+  "base": 850,
+  "top": 1920,
+  "liftCount": 5
+ },
+ {
+  "name": "Elm",
+  "lat": 46.923,
+  "lon": 9.148,
+  "base": 1020,
+  "top": 2090,
+  "liftCount": 5
+ },
+ {
+  "name": "Dreiländereck - Arnoldstein",
+  "lat": 46.527,
+  "lon": 13.721,
+  "base": 690,
+  "top": 1550,
+  "liftCount": 7
+ },
+ {
+  "name": "Claviere",
+  "lat": 44.926,
+  "lon": 6.774,
+  "base": 1540,
+  "top": 2400,
+  "liftCount": 7
+ },
+ {
+  "name": "Grebenzen",
+  "lat": 47.058,
+  "lon": 14.324,
+  "base": 1010,
+  "top": 1860,
+  "liftCount": 7
+ },
+ {
+  "name": "Piancavallo",
+  "lat": 46.108,
+  "lon": 12.51,
+  "base": 1260,
+  "top": 1800,
+  "liftCount": 10
+ },
+ {
+  "name": "L’Essert – Abondance",
+  "lat": 46.265,
+  "lon": 6.702,
+  "base": 950,
+  "top": 1690,
+  "liftCount": 8
+ },
+ {
+  "name": "Domobianca",
+  "lat": 46.1,
+  "lon": 8.241,
+  "base": 1090,
+  "top": 1830,
+  "liftCount": 8
+ },
+ {
+  "name": "Scopello / Alpe di Mera",
+  "lat": 45.747,
+  "lon": 8.084,
+  "base": 690,
+  "top": 1730,
+  "liftCount": 5
+ },
+ {
+  "name": "Champorcher",
+  "lat": 45.611,
+  "lon": 7.586,
+  "base": 1450,
+  "top": 2490,
+  "liftCount": 5
+ },
+ {
+  "name": "Seefeld - Rosshütte",
+  "lat": 47.335,
+  "lon": 11.219,
+  "base": 1230,
+  "top": 2050,
+  "liftCount": 7
+ },
+ {
+  "name": "Domaine Skiable Saint-Léger-Les-Mélèzes",
+  "lat": 44.642,
+  "lon": 6.21,
+  "base": 1270,
+  "top": 1980,
+  "liftCount": 8
+ },
+ {
+  "name": "Pragelato",
+  "lat": 44.993,
+  "lon": 6.944,
+  "base": 1530,
+  "top": 2540,
+  "liftCount": 5
+ },
+ {
+  "name": "Arolla",
+  "lat": 46.022,
+  "lon": 7.47,
+  "base": 1980,
+  "top": 2880,
+  "liftCount": 6
+ },
+ {
+  "name": "Wispile – Gstaad",
+  "lat": 46.455,
+  "lon": 7.296,
+  "base": 1050,
+  "top": 1940,
+  "liftCount": 6
+ },
+ {
+  "name": "Bannalp",
+  "lat": 46.878,
+  "lon": 8.434,
+  "base": 900,
+  "top": 1790,
+  "liftCount": 6
+ },
+ {
+  "name": "Le Seignus",
+  "lat": 44.229,
+  "lon": 6.607,
+  "base": 1520,
+  "top": 2410,
+  "liftCount": 6
+ },
+ {
+  "name": "Niedere Andelsbuch-Bezau",
+  "lat": 47.403,
+  "lon": 9.942,
+  "base": 710,
+  "top": 1700,
+  "liftCount": 5
+ },
+ {
+  "name": "Rochers de Naye",
+  "lat": 46.441,
+  "lon": 6.974,
+  "base": 1130,
+  "top": 2000,
+  "liftCount": 6
+ },
+ {
+  "name": "Meran 2000",
+  "lat": 46.681,
+  "lon": 11.267,
+  "base": 1620,
+  "top": 2280,
+  "liftCount": 8
+ },
+ {
+  "name": "Patscherkofel",
+  "lat": 47.218,
+  "lon": 11.433,
+  "base": 900,
+  "top": 1960,
+  "liftCount": 4
+ },
+ {
+  "name": "Gresse en Vercors",
+  "lat": 44.892,
+  "lon": 5.543,
+  "base": 1250,
+  "top": 1700,
+  "liftCount": 10
+ }
+]

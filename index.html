@@ -242,7 +242,7 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
     <path d="M60 400 L176 270 L222 318 L284 206 L452 400" fill="none" class="ink-s" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
     <path d="M284 206 L356.7 290 L330.5 280 L309.0 298 L285.2 280 L261.3 296 L237.5 290 ZM176 270 L214.3 310 L198.0 300 L184.7 318 L169.9 300 L155.1 316 L140.3 310 Z" class="ink-f" class="ink-s" stroke-width="8" stroke-linejoin="round"/>
       </svg>Yuki <span>Radar</span></h1>
-      <p>Pudersnö, lavinläge och ställplatser för skidresan i Japan och Skandinavien</p>
+      <p>Pudersnö, lavinläge och ställplatser för skidresan i Japan, Skandinavien och Alperna</p>
     </div>
     <div class="status">
       <div class="updated" id="updated">Hämtar prognos…</div>
@@ -480,6 +480,312 @@ const RESORTS = [
   {id:"sveitsinhiihtokeskus",name:"Sveitsin Hiihtokeskus",jp:"",region:"Nyland",lat:60.654,lon:24.82,base:90,top:160,area:"scandinavia",country:"Finland"},
   {id:"vihtiskicenter",name:"Vihti Ski Center",jp:"",region:"Nyland",lat:60.377,lon:24.369,base:50,top:120,area:"scandinavia",country:"Finland"},
   {id:"messilanlumikeskus",name:"Messilän Lumikeskus",jp:"",region:"Päijänne-Tavastland",lat:61.016,lon:25.553,base:80,top:190,area:"scandinavia",country:"Finland"},
+  // ----- alps:start · Alperna: found in OpenStreetMap (named ski areas with lifts), base/top = lowest/highest lift station -----
+  // Österrike
+  {id:"ankogelmallnitz",name:"Ankogel Mallnitz",jp:"",region:"Kärnten",lat:47.024,lon:13.194,base:1270,top:2620,area:"alps",country:"Österrike",eaws:"AT-02-03-01-01"},
+  {id:"badkleinkirchheim",name:"Bad Kleinkirchheim",jp:"",region:"Kärnten",lat:46.818,lon:13.774,base:1030,top:2040,area:"alps",country:"Österrike",eaws:"AT-02-04-01"},
+  {id:"dreilandereckarnoldstein",name:"Dreiländereck - Arnoldstein",jp:"",region:"Kärnten",lat:46.527,lon:13.721,base:690,top:1550,area:"alps",country:"Österrike",eaws:"AT-02-17"},
+  {id:"gerlitzenalpe",name:"Gerlitzen Alpe",jp:"",region:"Kärnten",lat:46.696,lon:13.913,base:1000,top:1910,area:"alps",country:"Österrike",eaws:"AT-02-04-02"},
+  {id:"goldeck",name:"Goldeck",jp:"",region:"Kärnten",lat:46.77,lon:13.452,base:550,top:2110,area:"alps",country:"Österrike",eaws:"AT-02-12-02"},
+  {id:"groglocknerheiligenblut",name:"Großglockner Heiligenblut",jp:"",region:"Kärnten",lat:47.053,lon:12.86,base:1310,top:2920,area:"alps",country:"Österrike",eaws:"AT-02-01-02-01"},
+  {id:"molltalergletscher",name:"Mölltaler Gletscher",jp:"",region:"Kärnten",lat:47.026,lon:13.011,base:2110,top:3080,area:"alps",country:"Österrike",eaws:"AT-02-01-02-01"},
+  {id:"nassfeld",name:"Nassfeld",jp:"",region:"Kärnten",lat:46.57,lon:13.268,base:610,top:2000,area:"alps",country:"Österrike",eaws:"AT-02-15-02"},
+  {id:"petzen",name:"Petzen",jp:"",region:"Kärnten",lat:46.529,lon:14.773,base:640,top:1910,area:"alps",country:"Österrike",eaws:"AT-02-19"},
+  {id:"feuerkogel",name:"Feuerkogel",jp:"",region:"Oberösterreich",lat:47.814,lon:13.723,base:470,top:1660,area:"alps",country:"Österrike",eaws:"AT-04-05"},
+  {id:"freesportsarenadachstein",name:"Freesports Arena Dachstein Krippenstein",jp:"",region:"Oberösterreich",lat:47.53,lon:13.699,base:600,top:2060,area:"alps",country:"Österrike",eaws:"AT-04-01"},
+  {id:"hinterstoder",name:"Hinterstoder",jp:"",region:"Oberösterreich",lat:47.672,lon:14.168,base:590,top:1980,area:"alps",country:"Österrike",eaws:"AT-04-04"},
+  {id:"almenweltlofer",name:"Almenwelt Lofer",jp:"",region:"Salzburg",lat:47.603,lon:12.665,base:630,top:1660,area:"alps",country:"Österrike",eaws:"AT-05-21"},
+  {id:"dachsteinwest",name:"Dachstein West",jp:"",region:"Salzburg",lat:47.549,lon:13.477,base:750,top:1570,area:"alps",country:"Österrike",eaws:"AT-05-16"},
+  {id:"groarltaldorfgastein",name:"Großarltal-Dorfgastein",jp:"",region:"Salzburg",lat:47.238,lon:13.156,base:870,top:2010,area:"alps",country:"Österrike",eaws:"AT-05-09"},
+  {id:"groeckspeiereck",name:"Großeck-Speiereck",jp:"",region:"Salzburg",lat:47.128,lon:13.652,base:1090,top:2340,area:"alps",country:"Österrike",eaws:"AT-05-02"},
+  {id:"hochkonig",name:"Hochkönig",jp:"",region:"Salzburg",lat:47.388,lon:12.975,base:830,top:1890,area:"alps",country:"Österrike",eaws:"AT-05-13"},
+  {id:"katschbergaineck",name:"Katschberg-Aineck",jp:"",region:"Salzburg",lat:47.061,lon:13.632,base:1060,top:2210,area:"alps",country:"Österrike",eaws:"AT-05-01"},
+  {id:"kitzsteinhorn",name:"Kitzsteinhorn",jp:"",region:"Salzburg",lat:47.202,lon:12.684,base:1970,top:3030,area:"alps",country:"Österrike",eaws:"AT-05-10"},
+  {id:"maiskogel",name:"Maiskogel",jp:"",region:"Salzburg",lat:47.266,lon:12.743,base:760,top:1730,area:"alps",country:"Österrike",eaws:"AT-05-10"},
+  {id:"obertauern",name:"Obertauern",jp:"",region:"Salzburg",lat:47.253,lon:13.554,base:1660,top:2190,area:"alps",country:"Österrike",eaws:"AT-05-04"},
+  {id:"raurisertal",name:"Raurisertal",jp:"",region:"Salzburg",lat:47.224,lon:12.968,base:930,top:2170,area:"alps",country:"Österrike",eaws:"AT-05-09"},
+  {id:"schmittenhohezellamsee",name:"Schmittenhöhe Zell am See",jp:"",region:"Salzburg",lat:47.326,lon:12.759,base:760,top:1940,area:"alps",country:"Österrike",eaws:"AT-05-14"},
+  {id:"skigasteinstubnerkogelsc",name:"Ski Gastein - Stubnerkogel/Schlossalm",jp:"",region:"Salzburg",lat:47.132,lon:13.087,base:840,top:2230,area:"alps",country:"Österrike",eaws:"AT-05-05"},
+  {id:"skiamade",name:"Ski amadé",jp:"",region:"Salzburg",lat:47.294,lon:13.281,base:1010,top:1740,area:"alps",country:"Österrike",eaws:"AT-05-08"},
+  {id:"skicircussaalbachhinterg",name:"Skicircus Saalbach-Hinterglemm Leogang Fieberbrunn",jp:"",region:"Salzburg",lat:47.404,lon:12.618,base:810,top:1980,area:"alps",country:"Österrike",eaws:"AT-05-14"},
+  {id:"snowspacesalzburg",name:"Snow Space Salzburg",jp:"",region:"Salzburg",lat:47.326,lon:13.31,base:740,top:1840,area:"alps",country:"Österrike",eaws:"AT-05-08"},
+  {id:"weiseegletscherwelt",name:"Weißsee Gletscherwelt",jp:"",region:"Salzburg",lat:47.144,lon:12.626,base:1500,top:2560,area:"alps",country:"Österrike",eaws:"AT-05-06"},
+  {id:"werfenweng",name:"Werfenweng",jp:"",region:"Salzburg",lat:47.465,lon:13.285,base:900,top:1820,area:"alps",country:"Österrike",eaws:"AT-05-16"},
+  {id:"wildkogel",name:"Wildkogel",jp:"",region:"Salzburg",lat:47.28,lon:12.284,base:830,top:2120,area:"alps",country:"Österrike",eaws:"AT-05-15"},
+  {id:"zauchenseeflachauwinkl",name:"Zauchensee-Flachauwinkl",jp:"",region:"Salzburg",lat:47.29,lon:13.447,base:1000,top:2100,area:"alps",country:"Österrike",eaws:"AT-05-08"},
+  {id:"aflenzerburgeralm",name:"Aflenzer Bürgeralm",jp:"",region:"Steiermark",lat:47.572,lon:15.229,base:870,top:1780,area:"alps",country:"Österrike",eaws:"AT-06-10-02"},
+  {id:"grebenzen",name:"Grebenzen",jp:"",region:"Steiermark",lat:47.058,lon:14.324,base:1010,top:1860,area:"alps",country:"Österrike",eaws:"AT-06-18-02"},
+  {id:"kreischberg",name:"Kreischberg",jp:"",region:"Steiermark",lat:47.074,lon:14.056,base:860,top:2120,area:"alps",country:"Österrike",eaws:"AT-06-18-03"},
+  {id:"loseraltaussee",name:"Loser-Altaussee",jp:"",region:"Steiermark",lat:47.662,lon:13.769,base:860,top:1760,area:"alps",country:"Österrike",eaws:"AT-06-02"},
+  {id:"schladmingdachstein",name:"Schladming Dachstein",jp:"",region:"Steiermark",lat:47.383,lon:13.679,base:720,top:1840,area:"alps",country:"Österrike",eaws:"AT-06-04-01"},
+  {id:"stuhlecksemmering",name:"Stuhleck - Semmering",jp:"",region:"Steiermark",lat:47.6,lon:15.762,base:780,top:1770,area:"alps",country:"Österrike",eaws:"AT-06-13-01"},
+  {id:"tauplitzbadmitterndorf",name:"Tauplitz / Bad Mitterndorf",jp:"",region:"Steiermark",lat:47.592,lon:13.988,base:920,top:1950,area:"alps",country:"Österrike",eaws:"AT-06-02"},
+  {id:"turracherhohe",name:"Turracher Höhe",jp:"",region:"Steiermark",lat:46.922,lon:13.873,base:1390,top:2190,area:"alps",country:"Österrike",eaws:"AT-06-18-03"},
+  {id:"axamerlizum",name:"Axamer Lizum",jp:"",region:"Tirol",lat:47.193,lon:11.299,base:1560,top:2330,area:"alps",country:"Österrike",eaws:"AT-07-14-04"},
+  {id:"bergeralm",name:"Bergeralm",jp:"",region:"Tirol",lat:47.072,lon:11.452,base:1080,top:2170,area:"alps",country:"Österrike",eaws:"AT-07-22"},
+  {id:"berwang",name:"Berwang",jp:"",region:"Tirol",lat:47.416,lon:10.747,base:1050,top:1740,area:"alps",country:"Österrike",eaws:"AT-07-02-02"},
+  {id:"brunnalmstjakob",name:"Brunnalm / St. Jakob",jp:"",region:"Tirol",lat:46.9,lon:12.361,base:1400,top:2670,area:"alps",country:"Österrike",eaws:"AT-07-27"},
+  {id:"christlum",name:"Christlum",jp:"",region:"Tirol",lat:47.507,lon:11.68,base:940,top:1730,area:"alps",country:"Österrike",eaws:"AT-07-04-02"},
+  {id:"fendels",name:"Fendels",jp:"",region:"Tirol",lat:47.049,lon:10.683,base:910,top:2270,area:"alps",country:"Österrike",eaws:"AT-07-14-01"},
+  {id:"glungezer",name:"Glungezer",jp:"",region:"Tirol",lat:47.239,lon:11.539,base:940,top:2290,area:"alps",country:"Österrike",eaws:"AT-07-15"},
+  {id:"hintertuxergletscher",name:"Hintertuxer Gletscher",jp:"",region:"Tirol",lat:47.077,lon:11.667,base:1500,top:3220,area:"alps",country:"Österrike",eaws:"AT-07-23-02"},
+  {id:"hochfugenzillertal",name:"Hochfügen - Zillertal",jp:"",region:"Tirol",lat:47.263,lon:11.816,base:550,top:2370,area:"alps",country:"Österrike",eaws:"AT-07-16"},
+  {id:"hochkossenunterberghorn",name:"Hochkössen - Unterberghorn",jp:"",region:"Tirol",lat:47.639,lon:12.429,base:610,top:1670,area:"alps",country:"Österrike",eaws:"AT-07-06"},
+  {id:"hochoetzkuhtai",name:"Hochoetz-Kühtai",jp:"",region:"Tirol",lat:47.214,lon:10.973,base:810,top:2500,area:"alps",country:"Österrike",eaws:"AT-07-14-02"},
+  {id:"hochzeiger",name:"Hochzeiger",jp:"",region:"Tirol",lat:47.155,lon:10.776,base:1460,top:2470,area:"alps",country:"Österrike",eaws:"AT-07-14-02"},
+  {id:"ischglsamnaun",name:"Ischgl-Samnaun",jp:"",region:"Tirol",lat:46.977,lon:10.33,base:1350,top:2840,area:"alps",country:"Österrike",eaws:"AT-07-13"},
+  {id:"kalsmatrei",name:"Kals-Matrei",jp:"",region:"Tirol",lat:46.999,lon:12.602,base:930,top:2420,area:"alps",country:"Österrike",eaws:"AT-07-26-02"},
+  {id:"kappl",name:"Kappl",jp:"",region:"Tirol",lat:47.072,lon:10.354,base:1180,top:2630,area:"alps",country:"Österrike",eaws:"AT-07-11"},
+  {id:"kaunertalergletscher",name:"Kaunertaler Gletscher",jp:"",region:"Tirol",lat:46.864,lon:10.709,base:2180,top:3110,area:"alps",country:"Österrike",eaws:"AT-07-19"},
+  {id:"kitzski",name:"KitzSki",jp:"",region:"Tirol",lat:47.397,lon:12.376,base:780,top:1920,area:"alps",country:"Österrike",eaws:"AT-07-17-02"},
+  {id:"lermoosgrubigstein",name:"Lermoos - Grubigstein",jp:"",region:"Tirol",lat:47.391,lon:10.868,base:990,top:2050,area:"alps",country:"Österrike",eaws:"AT-07-02-02"},
+  {id:"lienzerbergbahnen",name:"Lienzer Bergbahnen",jp:"",region:"Tirol",lat:46.848,lon:12.769,base:680,top:2250,area:"alps",country:"Österrike",eaws:"AT-07-28"},
+  {id:"mayrhofenhippach",name:"Mayrhofen Hippach",jp:"",region:"Tirol",lat:47.171,lon:11.8,base:620,top:2470,area:"alps",country:"Österrike",eaws:"AT-07-16"},
+  {id:"naudersamreschenpass",name:"Nauders am Reschenpass",jp:"",region:"Tirol",lat:46.87,lon:10.536,base:1350,top:2650,area:"alps",country:"Österrike",eaws:"AT-07-19"},
+  {id:"niederauwildschonau",name:"Niederau (Wildschönau)",jp:"",region:"Tirol",lat:47.441,lon:12.096,base:830,top:1560,area:"alps",country:"Österrike",eaws:"AT-07-17-01"},
+  {id:"nordkette",name:"Nordkette",jp:"",region:"Tirol",lat:47.304,lon:11.382,base:860,top:2260,area:"alps",country:"Österrike",eaws:"AT-07-04-01"},
+  {id:"obergurglhochgurgl",name:"Obergurgl-Hochgurgl",jp:"",region:"Tirol",lat:46.879,lon:11.047,base:1910,top:2910,area:"alps",country:"Österrike",eaws:"AT-07-21"},
+  {id:"patscherkofel",name:"Patscherkofel",jp:"",region:"Tirol",lat:47.218,lon:11.433,base:900,top:1960,area:"alps",country:"Österrike",eaws:"AT-07-15"},
+  {id:"ranggerkopfl",name:"Rangger Köpfl",jp:"",region:"Tirol",lat:47.24,lon:11.215,base:850,top:1920,area:"alps",country:"Österrike",eaws:"AT-07-09"},
+  {id:"rifflsee",name:"Rifflsee",jp:"",region:"Tirol",lat:46.966,lon:10.857,base:1670,top:2790,area:"alps",country:"Österrike",eaws:"AT-07-20"},
+  {id:"schlick2000",name:"Schlick 2000",jp:"",region:"Tirol",lat:47.151,lon:11.317,base:1010,top:2230,area:"alps",country:"Österrike",eaws:"AT-07-14-04"},
+  {id:"seefeldrosshutte",name:"Seefeld - Rosshütte",jp:"",region:"Tirol",lat:47.335,lon:11.219,base:1230,top:2050,area:"alps",country:"Österrike",eaws:"AT-07-04-01"},
+  {id:"serfausfissladis",name:"Serfaus-Fiss-Ladis",jp:"",region:"Tirol",lat:47.052,lon:10.561,base:1220,top:2570,area:"alps",country:"Österrike",eaws:"AT-07-13"},
+  {id:"sillianhochpustertal",name:"Sillian - Hochpustertal",jp:"",region:"Tirol",lat:46.77,lon:12.403,base:1080,top:2390,area:"alps",country:"Österrike",eaws:"AT-07-27"},
+  {id:"skijuwelalpbachtalwildsc",name:"Ski Juwel Alpbachtal Wildschönau",jp:"",region:"Tirol",lat:47.385,lon:11.961,base:820,top:1870,area:"alps",country:"Österrike",eaws:"AT-07-17-01"},
+  {id:"skiweltwilderkaiserbrixe",name:"SkiWelt Wilder Kaiser Brixental",jp:"",region:"Tirol",lat:47.472,lon:12.243,base:630,top:1800,area:"alps",country:"Österrike",eaws:"AT-07-17-02"},
+  {id:"spieljochfugen",name:"Spieljoch - Fügen",jp:"",region:"Tirol",lat:47.33,lon:11.802,base:640,top:2040,area:"alps",country:"Österrike",eaws:"AT-07-16"},
+  {id:"stjohannintirol",name:"St. Johann in Tirol",jp:"",region:"Tirol",lat:47.5,lon:12.427,base:680,top:1600,area:"alps",country:"Österrike",eaws:"AT-07-18"},
+  {id:"stubaiergletscher",name:"Stubaier Gletscher",jp:"",region:"Tirol",lat:46.99,lon:11.12,base:1690,top:3190,area:"alps",country:"Österrike",eaws:"AT-07-22"},
+  {id:"solden",name:"Sölden",jp:"",region:"Tirol",lat:46.953,lon:10.965,base:1350,top:3230,area:"alps",country:"Österrike",eaws:"AT-07-20"},
+  {id:"tannheimzoblenschattwald",name:"Tannheim-Zöblen-Schattwald",jp:"",region:"Tirol",lat:47.496,lon:10.506,base:1080,top:1800,area:"alps",country:"Österrike",eaws:"AT-07-01"},
+  {id:"venet",name:"Venet",jp:"",region:"Tirol",lat:47.15,lon:10.615,base:770,top:2210,area:"alps",country:"Österrike",eaws:"AT-07-14-01"},
+  {id:"zillertalarena",name:"Zillertal Arena",jp:"",region:"Tirol",lat:47.243,lon:12.05,base:570,top:2500,area:"alps",country:"Österrike",eaws:"AT-07-17-01"},
+  {id:"brandnertalbrandburserbe",name:"Brandnertal – Brand/​Bürserberg",jp:"",region:"Vorarlberg",lat:47.118,lon:9.734,base:890,top:1970,area:"alps",country:"Österrike",eaws:"AT-08-05-02"},
+  {id:"bodele",name:"Bödele",jp:"",region:"Vorarlberg",lat:47.413,lon:9.817,base:810,top:1450,area:"alps",country:"Österrike",eaws:"AT-08-07"},
+  {id:"diedamskopf",name:"Diedamskopf",jp:"",region:"Vorarlberg",lat:47.334,lon:10.029,base:840,top:2050,area:"alps",country:"Österrike",eaws:"AT-08-02"},
+  {id:"gargellen",name:"Gargellen",jp:"",region:"Vorarlberg",lat:46.96,lon:9.904,base:1430,top:2260,area:"alps",country:"Österrike",eaws:"AT-08-05-01"},
+  {id:"golm",name:"Golm",jp:"",region:"Vorarlberg",lat:47.069,lon:9.851,base:650,top:2100,area:"alps",country:"Österrike",eaws:"AT-08-05-01"},
+  {id:"kleinwalsertaloberstdorf",name:"Kleinwalsertal-Oberstdorf",jp:"",region:"Vorarlberg",lat:47.34,lon:10.158,base:1070,top:2020,area:"alps",country:"Österrike",eaws:"AT-08-02"},
+  {id:"niedereandelsbuchbezau",name:"Niedere Andelsbuch-Bezau",jp:"",region:"Vorarlberg",lat:47.403,lon:9.942,base:710,top:1700,area:"alps",country:"Österrike",eaws:"AT-08-01"},
+  {id:"silvrettamontafon",name:"Silvretta Montafon",jp:"",region:"Vorarlberg",lat:47.024,lon:9.976,base:690,top:2360,area:"alps",country:"Österrike",eaws:"AT-08-04"},
+  {id:"skiarlberg",name:"Ski Arlberg",jp:"",region:"Vorarlberg",lat:47.177,lon:10.184,base:1300,top:2610,area:"alps",country:"Österrike",eaws:"AT-08-03-01"},
+  {id:"sonnenkopf",name:"Sonnenkopf",jp:"",region:"Vorarlberg",lat:47.109,lon:10.06,base:1000,top:2280,area:"alps",country:"Österrike",eaws:"AT-08-04"},
+  // Schweiz
+  {id:"adelbodenlenk",name:"Adelboden - Lenk",jp:"",region:"Bern/Berne",lat:46.461,lon:7.517,base:1260,top:2190,area:"alps",country:"Schweiz",eaws:"CH-1226"},
+  {id:"beatenbergniederhornhohw",name:"Beatenberg-Niederhorn-Hohwald",jp:"",region:"Bern/Berne",lat:46.699,lon:7.785,base:620,top:1940,area:"alps",country:"Schweiz",eaws:"CH-1213"},
+  {id:"betelberg",name:"Betelberg",jp:"",region:"Bern/Berne",lat:46.444,lon:7.423,base:1100,top:1990,area:"alps",country:"Schweiz",eaws:"CH-1224"},
+  {id:"elsigenmetsch",name:"Elsigen-Metsch",jp:"",region:"Bern/Berne",lat:46.521,lon:7.627,base:1320,top:2280,area:"alps",country:"Schweiz",eaws:"CH-1226"},
+  {id:"firstgrindelwald",name:"First – Grindelwald",jp:"",region:"Bern/Berne",lat:46.649,lon:8.058,base:1020,top:2510,area:"alps",country:"Schweiz",eaws:"CH-1242"},
+  {id:"grindelwaldwengen",name:"Grindelwald - Wengen",jp:"",region:"Bern/Berne",lat:46.599,lon:7.956,base:940,top:2340,area:"alps",country:"Schweiz",eaws:"CH-1242"},
+  {id:"gstaadsaanenrougemont",name:"Gstaad - Saanen - Rougemont",jp:"",region:"Bern/Berne",lat:46.465,lon:7.24,base:970,top:2150,area:"alps",country:"Schweiz",eaws:"CH-1112"},
+  {id:"meiringenhasliberg",name:"Meiringen-Hasliberg",jp:"",region:"Bern/Berne",lat:46.751,lon:8.232,base:630,top:2230,area:"alps",country:"Schweiz",eaws:"CH-1244"},
+  {id:"murrenschilthorn",name:"Mürren/Schilthorn",jp:"",region:"Bern/Berne",lat:46.564,lon:7.881,base:810,top:2940,area:"alps",country:"Schweiz",eaws:"CH-1233"},
+  {id:"schonriedsaanenmoserzwei",name:"Schönried - Saanenmöser - Zweisimmen - St. Stephan",jp:"",region:"Bern/Berne",lat:46.506,lon:7.335,base:940,top:2000,area:"alps",country:"Schweiz",eaws:"CH-1222"},
+  {id:"wispilegstaad",name:"Wispile – Gstaad",jp:"",region:"Bern/Berne",lat:46.455,lon:7.296,base:1050,top:1940,area:"alps",country:"Schweiz",eaws:"CH-1222"},
+  {id:"elm",name:"Elm",jp:"",region:"Glarus",lat:46.923,lon:9.148,base:1020,top:2090,area:"alps",country:"Schweiz",eaws:"CH-3113"},
+  {id:"andermattdisentissedrun",name:"Andermatt+Disentis+Sedrun",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.665,lon:8.7,base:1230,top:2930,area:"alps",country:"Schweiz",eaws:"CH-5211"},
+  {id:"arosalenzerheide",name:"Arosa Lenzerheide",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.761,lon:9.584,base:1250,top:2840,area:"alps",country:"Schweiz",eaws:"CH-5122"},
+  {id:"bergunfilisurdarlux",name:"Bergün - Filisur / Darlux",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.624,lon:9.767,base:1370,top:2570,area:"alps",country:"Schweiz",eaws:"CH-5231"},
+  {id:"brigelswaltensburgandias",name:"Brigels Waltensburg Andiast",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.794,lon:9.073,base:1100,top:2410,area:"alps",country:"Schweiz",eaws:"CH-5124"},
+  {id:"churbrambruesch",name:"Chur - Brambrüesch",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.826,lon:9.515,base:590,top:2170,area:"alps",country:"Schweiz",eaws:"CH-5122"},
+  {id:"corvatschfurtschellas",name:"Corvatsch-Furtschellas",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.432,lon:9.807,base:1800,top:3290,area:"alps",country:"Schweiz",eaws:"CH-7111"},
+  {id:"corviglia",name:"Corviglia",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.507,lon:9.817,base:1750,top:3010,area:"alps",country:"Schweiz",eaws:"CH-7114"},
+  {id:"gruschdanusa",name:"Grüsch Danusa",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.951,lon:9.641,base:600,top:1770,area:"alps",country:"Schweiz",eaws:"CH-5112"},
+  {id:"jakobshorn",name:"Jakobshorn",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.779,lon:9.835,base:1530,top:2560,area:"alps",country:"Schweiz",eaws:"CH-5123"},
+  {id:"laax",name:"Laax",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.845,lon:9.224,base:1090,top:2800,area:"alps",country:"Schweiz",eaws:"CH-5124"},
+  {id:"madrisa",name:"Madrisa",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.907,lon:9.868,base:1140,top:2610,area:"alps",country:"Schweiz",eaws:"CH-5111"},
+  {id:"obersaxenmundaun",name:"Obersaxen-Mundaun",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.741,lon:9.13,base:1250,top:2260,area:"alps",country:"Schweiz",eaws:"CH-5214"},
+  {id:"parsenn",name:"Parsenn",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.846,lon:9.831,base:1190,top:2670,area:"alps",country:"Schweiz",eaws:"CH-5112"},
+  {id:"rinerhorn",name:"Rinerhorn",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.743,lon:9.805,base:1460,top:2500,area:"alps",country:"Schweiz",eaws:"CH-5231"},
+  {id:"savognin",name:"Savognin",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.577,lon:9.545,base:1170,top:2690,area:"alps",country:"Schweiz",eaws:"CH-5232"},
+  {id:"scuolmottanaluns",name:"Scuol Motta Naluns",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.818,lon:10.266,base:1300,top:2790,area:"alps",country:"Schweiz",eaws:"CH-7124"},
+  {id:"vals3000",name:"Vals 3000",jp:"",region:"Graubünden/Grischun/Grigioni",lat:46.603,lon:9.137,base:1280,top:2860,area:"alps",country:"Schweiz",eaws:"CH-5216"},
+  {id:"sorenberg",name:"Sörenberg",jp:"",region:"Luzern",lat:46.812,lon:8.03,base:1130,top:2280,area:"alps",country:"Schweiz",eaws:"CH-2121"},
+  {id:"bannalp",name:"Bannalp",jp:"",region:"Nidwalden",lat:46.878,lon:8.434,base:900,top:1790,area:"alps",country:"Schweiz",eaws:"CH-2122"},
+  {id:"dallenwilwirzweli",name:"Dallenwil - Wirzweli",jp:"",region:"Nidwalden",lat:46.911,lon:8.372,base:490,top:1570,area:"alps",country:"Schweiz",eaws:"CH-2124"},
+  {id:"engelbergtitlis",name:"Engelberg-Titlis",jp:"",region:"Nidwalden",lat:46.792,lon:8.401,base:1000,top:3000,area:"alps",country:"Schweiz",eaws:"CH-2122"},
+  {id:"klewenalpstockhutte",name:"Klewenalp - Stockhütte",jp:"",region:"Nidwalden",lat:46.939,lon:8.485,base:450,top:1930,area:"alps",country:"Schweiz",eaws:"CH-2124"},
+  {id:"melchseefrutt",name:"Melchsee-Frutt",jp:"",region:"Obwalden",lat:46.781,lon:8.283,base:1080,top:2230,area:"alps",country:"Schweiz",eaws:"CH-2123"},
+  {id:"brunniholzeggrotenflue",name:"Brunni-Holzegg-Rotenflue",jp:"",region:"Schwyz",lat:47.03,lon:8.706,base:610,top:1560,area:"alps",country:"Schweiz",eaws:"CH-2132"},
+  {id:"hochybrig",name:"Hoch-Ybrig",jp:"",region:"Schwyz",lat:47.014,lon:8.784,base:1040,top:1810,area:"alps",country:"Schweiz",eaws:"CH-2132"},
+  {id:"stoos",name:"Stoos",jp:"",region:"Schwyz",lat:46.975,lon:8.663,base:790,top:1910,area:"alps",country:"Schweiz",eaws:"CH-2133"},
+  {id:"chaserruggaltstjohann",name:"Chäserrugg-Alt St. Johann",jp:"",region:"St. Gallen",lat:47.175,lon:9.308,base:890,top:2250,area:"alps",country:"Schweiz",eaws:"CH-3222"},
+  {id:"flumserberg",name:"Flumserberg",jp:"",region:"St. Gallen",lat:47.08,lon:9.269,base:660,top:2210,area:"alps",country:"Schweiz",eaws:"CH-3223"},
+  {id:"pizolbadragaz",name:"Pizol Bad Ragaz",jp:"",region:"St. Gallen",lat:46.992,lon:9.436,base:490,top:2240,area:"alps",country:"Schweiz",eaws:"CH-3224"},
+  {id:"airolopescium",name:"Airolo - Pesciüm",jp:"",region:"Ticino",lat:46.514,lon:8.61,base:1180,top:2250,area:"alps",country:"Schweiz",eaws:"CH-6112"},
+  {id:"naraleontica",name:"Nara – Leontica",jp:"",region:"Ticino",lat:46.464,lon:8.891,base:920,top:2130,area:"alps",country:"Schweiz",eaws:"CH-6113"},
+  {id:"brustiattinghausen",name:"Brüsti – Attinghausen",jp:"",region:"Uri",lat:46.847,lon:8.616,base:470,top:1600,area:"alps",country:"Schweiz",eaws:"CH-2212"},
+  {id:"ratzispiringen",name:"Ratzi – Spiringen",jp:"",region:"Uri",lat:46.876,lon:8.727,base:760,top:1840,area:"alps",country:"Schweiz",eaws:"CH-2211"},
+  {id:"4valleesverbierlatzoumaz",name:"4 Vallées – Verbier/La Tzoumaz/Nendaz/Veysonnaz/Thyon",jp:"",region:"Valais/Wallis",lat:46.128,lon:7.293,base:820,top:2900,area:"alps",country:"Schweiz",eaws:"CH-4115"},
+  {id:"aletscharena",name:"Aletsch Arena",jp:"",region:"Valais/Wallis",lat:46.395,lon:8.069,base:830,top:2860,area:"alps",country:"Schweiz",eaws:"CH-4214"},
+  {id:"anzere",name:"Anzère",jp:"",region:"Valais/Wallis",lat:46.313,lon:7.398,base:1550,top:2400,area:"alps",country:"Schweiz",eaws:"CH-4121"},
+  {id:"arolla",name:"Arolla",jp:"",region:"Valais/Wallis",lat:46.022,lon:7.47,base:1980,top:2880,area:"alps",country:"Schweiz",eaws:"CH-4123"},
+  {id:"bellwald",name:"Bellwald",jp:"",region:"Valais/Wallis",lat:46.439,lon:8.161,base:1180,top:2550,area:"alps",country:"Schweiz",eaws:"CH-4214"},
+  {id:"blattenbelalp",name:"Blatten Belalp",jp:"",region:"Valais/Wallis",lat:46.38,lon:7.977,base:1330,top:3100,area:"alps",country:"Schweiz",eaws:"CH-4214"},
+  {id:"champerylescrosetschampo",name:"Champéry – Les Crosets – Champoussin – Morgins",jp:"",region:"Valais/Wallis",lat:46.183,lon:6.822,base:1030,top:2250,area:"alps",country:"Schweiz",eaws:"CH-1312"},
+  {id:"cransmontana",name:"Crans-Montana",jp:"",region:"Valais/Wallis",lat:46.337,lon:7.489,base:1510,top:2880,area:"alps",country:"Schweiz",eaws:"CH-4121"},
+  {id:"eischoll",name:"Eischoll",jp:"",region:"Valais/Wallis",lat:46.291,lon:7.783,base:640,top:2140,area:"alps",country:"Schweiz",eaws:"CH-4221"},
+  {id:"evolene",name:"Evolène",jp:"",region:"Valais/Wallis",lat:46.117,lon:7.45,base:1400,top:2640,area:"alps",country:"Schweiz",eaws:"CH-4122"},
+  {id:"grachen",name:"Grächen",jp:"",region:"Valais/Wallis",lat:46.2,lon:7.863,base:1620,top:2860,area:"alps",country:"Schweiz",eaws:"CH-4221"},
+  {id:"jeizinen",name:"Jeizinen",jp:"",region:"Valais/Wallis",lat:46.333,lon:7.725,base:630,top:2190,area:"alps",country:"Schweiz",eaws:"CH-4215"},
+  {id:"lauchernalp",name:"Lauchernalp",jp:"",region:"Valais/Wallis",lat:46.418,lon:7.765,base:1400,top:3080,area:"alps",country:"Schweiz",eaws:"CH-4211"},
+  {id:"leukerbadtorrent",name:"Leukerbad (Torrent)",jp:"",region:"Valais/Wallis",lat:46.369,lon:7.645,base:1390,top:2590,area:"alps",country:"Schweiz",eaws:"CH-4211"},
+  {id:"moosalpregion",name:"Moosalpregion",jp:"",region:"Valais/Wallis",lat:46.261,lon:7.825,base:1480,top:2520,area:"alps",country:"Schweiz",eaws:"CH-4221"},
+  {id:"nax",name:"Nax",jp:"",region:"Valais/Wallis",lat:46.214,lon:7.474,base:1510,top:2640,area:"alps",country:"Schweiz",eaws:"CH-4122"},
+  {id:"ovronnaz",name:"Ovronnaz",jp:"",region:"Valais/Wallis",lat:46.204,lon:7.136,base:1390,top:2450,area:"alps",country:"Schweiz",eaws:"CH-4114"},
+  {id:"rosswald",name:"Rosswald",jp:"",region:"Valais/Wallis",lat:46.309,lon:8.052,base:1030,top:2530,area:"alps",country:"Schweiz",eaws:"CH-4231"},
+  {id:"saasfee",name:"Saas Fee",jp:"",region:"Valais/Wallis",lat:46.088,lon:7.915,base:1780,top:3160,area:"alps",country:"Schweiz",eaws:"CH-4223"},
+  {id:"saasgrund",name:"Saas-Grund",jp:"",region:"Valais/Wallis",lat:46.139,lon:7.967,base:1560,top:3130,area:"alps",country:"Schweiz",eaws:"CH-4223"},
+  {id:"saintlucchandolin",name:"Saint Luc - Chandolin",jp:"",region:"Valais/Wallis",lat:46.242,lon:7.62,base:1940,top:2970,area:"alps",country:"Schweiz",eaws:"CH-4124"},
+  {id:"staldenriedgspon",name:"Staldenried - Gspon",jp:"",region:"Valais/Wallis",lat:46.227,lon:7.896,base:800,top:2200,area:"alps",country:"Schweiz",eaws:"CH-4221"},
+  {id:"vercorin",name:"Vercorin",jp:"",region:"Valais/Wallis",lat:46.231,lon:7.534,base:1310,top:2360,area:"alps",country:"Schweiz",eaws:"CH-4122"},
+  {id:"zermattbreuilcervinia",name:"Zermatt - Breuil-Cervinia",jp:"",region:"Valais/Wallis",lat:45.961,lon:7.717,base:1860,top:3760,area:"alps",country:"Schweiz",eaws:"CH-4224"},
+  {id:"zinalgrimentz",name:"Zinal / Grimentz",jp:"",region:"Valais/Wallis",lat:46.163,lon:7.577,base:1600,top:2870,area:"alps",country:"Schweiz",eaws:"CH-4124"},
+  {id:"glacier3000",name:"Glacier 3000",jp:"",region:"Vaud",lat:46.333,lon:7.217,base:1350,top:2970,area:"alps",country:"Schweiz",eaws:"CH-1114"},
+  {id:"lesmosses",name:"Les Mosses",jp:"",region:"Vaud",lat:46.403,lon:7.097,base:1380,top:1880,area:"alps",country:"Schweiz",eaws:"CH-1112"},
+  {id:"leysin",name:"Leysin",jp:"",region:"Vaud",lat:46.366,lon:7.019,base:1330,top:2190,area:"alps",country:"Schweiz",eaws:"CH-1113"},
+  {id:"rochersdenaye",name:"Rochers de Naye",jp:"",region:"Vaud",lat:46.441,lon:6.974,base:1130,top:2000,area:"alps",country:"Schweiz",eaws:"CH-1111"},
+  {id:"villarsgryonlesdiableret",name:"Villars/Gryon/Les Diablerets",jp:"",region:"Vaud",lat:46.321,lon:7.092,base:1170,top:1980,area:"alps",country:"Schweiz",eaws:"CH-1114"},
+  // Frankrike
+  {id:"aiguilledumidichamonix",name:"Aiguille du Midi (Chamonix)",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.901,lon:6.895,base:1030,top:3690,area:"alps",country:"Frankrike",eaws:"FR-03"},
+  {id:"alpedhuezgranddomaine",name:"Alpe d'Huez Grand Domaine",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.107,lon:6.079,base:720,top:3300,area:"alps",country:"Frankrike",eaws:"FR-12"},
+  {id:"arechesbeaufort",name:"Arêches Beaufort",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.662,lon:6.552,base:1020,top:2120,area:"alps",country:"Frankrike",eaws:"FR-05"},
+  {id:"aussois",name:"Aussois",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.245,lon:6.737,base:1530,top:2670,area:"alps",country:"Frankrike",eaws:"FR-11"},
+  {id:"avoriaz",name:"Avoriaz",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.19,lon:6.763,base:960,top:2220,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"balmevallorcine",name:"Balme - Vallorcine",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.017,lon:6.953,base:1260,top:2250,area:"alps",country:"Frankrike",eaws:"FR-03"},
+  {id:"bernex",name:"Bernex",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.347,lon:6.698,base:1000,top:1860,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"bonnevalsurarc",name:"Bonneval-sur-Arc",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.366,lon:7.059,base:1820,top:2950,area:"alps",country:"Frankrike",eaws:"FR-11"},
+  {id:"breventflegerechamonix",name:"Brévent/Flégère (Chamonix)",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.949,lon:6.87,base:1060,top:2480,area:"alps",country:"Frankrike",eaws:"FR-03"},
+  {id:"chamrousse",name:"Chamrousse",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.117,lon:5.886,base:1410,top:2250,area:"alps",country:"Frankrike",eaws:"FR-08"},
+  {id:"domaineautransmeaudre",name:"Domaine Autrans - Méaudre",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.172,lon:5.545,base:1010,top:1620,area:"alps",country:"Frankrike",eaws:"FR-14"},
+  {id:"espacediamantlessaisies",name:"Espace Diamant (Les Saisies)",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.765,lon:6.529,base:1240,top:1940,area:"alps",country:"Frankrike",eaws:"FR-05"},
+  {id:"espaceliberte",name:"Espace Liberté",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.26,lon:6.837,base:1010,top:2090,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"evasionmontblanc",name:"Evasion Mont Blanc",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.828,lon:6.619,base:810,top:1870,area:"alps",country:"Frankrike",eaws:"FR-03"},
+  {id:"gresseenvercors",name:"Gresse en Vercors",jp:"",region:"Auvergne-Rhône-Alpes",lat:44.892,lon:5.543,base:1250,top:1700,area:"alps",country:"Frankrike",eaws:"FR-14"},
+  {id:"hirmentazleshaberes",name:"Hirmentaz - Les Habères",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.24,lon:6.495,base:940,top:1600,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"lalpedugrandserre",name:"L'Alpe du Grand Serre",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.011,lon:5.851,base:1380,top:2160,area:"alps",country:"Frankrike",eaws:"FR-15"},
+  {id:"laclusaz",name:"La Clusaz",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.885,lon:6.431,base:1040,top:2470,area:"alps",country:"Frankrike",eaws:"FR-02"},
+  {id:"lanorma",name:"La Norma",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.193,lon:6.71,base:1360,top:2720,area:"alps",country:"Frankrike",eaws:"FR-11"},
+  {id:"larosiere",name:"La Rosière",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.645,lon:6.867,base:1190,top:2450,area:"alps",country:"Frankrike",eaws:"FR-06"},
+  {id:"lecolletdallevard",name:"Le Collet d'Allevard",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.395,lon:6.127,base:1420,top:2080,area:"alps",country:"Frankrike",eaws:"FR-08"},
+  {id:"legrandbornand",name:"Le Grand Bornand",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.963,lon:6.471,base:940,top:2020,area:"alps",country:"Frankrike",eaws:"FR-02"},
+  {id:"legranddomaine",name:"Le Grand Domaine",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.442,lon:6.41,base:1260,top:2390,area:"alps",country:"Frankrike",eaws:"FR-10"},
+  {id:"legrandmassif",name:"Le Grand Massif",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.029,lon:6.699,base:700,top:2480,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"les3vallees",name:"Les 3 Vallées",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.382,lon:6.595,base:620,top:2770,area:"alps",country:"Frankrike",eaws:"FR-10"},
+  {id:"les7laux",name:"Les 7 Laux",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.258,lon:6.021,base:1330,top:2370,area:"alps",country:"Frankrike",eaws:"FR-08"},
+  {id:"lesdeuxalpes",name:"Les Deux Alpes",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.006,lon:6.157,base:960,top:3400,area:"alps",country:"Frankrike",eaws:"FR-15"},
+  {id:"lesgetsmorzine",name:"Les Gets-Morzine",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.155,lon:6.689,base:980,top:1950,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"lesgrandsmontets",name:"Les Grands Montets",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.968,lon:6.936,base:1220,top:2770,area:"alps",country:"Frankrike",eaws:"FR-03"},
+  {id:"leshoucheschamonix",name:"Les Houches (Chamonix)",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.883,lon:6.763,base:1000,top:1890,area:"alps",country:"Frankrike",eaws:"FR-03"},
+  {id:"leskarellis",name:"Les Karellis",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.217,lon:6.398,base:1600,top:2480,area:"alps",country:"Frankrike",eaws:"FR-09"},
+  {id:"lessybelles",name:"Les Sybelles",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.238,lon:6.239,base:1500,top:2580,area:"alps",country:"Frankrike",eaws:"FR-09"},
+  {id:"lessertabondance",name:"L’Essert – Abondance",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.265,lon:6.702,base:950,top:1690,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"massifdesbrasses",name:"Massif des Brasses",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.17,lon:6.447,base:880,top:1480,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"montagnesdelans",name:"Montagnes de Lans",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.114,lon:5.613,base:1380,top:1790,area:"alps",country:"Frankrike",eaws:"FR-14"},
+  {id:"paradiski",name:"Paradiski",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.531,lon:6.743,base:1200,top:2710,area:"alps",country:"Frankrike",eaws:"FR-10"},
+  {id:"pralognanlavanoise",name:"Pralognan-la-Vanoise",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.385,lon:6.729,base:1410,top:2340,area:"alps",country:"Frankrike",eaws:"FR-10"},
+  {id:"prazdelyssommand",name:"Praz de Lys Sommand",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.15,lon:6.575,base:1260,top:1960,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"rocdenfer",name:"Roc d'Enfer",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.211,lon:6.608,base:950,top:1790,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"saintpierredechartreuse",name:"Saint-Pierre-de-Chartreuse",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.355,lon:5.838,base:1090,top:1760,area:"alps",country:"Frankrike",eaws:"FR-07"},
+  {id:"thollonlesmemises",name:"Thollon les Mémises",jp:"",region:"Auvergne-Rhône-Alpes",lat:46.379,lon:6.733,base:1030,top:1870,area:"alps",country:"Frankrike",eaws:"FR-01"},
+  {id:"tignesvaldisere",name:"Tignes - Val d'Isère",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.446,lon:6.949,base:1830,top:2850,area:"alps",country:"Frankrike",eaws:"FR-06"},
+  {id:"valcenis",name:"Val Cenis",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.277,lon:6.892,base:1400,top:2460,area:"alps",country:"Frankrike",eaws:"FR-11"},
+  {id:"valthorens",name:"Val Thorens",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.284,lon:6.576,base:880,top:3170,area:"alps",country:"Frankrike",eaws:"FR-10"},
+  {id:"valfrejus",name:"Valfréjus",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.158,lon:6.662,base:1560,top:2710,area:"alps",country:"Frankrike",eaws:"FR-11"},
+  {id:"valloiregalibierthabor",name:"Valloire - Galibier Thabor",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.166,lon:6.468,base:1410,top:2520,area:"alps",country:"Frankrike",eaws:"FR-09"},
+  {id:"villarddelanscorrencon",name:"Villard de Lans - Corrençon",jp:"",region:"Auvergne-Rhône-Alpes",lat:45.025,lon:5.556,base:1160,top:2060,area:"alps",country:"Frankrike",eaws:"FR-14"},
+  {id:"lesrousses",name:"Les Rousses",jp:"",region:"Bourgogne-Franche-Comté",lat:46.438,lon:6.069,base:1140,top:1660,area:"alps",country:"Frankrike",eaws:"CH-8111"},
+  {id:"metabief",name:"Métabief",jp:"",region:"Bourgogne-Franche-Comté",lat:46.749,lon:6.358,base:1020,top:1410,area:"alps",country:"Frankrike",eaws:"CH-8112"},
+  {id:"ancelle",name:"Ancelle",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.613,lon:6.206,base:1320,top:1800,area:"alps",country:"Frankrike",eaws:"FR-19"},
+  {id:"auron",name:"Auron",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.223,lon:6.915,base:1160,top:2420,area:"alps",country:"Frankrike",eaws:"FR-22"},
+  {id:"chabanon",name:"Chabanon",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.343,lon:6.292,base:1540,top:2020,area:"alps",country:"Frankrike",eaws:"FR-21"},
+  {id:"devoluy",name:"Dévoluy",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.666,lon:5.907,base:1460,top:2560,area:"alps",country:"Frankrike",eaws:"FR-18"},
+  {id:"espacelumiere",name:"Espace Lumière",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.329,lon:6.578,base:1640,top:2480,area:"alps",country:"Frankrike",eaws:"FR-21"},
+  {id:"isola2000",name:"Isola 2000",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.183,lon:7.151,base:1830,top:2420,area:"alps",country:"Frankrike",eaws:"FR-23"},
+  {id:"leseignus",name:"Le Seignus",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.229,lon:6.607,base:1520,top:2410,area:"alps",country:"Frankrike",eaws:"FR-22"},
+  {id:"lesorres",name:"Les Orres",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.483,lon:6.565,base:1560,top:2650,area:"alps",country:"Frankrike",eaws:"FR-20"},
+  {id:"molinesenqueyrassaintver",name:"Molines-en-Queyras - Saint-Véran",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.713,lon:6.865,base:1740,top:2800,area:"alps",country:"Frankrike",eaws:"FR-17"},
+  {id:"montclar",name:"Montclar",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.401,lon:6.382,base:1340,top:2460,area:"alps",country:"Frankrike",eaws:"FR-21"},
+  {id:"montgenevre",name:"Montgenèvre",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.925,lon:6.73,base:1810,top:2580,area:"alps",country:"Frankrike",eaws:"FR-13"},
+  {id:"orcieresmerlette",name:"Orcières Merlette",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.709,lon:6.324,base:1830,top:2720,area:"alps",country:"Frankrike",eaws:"FR-19"},
+  {id:"pelvouxvallouise",name:"Pelvoux-Vallouise",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.861,lon:6.476,base:1230,top:2210,area:"alps",country:"Frankrike",eaws:"FR-16"},
+  {id:"puysaintvincent",name:"Puy-Saint-Vincent",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.812,lon:6.478,base:1410,top:2660,area:"alps",country:"Frankrike",eaws:"FR-16"},
+  {id:"saintlegerlesmelezes",name:"Saint-Léger-Les-Mélèzes",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.642,lon:6.21,base:1270,top:1980,area:"alps",country:"Frankrike",eaws:"FR-19"},
+  {id:"serrechevalier",name:"Serre Chevalier",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.926,lon:6.551,base:1390,top:2500,area:"alps",country:"Frankrike",eaws:"FR-16"},
+  {id:"valberg",name:"Valberg",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.08,lon:6.948,base:1420,top:2010,area:"alps",country:"Frankrike",eaws:"FR-22"},
+  {id:"varsrisoul",name:"Vars/Risoul",jp:"",region:"Provence-Alpes-Côte d'Azur",lat:44.592,lon:6.653,base:1630,top:2720,area:"alps",country:"Frankrike",eaws:"FR-20"},
+  // Italien
+  {id:"piancavallo",name:"Piancavallo",jp:"",region:"Friuli-Venezia Giulia",lat:46.108,lon:12.51,base:1260,top:1800,area:"alps",country:"Italien",eaws:"IT-36-PN-01"},
+  {id:"tarvisio",name:"Tarvisio",jp:"",region:"Friuli-Venezia Giulia",lat:46.495,lon:13.553,base:770,top:1770,area:"alps",country:"Italien",eaws:"IT-36-UD-03"},
+  {id:"zoncolan",name:"Zoncolan",jp:"",region:"Friuli-Venezia Giulia",lat:46.505,lon:12.935,base:890,top:1950,area:"alps",country:"Italien",eaws:"IT-36-UD-02"},
+  {id:"aprica",name:"Aprica",jp:"",region:"Lombardia",lat:46.141,lon:10.157,base:1160,top:2250,area:"alps",country:"Italien",eaws:"IT-25-SO-04"},
+  {id:"bormioski",name:"Bormio Ski",jp:"",region:"Lombardia",lat:46.441,lon:10.394,base:1200,top:3000,area:"alps",country:"Italien",eaws:"IT-25-SO-03"},
+  {id:"cimapiazzisancolombano",name:"Cima Piazzi – San Colombano",jp:"",region:"Lombardia",lat:46.467,lon:10.315,base:1340,top:2360,area:"alps",country:"Italien",eaws:"IT-25-SO-03"},
+  {id:"foppolocarona",name:"Foppolo-Carona",jp:"",region:"Lombardia",lat:46.04,lon:9.774,base:1160,top:2160,area:"alps",country:"Italien",eaws:"IT-25-BG-01"},
+  {id:"livigno",name:"Livigno",jp:"",region:"Lombardia",lat:46.53,lon:10.128,base:1830,top:2780,area:"alps",country:"Italien",eaws:"IT-25-SO-03"},
+  {id:"pianidibobbiovaltortaski",name:"Piani di Bobbio - Valtorta Skiarea",jp:"",region:"Lombardia",lat:45.963,lon:9.496,base:810,top:1860,area:"alps",country:"Italien",eaws:"IT-25-LC-01"},
+  {id:"pontedilegnopassotonale",name:"Ponte di Legno - Passo Tonale",jp:"",region:"Lombardia",lat:46.256,lon:10.551,base:1120,top:2670,area:"alps",country:"Italien",eaws:"IT-25-BS-01"},
+  {id:"santacaterina",name:"Santa Caterina",jp:"",region:"Lombardia",lat:46.401,lon:10.483,base:1720,top:2880,area:"alps",country:"Italien",eaws:"IT-25-SO-03"},
+  {id:"skiareavalchiavenna",name:"Skiarea Valchiavenna",jp:"",region:"Lombardia",lat:46.426,lon:9.373,base:1540,top:2870,area:"alps",country:"Italien",eaws:"IT-25-SO-01"},
+  {id:"valmalencobernina",name:"Valmalenco Bernina",jp:"",region:"Lombardia",lat:46.292,lon:9.871,base:990,top:2340,area:"alps",country:"Italien",eaws:"IT-25-SO-02"},
+  {id:"artesina",name:"Artesina",jp:"",region:"Piemonte",lat:44.242,lon:7.748,base:800,top:2080,area:"alps",country:"Italien",eaws:"IT-21-CN-01"},
+  {id:"bardonecchia",name:"Bardonecchia",jp:"",region:"Piemonte",lat:45.054,lon:6.697,base:1350,top:2220,area:"alps",country:"Italien",eaws:"IT-21-TO-03"},
+  {id:"claviere",name:"Claviere",jp:"",region:"Piemonte",lat:44.926,lon:6.774,base:1540,top:2400,area:"alps",country:"Italien",eaws:"IT-21-TO-03"},
+  {id:"craveggiapianadivigezzo",name:"Craveggia - Piana di Vigezzo",jp:"",region:"Piemonte",lat:46.164,lon:8.48,base:810,top:2050,area:"alps",country:"Italien",eaws:"IT-21-VB-03"},
+  {id:"domobianca",name:"Domobianca",jp:"",region:"Piemonte",lat:46.1,lon:8.241,base:1090,top:1830,area:"alps",country:"Italien",eaws:"IT-21-VB-01"},
+  {id:"lurisiamontepigna",name:"Lurisia – Monte Pigna",jp:"",region:"Piemonte",lat:44.271,lon:7.707,base:830,top:1750,area:"alps",country:"Italien",eaws:"IT-21-CN-01"},
+  {id:"macugnagamoro",name:"Macugnaga - Moro",jp:"",region:"Piemonte",lat:45.99,lon:7.976,base:1320,top:2870,area:"alps",country:"Italien",eaws:"IT-21-VB-01"},
+  {id:"mottaroneskipark",name:"Mottarone Ski Park",jp:"",region:"Piemonte",lat:45.884,lon:8.461,base:200,top:1490,area:"alps",country:"Italien",eaws:"IT-21-VC-01"},
+  {id:"pragelato",name:"Pragelato",jp:"",region:"Piemonte",lat:44.993,lon:6.944,base:1530,top:2540,area:"alps",country:"Italien",eaws:"IT-21-TO-02"},
+  {id:"riservabiancalimonepiemo",name:"Riserva Bianca – Limone Piemonte",jp:"",region:"Piemonte",lat:44.173,lon:7.579,base:1070,top:2050,area:"alps",country:"Italien",eaws:"IT-21-CN-02"},
+  {id:"sandomenicodivarzo",name:"San Domenico di Varzo",jp:"",region:"Piemonte",lat:46.26,lon:8.201,base:1370,top:2480,area:"alps",country:"Italien",eaws:"IT-21-VB-02"},
+  {id:"sansicario",name:"Sansicario",jp:"",region:"Piemonte",lat:44.96,lon:6.823,base:1360,top:2690,area:"alps",country:"Italien",eaws:"IT-21-TO-03"},
+  {id:"sauzedoulx",name:"Sauze D'Oulx",jp:"",region:"Piemonte",lat:45.0,lon:6.87,base:1390,top:2680,area:"alps",country:"Italien",eaws:"IT-21-TO-03"},
+  {id:"scopelloalpedimera",name:"Scopello / Alpe di Mera",jp:"",region:"Piemonte",lat:45.747,lon:8.084,base:690,top:1730,area:"alps",country:"Italien",eaws:"IT-21-VC-01"},
+  {id:"sestriere",name:"Sestriere",jp:"",region:"Piemonte",lat:44.959,lon:6.894,base:1590,top:2590,area:"alps",country:"Italien",eaws:"IT-21-TO-03"},
+  {id:"alpecermis",name:"Alpe Cermis",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.257,lon:11.491,base:860,top:2240,area:"alps",country:"Italien",eaws:"IT-32-TN-07"},
+  {id:"alpecimbra",name:"Alpe Cimbra",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:45.908,lon:11.235,base:1180,top:1810,area:"alps",country:"Italien",eaws:"IT-32-TN-06"},
+  {id:"altabadia",name:"Alta Badia",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.555,lon:11.886,base:1340,top:2210,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-02"},
+  {id:"brixenploseplosedibressa",name:"Brixen Plose - Plose di Bressanone",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.69,lon:11.716,base:1040,top:2500,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-01"},
+  {id:"campigliodolomitidibrent",name:"Campiglio Dolomiti di Brenta",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.232,lon:10.839,base:1150,top:2440,area:"alps",country:"Italien",eaws:"IT-32-TN-04"},
+  {id:"carezza",name:"Carezza",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.419,lon:11.596,base:1190,top:2330,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-02"},
+  {id:"dolomitisuperski",name:"Dolomiti Superski",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.535,lon:11.706,base:270,top:2250,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-02"},
+  {id:"dreizinnentrecime",name:"Drei Zinnen - Tre Cime",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.696,lon:12.336,base:1130,top:2220,area:"alps",country:"Italien",eaws:"IT-32-BZ-20"},
+  {id:"folgaridamarilleva",name:"Folgarida-Marilleva",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.29,lon:10.831,base:810,top:2160,area:"alps",country:"Italien",eaws:"IT-32-TN-19"},
+  {id:"gitschbergjochtal",name:"Gitschberg Jochtal",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.839,lon:11.652,base:1300,top:2100,area:"alps",country:"Italien",eaws:"IT-32-BZ-09"},
+  {id:"klausbergskiarena",name:"Klausberg Skiarena",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.958,lon:11.962,base:940,top:2470,area:"alps",country:"Italien",eaws:"IT-32-BZ-11"},
+  {id:"kronplatzplandecorones",name:"Kronplatz - Plan de Corones",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.732,lon:11.957,base:920,top:2270,area:"alps",country:"Italien",eaws:"IT-32-BZ-19"},
+  {id:"latemardolomites",name:"Latemar Dolomites",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.353,lon:11.546,base:1060,top:2310,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-02"},
+  {id:"marmolada",name:"Marmolada",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.443,lon:11.887,base:1450,top:3180,area:"alps",country:"Italien",eaws:"IT-34-BL-01"},
+  {id:"meran2000",name:"Meran 2000",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.681,lon:11.267,base:1620,top:2280,area:"alps",country:"Italien",eaws:"IT-32-BZ-08-01"},
+  {id:"paganella",name:"Paganella",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.153,lon:11.02,base:1030,top:2110,area:"alps",country:"Italien",eaws:"IT-32-TN-11"},
+  {id:"pejo3000",name:"Pejo 3000",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.37,lon:10.659,base:1410,top:2950,area:"alps",country:"Italien",eaws:"IT-32-TN-19"},
+  {id:"pinzolo",name:"Pinzolo",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.173,lon:10.801,base:790,top:2090,area:"alps",country:"Italien",eaws:"IT-32-TN-04"},
+  {id:"ratschingsjaufen",name:"Ratschings-Jaufen",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.852,lon:11.306,base:1290,top:2130,area:"alps",country:"Italien",eaws:"IT-32-BZ-04-02"},
+  {id:"sanmartinodicastrozzapas",name:"San Martino di Castrozza - Passo Rolle",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.265,lon:11.781,base:1410,top:2610,area:"alps",country:"Italien",eaws:"IT-32-TN-13"},
+  {id:"schnalstal",name:"Schnalstal",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.77,lon:10.791,base:2010,top:3190,area:"alps",country:"Italien",eaws:"IT-32-BZ-03"},
+  {id:"schwemmalm",name:"Schwemmalm",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.541,lon:10.928,base:1140,top:2620,area:"alps",country:"Italien",eaws:"IT-32-BZ-15"},
+  {id:"schonebenbelpiano",name:"Schöneben - Belpiano",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.795,lon:10.5,base:1460,top:2380,area:"alps",country:"Italien",eaws:"IT-32-BZ-01-01"},
+  {id:"seiseralmmontdeseucalped",name:"Seiser Alm - Mont de Sëuc - Alpe di Siusi",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.544,lon:11.628,base:1020,top:2210,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-02"},
+  {id:"skiareaalpelusia",name:"Ski Area Alpe Lusia",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.343,lon:11.694,base:1370,top:2340,area:"alps",country:"Italien",eaws:"IT-32-TN-13"},
+  {id:"skiareasanpellegrinofalc",name:"Ski Area San Pellegrino - Falcade",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.371,lon:11.807,base:1220,top:2510,area:"alps",country:"Italien",eaws:"IT-32-TN-16"},
+  {id:"skiramadolomitiadamellob",name:"Skirama Dolomiti Adamello-Brenta",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.15,lon:10.923,base:190,top:2370,area:"alps",country:"Italien",eaws:"IT-32-TN-05"},
+  {id:"suldenamortlersoldaalort",name:"Sulden am Ortler - Solda al Ortles",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.511,lon:10.599,base:1840,top:3210,area:"alps",country:"Italien",eaws:"IT-32-BZ-14"},
+  {id:"valgardena",name:"Val Gardena",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.55,lon:11.744,base:1260,top:2500,area:"alps",country:"Italien",eaws:"IT-32-BZ-18-02"},
+  {id:"valdifassa",name:"Val di Fassa",jp:"",region:"Trentino-Alto Adige/Südtirol",lat:46.466,lon:11.755,base:1350,top:2420,area:"alps",country:"Italien",eaws:"IT-32-TN-16"},
+  {id:"champorcher",name:"Champorcher",jp:"",region:"Valle d'Aosta / Vallée d'Aoste",lat:45.611,lon:7.586,base:1450,top:2490,area:"alps",country:"Italien",eaws:"IT-23-AO-11"},
+  {id:"courmayeur",name:"Courmayeur",jp:"",region:"Valle d'Aosta / Vallée d'Aoste",lat:45.792,lon:6.936,base:1200,top:2610,area:"alps",country:"Italien",eaws:"IT-23-AO-22"},
+  {id:"lathuile",name:"La Thuile",jp:"",region:"Valle d'Aosta / Vallée d'Aoste",lat:45.696,lon:6.931,base:1470,top:2560,area:"alps",country:"Italien",eaws:"IT-23-AO-15"},
+  {id:"monterosaski",name:"Monterosa Ski",jp:"",region:"Valle d'Aosta / Vallée d'Aoste",lat:45.857,lon:7.828,base:1210,top:3250,area:"alps",country:"Italien",eaws:"IT-23-AO-06"},
+  {id:"pila",name:"Pila",jp:"",region:"Valle d'Aosta / Vallée d'Aoste",lat:45.677,lon:7.308,base:1770,top:2710,area:"alps",country:"Italien",eaws:"IT-23-AO-04"},
+  {id:"arabba",name:"Arabba",jp:"",region:"Veneto",lat:46.486,lon:11.872,base:1610,top:2480,area:"alps",country:"Italien",eaws:"IT-34-BL-01"},
+  {id:"cortinatofane",name:"Cortina Tofane",jp:"",region:"Veneto",lat:46.539,lon:12.097,base:1210,top:3100,area:"alps",country:"Italien",eaws:"IT-34-BL-02"},
+  {id:"cristallofaloria",name:"Cristallo - Faloria",jp:"",region:"Veneto",lat:46.546,lon:12.171,base:1220,top:2340,area:"alps",country:"Italien",eaws:"IT-34-BL-02"},
+  {id:"lagazuoi5torri",name:"Lagazuoi - 5 Torri",jp:"",region:"Veneto",lat:46.51,lon:12.031,base:1730,top:2720,area:"alps",country:"Italien",eaws:"IT-34-BL-02"},
+  {id:"praalpesina",name:"Prà Alpesina",jp:"",region:"Veneto",lat:45.768,lon:10.863,base:560,top:1830,area:"alps",country:"Italien",eaws:"IT-34-VR-01"},
+  {id:"skicivetta",name:"Ski Civetta",jp:"",region:"Veneto",lat:46.402,lon:12.078,base:990,top:2070,area:"alps",country:"Italien",eaws:"IT-34-BL-01"},
+  // ----- alps:end -----
 ];
 RESORTS.forEach(r => { r.area = r.area || "japan"; r.country = r.country || "Japan"; r.mid = Math.round((r.base + r.top) / 2); });
 
@@ -487,6 +793,7 @@ RESORTS.forEach(r => { r.area = r.area || "japan"; r.country = r.country || "Jap
 const AREAS = {
   japan:       {name:"Japan",       sauna:"Onsen",        flag:"JP"},
   scandinavia: {name:"Skandinavien", sauna:"Bastu & bad", flag:"SE NO FI"},
+  alps:        {name:"Alperna",      sauna:"Bad & bastu", flag:"AT CH FR IT"},
 };
 const areaResorts = a => RESORTS.filter(r => r.area === a);
 const regionsOf = a => [...new Set(areaResorts(a).map(r => r.region))];
@@ -715,7 +1022,8 @@ function renderOverview(){
   markerLayer = L.markerClusterGroup({
     maxClusterRadius: 34, showCoverageOnHover: false, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 10,
     iconCreateFunction: c => {
-      const kids = c.getAllChildMarkers(), v = Math.max(...kids.map(m => m.options.snow));
+      const kids = c.getAllChildMarkers(), vals = kids.map(m => m.options.snow).filter(v => v != null);
+      const v = vals.length ? Math.max(...vals) : null;
       return snowIcon(v, maxPinVal, `<small>${kids.length}</small>`, "group");
     },
   }).addTo(overviewMap);
@@ -732,6 +1040,23 @@ function setArea(a){
   if (!areaResorts(a).every(r => state.overview?.[r.id])) refreshOverview();
 }
 
+// No forecast to rank by (offline on first visit, or the weather service refused): still list the resorts by name
+function listWithoutSnow(msg){
+  const list = $("#list"); if (!list) return;
+  const rows = areaResorts(state.area).filter(r => inRegion(r, state.region)).sort((a,b) => a.name.localeCompare(b.name, "sv"));
+  list.innerHTML = `<div class="msg err">${msg}</div>` + rows.map(r => `<button class="row" data-id="${r.id}">
+      <span class="info">
+        <span class="name">${esc(r.name)}</span>
+        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(r.country) : ""} · ${r.base}–${r.top} m</span>
+      </span>
+    </button>`).join("");
+  list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
+  markerLayer.clearLayers();
+  maxPinVal = 1;
+  markerLayer.addLayers(rows.map(r => L.marker([r.lat, r.lon], {icon: snowIcon(null, 1), title: r.name, snow: null})
+    .bindTooltip(`<b>${esc(r.name)}</b>`, {direction:"top"}).on("click", () => go(r.id))));
+  fitMap(rows);
+}
 function fillOverview(){
   const list = $("#list"); if (!list) return;
   if (!areaResorts(state.area).some(r => state.overview?.[r.id])){
@@ -780,10 +1105,11 @@ function fillOverview(){
 
 let maxPinVal = 1;
 function snowIcon(v, maxVal, extra = "", cls = ""){
-  const size = 24 + Math.round(Math.sqrt(v / maxVal) * 22);
-  const {bg, ink} = rampColor(SNOW_RAMP[state.mode], v);
+  // v null = no forecast: small neutral pin with a dash
+  const size = v == null ? 24 : 24 + Math.round(Math.sqrt(v / maxVal) * 22);
+  const {bg, ink} = v == null ? {bg: "var(--line)", ink: "var(--muted)"} : rampColor(SNOW_RAMP[state.mode], v);
   return L.divIcon({className:"", iconSize:[size,size],
-    html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${Math.round(v)}${extra}</div>`});
+    html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${v == null ? "–" : Math.round(v)}${extra}</div>`});
 }
 
 // Colour scale for the overview pins: pale for a dusting, deep for a dump.
@@ -842,6 +1168,14 @@ const TIPS_SCANDINAVIA = [
   `Tänk på kylan: frostskydda vattnet, ha gott om gasol eller diesel till värmaren och kolla att toalettkassetten inte fryser.`,
   `Bastu finns ofta på campingar, i simhallar och på hotell i skidorterna. Fråga om dagsbiljett.`,
 ];
+const TIPS_ALPS = [
+  `Leta efter ställplatser: <b>Stellplatz</b> (Österrike, Schweiz), <b>aire de camping-car</b> (Frankrike) och <b>area di sosta camper</b> (Italien). Många skidorter har en egen vid liften, ofta med el. Appar som park4night visar fler.`,
+  `Att sova i husbilen på vanliga parkeringar är förbjudet på många håll, särskilt i Schweiz och i flera österrikiska förbundsländer som Tyrolen. Följ skyltarna och använd ställplatser eller vintercamping.`,
+  `Vinterutrustning är ett krav i bergen: vinterdäck och snökedjor i bilen (i Frankrike och Italien under vintersäsongen enligt lag i bergsområden). Kedjeskyltar gäller även husbilar.`,
+  `Österrike och Schweiz kräver vägavgift (vignette) och Italien och Frankrike har betalmotorvägar. Husbilar över 3,5 ton har egna regler i Österrike (GO-Box).`,
+  `Termalbad (Therme, terme) och badhus med bastu finns i många alpdalar, ofta med kvällsöppet efter skidåkningen.`,
+];
+const TIPS = {japan: TIPS_JAPAN, scandinavia: TIPS_SCANDINAVIA, alps: TIPS_ALPS};
 
 async function renderDetail(id){
   const r = RESORTS.find(x => x.id === id);
@@ -888,7 +1222,7 @@ async function renderDetail(id){
           <div class="poimapbox"><div id="poimap" role="region" aria-label="Karta med faciliteter"></div></div>
           <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
             <div class="pois" id="pois"><div class="msg">Laddar platser…</div></div>
-            <ul class="tips">${(r.area === "japan" ? TIPS_JAPAN : TIPS_SCANDINAVIA).map(t => `<li>${t}</li>`).join("")}</ul>
+            <ul class="tips">${TIPS[r.area].map(t => `<li>${t}</li>`).join("")}</ul>
           </div>
         </div>
       </div>
@@ -1014,9 +1348,12 @@ function aspectRose(grid){
   return `<svg class="rose" viewBox="-6 -6 132 132" role="img" aria-label="Utsatta sluttningsriktningar">${paths.join("")}${labels.join("")}</svg>`;
 }
 // Varsom's height limits: fill 1 = above h1, 2 = below h1, 3 = above the higher and below the lower, 4 = between
+// Limits are metres, or "treeline" from EAWS bulletins (then h1 is the upper and h2 the lower limit)
 function heightInfo({fill, h1, h2}){
-  const hi = Math.max(h1, h2 || h1), lo = Math.min(h1, h2 || h1);
-  const text = {1: `över ${h1} m`, 2: `under ${h1} m`, 3: `över ${hi} m och under ${lo} m`, 4: `mellan ${lo} och ${hi} m`}[fill];
+  const num = typeof h1 === "number" && typeof (h2 || h1) === "number";
+  const hi = num ? Math.max(h1, h2 || h1) : h1, lo = num ? Math.min(h1, h2 || h1) : h2;
+  const m = v => v === "treeline" ? "trädgränsen" : `${v} m`;
+  const text = {1: `över ${m(h1)}`, 2: `under ${m(h1)}`, 3: `över ${m(hi)} och under ${m(lo)}`, 4: `mellan ${m(lo)} och ${m(hi)}`}[fill];
   if (!text) return null;
   const band = (y0, y1) => `<rect class="on" x="0" y="${y0}" width="46" height="${y1 - y0}"/>`;
   const on = {1: band(0, 22), 2: band(22, 40), 3: band(0, 15) + band(29, 40), 4: band(15, 29)}[fill];
@@ -1054,7 +1391,8 @@ function problemHtml(p, ringLabels){
       </div></div>`;
 }
 
-function dangerCard({top, levels, area, near, issued, source, problems = [], advice, adviceLabel, links, ringLabels = BANDS}){
+function dangerCard({top, levels, bands, area, near, issued, source, problems = [], advice, adviceLabel, adviceLang = "en", links, ringLabels = BANDS}){
+  bands = bands || levels?.map((level, i) => ({label: BANDS[i], level}));
   const linkHtml = `<div class="dlinks">${links.join("")}</div>`;
   const areaHtml = `${esc(area)}${near ? ` <span class="near">${esc(near)}</span>` : ""}`;
   if (!top){
@@ -1075,9 +1413,9 @@ function dangerCard({top, levels, area, near, issued, source, problems = [], adv
         <p>Högsta nivån idag i ${areaHtml}. Utfärdad ${issued} av ${esc(source)}.</p>
       </div>
     </div>
-    ${levels ? `<div class="bands">${levels.map((l, i) => `<div class="band">${dangerBox(l)}<span>${BANDS[i]}</span><b>${DANGER[l].n}</b></div>`).join("")}</div>` : ""}
+    ${bands ? `<div class="bands">${bands.map(b => `<div class="band">${dangerBox(b.level)}<span>${esc(b.label)}</span><b>${DANGER[b.level].n}</b></div>`).join("")}</div>` : ""}
     ${probs ? `<div class="probs"><span class="label">Lavinproblem idag</span>${probs}${roseHint}</div>` : ""}
-    ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="en">${esc(advice)}</p></details>` : ""}
+    ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="${adviceLang}">${esc(advice)}</p></details>` : ""}
     ${linkHtml}`;
 }
 const noForecast = text => `<div class="dcard none">${dangerBox(0, true)}<div><b class="dhead-t">Ingen officiell lavinprognos</b><p>${text}</p></div></div>`;
@@ -1088,6 +1426,7 @@ const fmtWhen = (d, tz, withYear) => d.toLocaleString("sv-SE", {timeZone: tz, da
 
 function avalOfficial(r){
   if (r.area === "japan") return avalJapan(r);
+  if (r.area === "alps") return avalAlps(r);
   if (r.country === "Norge") { setTimeout(() => loadVarsom(r), 0); return `<div id="varsom"><div class="msg">Hämtar dagens lavinvarsel från Varsom…</div></div>`; }
   if (r.country === "Sverige") return avalSweden(r);
   return noForecast(`Finland har ingen nationell lavinprognos. Laviner kan ändå gå i branta fjällsluttningar, till exempel i fjällen kring Kilpisjärvi och på de branta delarna av fjällen kring skidorterna. Fråga pistpatrullen innan du åker utanför pisterna.`);
@@ -1127,6 +1466,95 @@ function avalSweden(r){
       .map(p => ({...p, sv: p.name, text: "Läs mer om lavinproblemet i hela prognosen.", grid: p.grid?.map(r => r.map(v => v ? 2 : 0))})),
     advice: bul?.message, adviceLabel: "Dagens huvudbudskap", links: [site],
     ringLabels: ["Kalfjället", "Trädgränsen", "Under trädgränsen"]});
+}
+
+// ---- Alps: EAWS bulletins (CAAML v6), mirrored for every member service at static.avalanche.report.
+// One file per service and day; the resort's micro-region (r.eaws, from tools/assign_eaws.py) picks the bulletin.
+const EAWS_LEVEL = {low: 1, moderate: 2, considerable: 3, high: 4, very_high: 5};
+const EAWS_PROBLEM = {new_snow: "Nysnö", wind_slab: "Vindflak", persistent_weak_layers: "Ihållande svagt lager",
+  wet_snow: "Våt snö", gliding_snow: "Glidsnö", cornices: "Snöhängdor",
+  no_distinct_avalanche_problem: "Inget tydligt lavinproblem", favourable_situation: "Gynnsamt läge"};
+const EAWS_SIZE = ["", "liten", "medelstor", "stor", "mycket stor", "extremt stor"];
+const EAWS_FREQ = {none: "nästan inga platser", few: "enstaka platser", some: "några platser", many: "många platser"};
+const EAWS_ASPECTS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+// Service file per micro-region, its name and the page with the full bulletin
+// Météo-France massifs (EAWS ids FR-01 … FR-23 in the Alps); the French bulletins carry no region names
+const FR_MASSIF = ["", "Chablais", "Aravis", "Mont-Blanc", "Bauges", "Beaufortain", "Haute-Tarentaise", "Chartreuse",
+  "Belledonne", "Maurienne", "Vanoise", "Haute-Maurienne", "Grandes-Rousses", "Thabor", "Vercors", "Oisans", "Pelvoux",
+  "Queyras", "Dévoluy", "Champsaur", "Embrunais-Parpaillon", "Ubaye", "Haut-Var/Haut-Verdon", "Mercantour"];
+const LANG_SV = {en: "engelska", de: "tyska", fr: "franska", it: "italienska"};
+const eawsService = id => /^(CH|FR)/.test(id) ? id.slice(0, 2) : /^IT-32-/.test(id) ? id.slice(0, 8) : id.slice(0, 5);
+const EAWS_SOURCE = {
+  "AT-02": ["Lawinenwarndienst Kärnten", "https://lawinenwarndienst.ktn.gv.at/"],
+  "AT-03": ["Lawinenwarndienst Niederösterreich", "https://www.lawinenwarndienst-niederoesterreich.at/"],
+  "AT-04": ["Lawinenwarndienst Oberösterreich", "https://www.land-oberoesterreich.gv.at/lawinenwarndienst.htm"],
+  "AT-05": ["Lawinenwarndienst Salzburg", "https://lawine.salzburg.at/"],
+  "AT-06": ["Lawinenwarndienst Steiermark", "https://www.lawine-steiermark.at/"],
+  "AT-07": ["Lawinenwarndienst Tirol (Euregio)", "https://avalanche.report/"],
+  "AT-08": ["Lawinenwarndienst Vorarlberg", "https://www.vorarlberg.at/lawine"],
+  "CH": ["SLF", "https://www.slf.ch/en/avalanche-bulletin-and-snow-situation/"],
+  "FR": ["Météo-France", "https://meteofrance.com/meteo-montagne"],
+  "IT-21": ["ARPA Piemonte", "https://www.avalanches.org/"],
+  "IT-23": ["Valle d'Aosta", "https://www.avalanches.org/"],
+  "IT-25": ["ARPA Lombardia", "https://www.avalanches.org/"],
+  "IT-32-BZ": ["Lawinenwarndienst Südtirol (Euregio)", "https://avalanche.report/"],
+  "IT-32-TN": ["Meteotrentino (Euregio)", "https://avalanche.report/"],
+  "IT-34": ["ARPA Veneto", "https://www.avalanches.org/"],
+  "IT-36": ["Friuli Venezia Giulia", "https://www.avalanches.org/"],
+};
+function avalAlps(r){
+  if (!r.eaws) return noForecast(`${esc(r.name)} ligger utanför de europeiska lavinprognosernas regioner. Fråga pistpatrullen om läget innan du åker utanför pisterna.`);
+  setTimeout(() => loadEaws(r), 0);
+  return `<div id="eaws"><div class="msg">Hämtar dagens lavinprognos…</div></div>`;
+}
+const eawsBand = el => el?.lowerBound && el?.upperBound ? `${el.lowerBound === "treeline" ? "trädgränsen" : el.lowerBound + " m"}–${el.upperBound === "treeline" ? "trädgränsen" : el.upperBound + " m"}`
+  : el?.lowerBound ? `Över ${el.lowerBound === "treeline" ? "trädgränsen" : el.lowerBound + " m"}`
+  : el?.upperBound ? `Under ${el.upperBound === "treeline" ? "trädgränsen" : el.upperBound + " m"}` : "Alla höjder";
+const eawsLimit = v => v === "treeline" ? v : +v;
+async function loadEaws(r){
+  const svc = eawsService(r.eaws);
+  const [srcName, srcUrl] = EAWS_SOURCE[svc] || ["EAWS", "https://www.avalanches.org/"];
+  const links = [`<a class="dirbtn" href="${srcUrl}" target="_blank" rel="noopener">Hela prognosen hos ${esc(srcName)} ↗</a>`];
+  const box = html => { if ($("#eaws")) $("#eaws").outerHTML = `<div id="eaws">${html}</div>`; };
+  // Bulletins are named by the day they are valid; tomorrow's comes out around 17:00
+  const day = off => new Date(Date.now() + off * 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Vienna"});
+  let bul = null;
+  try {
+    for (const d of [day(0), day(1)]){
+      const res = await netFetch(`https://static.avalanche.report/eaws_bulletins/${d}/${d}-${svc}.json`);
+      if (!res.ok) continue;
+      const b = ((await res.json()).bulletins || []).find(b => (b.regions || []).some(x => x.regionID === r.eaws));
+      if (b && new Date(b.validTime?.endTime) > Date.now()){ bul = b; break; }
+    }
+  } catch (e){
+    box(`<p class="hint">Kunde inte hämta lavinprognosen (${esc(e.message)}).</p><div class="dlinks">${links.join("")}</div>`);
+    return;
+  }
+  if (!bul){
+    box(dangerCard({top: 0, area: srcName, issued: "", source: srcName, links}));
+    return;
+  }
+  const area = bul.regions.find(x => x.regionID === r.eaws)?.name || (svc === "FR" && FR_MASSIF[+r.eaws.slice(3)]) || srcName;
+  const lang = bul.lang || (svc === "FR" ? "fr" : "en");
+  const ratings = (bul.dangerRatings || []).filter(d => d.validTimePeriod !== "later" || !bul.dangerRatings.some(x => x.validTimePeriod === "earlier"));
+  const top = Math.max(0, ...ratings.map(d => EAWS_LEVEL[d.mainValue] || 0));
+  // Highest terrain first, like the other services
+  const order = el => el?.lowerBound && !el?.upperBound ? 0 : el?.upperBound && !el?.lowerBound ? 2 : 1;
+  const bands = ratings.length > 1 || ratings[0]?.elevation ? [...ratings].sort((a, b) => order(a.elevation) - order(b.elevation))
+    .map(d => ({label: eawsBand(d.elevation), level: EAWS_LEVEL[d.mainValue] || 0})) : null;
+  const problems = (bul.avalancheProblems || []).map(p => {
+    const aspects = EAWS_ASPECTS.map(a => (p.aspects || []).includes(a) ? 2 : 0);
+    const el = p.elevation || {};
+    const height = el.lowerBound && el.upperBound ? {fill: 4, h1: eawsLimit(el.upperBound), h2: eawsLimit(el.lowerBound)}
+      : el.lowerBound ? {fill: 1, h1: eawsLimit(el.lowerBound)} : el.upperBound ? {fill: 2, h1: eawsLimit(el.upperBound)} : null;
+    const facts = [p.avalancheSize && `Lavinstorlek: ${EAWS_SIZE[p.avalancheSize]}`, EAWS_FREQ[p.frequency] && `utbredning: ${EAWS_FREQ[p.frequency]}`].filter(Boolean);
+    return {name: (p.problemType || "").replace(/_/g, " "), sv: EAWS_PROBLEM[p.problemType] || p.problemType, text: facts.length ? facts.join(", ") + "." : "",
+      grid: aspects.some(v => v) ? [aspects] : null, height};
+  });
+  const advice = [bul.avalancheActivity?.highlights, bul.avalancheActivity?.comment, bul.snowpackStructure?.comment].filter(Boolean).join(" ");
+  box(dangerCard({top, bands, area, issued: bul.publicationTime ? fmtWhen(new Date(bul.publicationTime), "Europe/Vienna") : "",
+    source: srcName, problems, advice: advice.replace(/<[^>]+>/g, " "), adviceLang: lang,
+    adviceLabel: `Prognosens huvudbudskap <span class="en">på ${LANG_SV[lang] || lang}</span>`, links}));
 }
 
 async function loadVarsom(r){
@@ -1572,7 +2000,7 @@ async function refreshOverview(){
     const have = areaResorts(area).some(r => state.overview?.[r.id]);
     if (have){ net.fallback = true; showNet(); }
     $("#updated").textContent = have ? "Visar sparad data, kunde inte uppdatera" : "";
-    if (!have && $("#list")) $("#list").innerHTML = `<div class="msg err">Kunde inte hämta snödata (${esc(e.message)}). Kontrollera uppkopplingen och ladda om sidan.</div>`;
+    if (!have && !location.hash && area === state.area) listWithoutSnow(`Kunde inte hämta snödata (${esc(e.message)}). Orterna visas utan snö – försök igen senare med Uppdatera.`);
   }
 }
 </script>

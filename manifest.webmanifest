@@ -1,7 +1,7 @@
 {
   "name": "Yuki Radar",
   "short_name": "Yuki Radar",
-  "description": "Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidresan i Japan och Skandinavien.",
+  "description": "Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidresan i Japan, Skandinavien och Alperna.",
   "lang": "sv",
   "id": "./",
   "start_url": "./",
