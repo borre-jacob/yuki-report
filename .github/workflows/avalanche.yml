@@ -1,5 +1,5 @@
 # Fetch the latest Japan Avalanche Network bulletins each morning (Japan time) and
-# embed them in index.html. GitHub Pages republishes the app after the commit.
+# embed them in index.html. The workflow "Publicera appen" then republishes the app.
 name: Uppdatera lavinprognos
 
 on:

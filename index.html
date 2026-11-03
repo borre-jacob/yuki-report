@@ -936,12 +936,32 @@ const state = {
 state.region = store.get("yr-region-" + state.area) || "all";
 
 // ---------- Overview data (one request for all resorts in the chosen area) ----------
+// Snow for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_snow.py, workflow "Publicera appen").
+// Used while under CENTRAL_MAX_AGE old; otherwise the app asks Open-Meteo itself as before.
+const CENTRAL_MAX_AGE = 4 * 3600e3;
+async function centralSnow(area, list){
+  try {
+    const res = await netFetch(`data/snow/${area}.json`);
+    if (!res.ok) return null;
+    const c = await res.json();
+    const at = new Date(c.at);
+    if (!(Date.now() - at < CENTRAL_MAX_AGE) || !list.every(r => c.resorts[r.id])) return null;
+    // Back to Open-Meteo's own shape, so the rest of loadOverview() works the same for both sources
+    const hours = start => { const t0 = Date.parse(start + ":00Z");
+      return n => Array.from({length: n}, (_, i) => new Date(t0 + i * 3600e3).toISOString().slice(0, 16)); };
+    const arr = list.map(r => { const d = c.resorts[r.id];
+      return {utc_offset_seconds: d.utc_offset_seconds, daily: d.daily,
+              hourly: {time: hours(d.start)(d.snowfall.length), snowfall: d.snowfall}}; });
+    return {part: list, arr, cachedAt: at};
+  } catch { return null; }
+}
 async function loadOverview(){
   const area = state.area, list = areaResorts(area);
+  const central = await centralSnow(area, list);
   // Open-Meteo takes many places per request; keep each one to 100 (URL length, fair use)
   const parts = [];
-  for (let i = 0; i < list.length; i += 100) parts.push(list.slice(i, i + 100));
-  const answers = await Promise.all(parts.map(async part => {
+  if (!central) for (let i = 0; i < list.length; i += 100) parts.push(list.slice(i, i + 100));
+  const answers = central ? [central] : await Promise.all(parts.map(async part => {
     const p = new URLSearchParams({
       latitude: part.map(r => r.lat).join(","),
       longitude: part.map(r => r.lon).join(","),

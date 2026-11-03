@@ -1,0 +1,48 @@
+# Publish the app on GitHub Pages, with the snow forecast for every resort fetched once for all users.
+# Runs on every push to main, every 3 hours (fresh snow data) and after the daily avalanche update.
+# The snow files are published with the app but never committed, so the repo does not grow.
+# Needs Settings → Pages → Source: "GitHub Actions".
+name: Publicera appen
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "15 */3 * * *"
+  workflow_run:
+    workflows: ["Uppdatera lavinprognos"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Hämta snödata för alla orter
+        run: |
+          mkdir -p data/snow
+          # Start from the published files, so an area whose fetch fails keeps its last forecast
+          for area in japan scandinavia alps; do
+            curl -sSf "${{ steps.pages.outputs.base_url }}/data/snow/$area.json" -o "data/snow/$area.json" || rm -f "data/snow/$area.json"
+          done
+          python3 tools/fetch_snow.py index.html data/snow
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

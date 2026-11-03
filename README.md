@@ -18,11 +18,13 @@ Service workern ligger i `sw.js`. Höj `VERSION` där när `sw.js`, ikonerna ell
 
 ## Datakällor
 
-- Väder: [Open-Meteo](https://open-meteo.com/), hämtas live när sidan öppnas.
+- Väder: [Open-Meteo](https://open-meteo.com/). Snön för alla orter i översikten hämtas centralt var tredje timme av GitHub Actions (`.github/workflows/pages.yml` kör `tools/fetch_snow.py`) och publiceras som `data/snow/<område>.json` tillsammans med appen, utan att committas. Antalet anrop blir då detsamma hur många som än använder appen. Är filen äldre än 4 timmar hämtar appen direkt från Open-Meteo. Detaljsidan för en ort hämtar alltid live.
 - Lavinprognos Norge: [Varsom](https://www.varsom.no/) (NVE), hämtas live i appen.
 - Lavinprognos Alperna: de nationella och regionala lavintjänsterna (bl.a. SLF, Météo-France, Euregio/avalanche.report, AINEVA-regionerna) via [EAWS](https://www.avalanches.org/), som speglas på static.avalanche.report. Hämtas live i appen; varje ort är kopplad till sin prognosregion med `tools/assign_eaws.py`.
 - Lavinprognos Sverige: [lavinprognoser.se](https://www.lavinprognoser.se/) (Naturvårdsverket), hämtas varje morgon tillsammans med JAN.
 - Lavinprognos Japan: [Japan Avalanche Network](https://data.nadare.jp/avalanche_informations?locale=en). Hämtas varje morgon av GitHub Actions (`.github/workflows/avalanche.yml`) och byggs in i `index.html`.
+
+Appen publiceras av arbetsflödet "Publicera appen" (`.github/workflows/pages.yml`), som kräver att Settings → Pages → Source är satt till "GitHub Actions".
 - Liftar, onsen, toaletter och parkering: [OpenStreetMap](https://www.openstreetmap.org/copyright) via Overpass API. Datan ligger i en fil per ort i `data/osm/places/` som appen hämtar när man öppnar orten. Service workern sparar orterna för användning utan täckning: små områden automatiskt, större med knappen "Spara offline".
 - Karta: [OpenFreeMap](https://openfreemap.org/), eller Google Maps om du lägger in en egen API-nyckel under "Kartinställning" längst ner på sidan.
 

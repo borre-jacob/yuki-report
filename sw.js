@@ -3,13 +3,14 @@
      network-first so the daily avalanche update is picked up.
    - Lifts and facilities per resort (data/osm/places/): stale-while-revalidate. A resort is kept once it
      has been opened, and the app's "Spara offline" button fetches a whole area.
-   - Open-Meteo and Varsom: network-first, falling back to the last cached answer.
+   - Snow for all resorts (data/snow/, fetched centrally every 3 hours), Open-Meteo and Varsom: network-first,
+     falling back to the last cached answer.
    - Overpass (OpenStreetMap): stale-while-revalidate.
    - OpenFreeMap: style, fonts and sprites stale-while-revalidate; visited map tiles are kept,
      at most TILE_MAX of them (oldest removed first).
    - Google Maps tiles and scripts are never cached (Google's terms): they go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v4";
+const VERSION = "v5";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";
@@ -72,6 +73,7 @@ self.addEventListener("fetch", e => {
 
   if (req.mode === "navigate") return e.respondWith(page(req));
   if (url.origin === location.origin && url.pathname.includes("/data/osm/places/")) return e.respondWith(staleWhileRevalidate(req, PLACES));
+  if (url.origin === location.origin && url.pathname.includes("/data/snow/")) return e.respondWith(networkFirst(req, DATA));
   if (url.origin === location.origin) return e.respondWith(cacheFirst(req, SHELL));
   if (h === "api.open-meteo.com" || h === "api01.nve.no") return e.respondWith(networkFirst(req, DATA));
   if (/overpass/.test(h) || url.pathname.includes("/overpass/")) return e.respondWith(staleWhileRevalidate(req, DATA));
