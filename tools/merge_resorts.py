@@ -46,7 +46,7 @@ taken = set(re.findall(r'\{id:"(\w+)"', open("index.html", encoding="utf-8").rea
 ids = taken | {r["id"] for r in rows}
 for r in new:
     name = r["name"].title() if r["name"].isupper() else r["name"]
-    name = PREFIX.sub("", name).strip() or name
+    name = PREFIX.sub("", name.replace("\u200b", "")).strip() or name  # OSM names can hold zero-width spaces
     i = base = slug(name)
     n = 2
     while i in ids:

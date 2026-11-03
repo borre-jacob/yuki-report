@@ -1,7 +1,7 @@
 """Fetch ski lift lines around every resort.
 
-Usage: python3 tools/fetch_lifts.py index.html data/osm/lifts.json
-Resorts already in data/osm/lifts.json with lifts are kept; the rest are fetched in groups of 20
+Usage: python3 tools/fetch_lifts.py index.html data/osm/lifts.json [resorts per query, default 20]
+Resorts already in data/osm/lifts.json with lifts are kept; the rest are fetched in groups (20 unless given; fewer when the servers are busy)
 (one Overpass query for all resorts at once is too big for the servers).
 """
 import json, math, os, re, subprocess, sys, time
@@ -31,9 +31,10 @@ def fetch(group):
     return None
 
 
+GROUP = int(sys.argv[3]) if len(sys.argv) > 3 else 20
 todo.sort(key=lambda r: (round(r[1]), r[2]))
-for n in range(0, len(todo), 20):
-    group = todo[n:n + 20]
+for n in range(0, len(todo), GROUP):
+    group = todo[n:n + GROUP]
     els = fetch(group)
     if els is None:
         print("group failed:", [g[0] for g in group], file=sys.stderr); continue

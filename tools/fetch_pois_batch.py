@@ -1,6 +1,6 @@
 """Fetch facilities for many resorts at once (groups of nearby resorts per Overpass query).
 
-Usage: python3 tools/fetch_pois_batch.py index.html data/osm/pois.json
+Usage: python3 tools/fetch_pois_batch.py index.html data/osm/pois.json [resorts per query, default 8]
 Same output rows as tools/fetch_pois.py; resorts already in data/osm/pois.json are skipped.
 Radii: toilets 12 km, saunas/baths and overnight places 30 km, car parks 4 km.
 """
@@ -13,6 +13,7 @@ resorts = [(i, float(a), float(b)) for i, a, b in
 result = json.load(open(out_path, encoding="utf-8")) if os.path.exists(out_path) else {}
 todo = [r for r in resorts if r[0] not in result]
 URLS = ["https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass-api.de/api/interpreter"]
+PER_QUERY = int(sys.argv[3]) if len(sys.argv) > 3 else 8  # fewer when the servers are busy and time out
 UA = "YukiRadar/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
 
 # Reuse the classification rules from fetch_pois.py
@@ -43,10 +44,10 @@ def query(group):
     return None
 
 
-# Group nearby resorts (greedy, within ~60 km, at most 8 per query)
+# Group nearby resorts (greedy, within ~60 km, at most PER_QUERY per query)
 groups = []
 for r in sorted(todo, key=lambda r: (round(r[1]), r[2])):
-    g = next((g for g in groups if len(g) < 8 and dist(g[0][1], g[0][2], r[1], r[2]) < 60), None)
+    g = next((g for g in groups if len(g) < PER_QUERY and dist(g[0][1], g[0][2], r[1], r[2]) < 60), None)
     (g.append(r) if g else groups.append([r]))
 print(len(todo), "resorts in", len(groups), "queries", file=sys.stderr)
 
