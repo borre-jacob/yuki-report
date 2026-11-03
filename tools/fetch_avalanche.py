@@ -11,7 +11,7 @@ import html, json, re, subprocess, sys, time
 AREAS = [2, 3, 4, 6, 7, 1]  # Hakuba, Myoko, Kagura/Tanigawa/Hotaka, SW Hokkaido, Central Hokkaido, Tateyama
 BASE = "https://data.nadare.jp"
 LEVEL = {"No rating": 0, "Low": 1, "Moderate": 2, "Considerable": 3, "High": 4, "Extreme": 5}
-UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
+UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-report)"
 
 
 def get(url):

@@ -14,7 +14,7 @@ result = json.load(open(out_path, encoding="utf-8")) if os.path.exists(out_path)
 todo = [r for r in resorts if r[0] not in result]
 URLS = ["https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass-api.de/api/interpreter"]
 PER_QUERY = int(sys.argv[3]) if len(sys.argv) > 3 else 8  # fewer when the servers are busy and time out
-UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
+UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-report)"
 
 # Reuse the classification rules from fetch_pois.py
 src = open(os.path.join(os.path.dirname(__file__), "fetch_pois.py"), encoding="utf-8").read()

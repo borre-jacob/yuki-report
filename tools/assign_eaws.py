@@ -9,7 +9,7 @@ import json, math, subprocess, sys, time
 
 REGIONS = ["AT-02", "AT-03", "AT-04", "AT-05", "AT-06", "AT-07", "AT-08", "CH", "FR",
            "IT-21", "IT-23", "IT-25", "IT-32-BZ", "IT-32-TN", "IT-34", "IT-36"]
-UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
+UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-report)"
 
 
 def get(url):
