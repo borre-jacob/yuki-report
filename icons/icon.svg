@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <!-- Yuki Radar: a snow-capped mountain drawn as a line chart -->
+  <!-- Yuki Report: a snow-capped mountain drawn as a line chart -->
   <rect width="512" height="512" rx="112" fill="#14213a"/>
   <g transform="translate(78.7 85.6) scale(0.394)">
     <path d="M40 110 V820 H805" fill="none" stroke="#ffffff" stroke-width="38" stroke-linecap="round" stroke-linejoin="miter"/>

@@ -1,4 +1,4 @@
-# Yuki Radar
+# Yuki Report
 
 Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidresor med husbil i **Japan**, **Skandinavien** (Sverige, Norge, Finland) och **Alperna** (Österrike, Schweiz, Frankrike, Italien).
 
@@ -9,7 +9,7 @@ Appen är `index.html`, med platsdata per ort i `data/osm/places/`. Kör den med
 
 ## Installera som app
 
-Yuki Radar är en PWA och fungerar offline: prognoser, lavinläge och kartdelar som du redan har tittat på finns kvar utan täckning (med en gul banner "Offline – visar senast hämtade data").
+Yuki Report är en PWA och fungerar offline: prognoser, lavinläge och kartdelar som du redan har tittat på finns kvar utan täckning (med en gul banner "Offline – visar senast hämtade data").
 
 - **iPhone:** öppna sidan i Safari → Dela → *Lägg till på hemskärmen*.
 - **Android:** öppna sidan i Chrome → menyn ⋮ → *Installera app*.

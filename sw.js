@@ -1,4 +1,4 @@
-/* Yuki Radar service worker: makes the app work offline.
+/* Yuki Report service worker: makes the app work offline.
    - App files (index.html, manifest, icons) and the map libraries are precached. The page itself is
      network-first so the daily avalanche update is picked up.
    - Lifts and facilities per resort (data/osm/places/): stale-while-revalidate. A resort is kept once it

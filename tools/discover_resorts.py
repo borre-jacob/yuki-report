@@ -13,7 +13,7 @@ Vosges and Apennines). --min-vert / --min-lifts change the size filter; --top ke
 """
 import argparse, json, math, os, subprocess, sys, time
 
-UA = "YukiRadar/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
+UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
 OVERPASS = ["https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass-api.de/api/interpreter"]
 KINDS = "chair_lift|gondola|cable_car|mixed_lift|drag_lift|t-bar|j-bar|platter"
 ap = argparse.ArgumentParser()

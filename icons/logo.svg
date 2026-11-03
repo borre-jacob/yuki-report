@@ -1,9 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 870">
-  <!-- Yuki Radar logo without background: dark lines on light backgrounds, white on dark -->
-  <style>
-    .ink-s{stroke:#14213a} .ink-f{fill:#14213a}
-    @media (prefers-color-scheme:dark){.ink-s{stroke:#ffffff} .ink-f{fill:#ffffff}}
-  </style>
+  <!-- Yuki Report logo without background: dark blue, for white and light backgrounds -->
+  <style>.ink-s{stroke:#14213a} .ink-f{fill:#14213a}</style>
     <path d="M40 110 V820 H805" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="miter"/>
     <path d="M40 575 L148 428 L215 480 L330 275 L408 365 L525 45 L615 335 L685 280 L860 585" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M472 210 L525 45 L585 215 L560 232 L520 275 L480 230 Z M300 355 L330 275 L370 330 L355 345 L322 405 L295 380 Z M660 300 L685 280 L715 320 L712 368 L692 385 L668 330 Z" class="ink-f"/>

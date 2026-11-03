@@ -8,7 +8,7 @@ out.json: same rows with lat/lon moved to the centre of the lifts within 5 km,
 import json, subprocess, sys, time
 
 KINDS = "chair_lift|gondola|cable_car|mixed_lift|drag_lift|t-bar|j-bar|platter|rope_tow"
-UA = "YukiRadar/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
+UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
 OVERPASS = ["https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass-api.de/api/interpreter"]
 
 

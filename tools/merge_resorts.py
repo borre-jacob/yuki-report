@@ -8,7 +8,7 @@ Ids never clash with resorts already in index.html.
 """
 import json, os, re, subprocess, sys, time, unicodedata
 
-UA = "YukiRadar/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
+UA = "YukiReport/1.0 (personal ski trip app; github.com/borre-jacob/yuki-radar)"
 COUNTRY = {"no": "Norge", "se": "Sverige", "fi": "Finland",
            "at": "Österrike", "ch": "Schweiz", "fr": "Frankrike", "it": "Italien"}
 SKIP = re.compile(r"hopp|skiklubb|sprungschanze|tremplin|trampolino", re.I)

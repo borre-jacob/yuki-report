@@ -22,7 +22,7 @@ def dist(a, b, c, d):
 def fetch(group):
     q = "[out:json][timeout:170];(" + "".join(f'way["aerialway"~"^({KINDS})$"](around:7000,{la},{lo});' for _, la, lo in group) + ");out geom tags;"
     for attempt in range(6):
-        r = subprocess.run(["curl", "-s", "-m", "200", "-A", "YukiRadar/1.0 (personal ski trip planner)", URLS[attempt % 2],
+        r = subprocess.run(["curl", "-s", "-m", "200", "-A", "YukiReport/1.0 (personal ski trip planner)", URLS[attempt % 2],
                             "--data-urlencode", "data=" + q], capture_output=True, text=True)
         try:
             return json.loads(r.stdout)["elements"]

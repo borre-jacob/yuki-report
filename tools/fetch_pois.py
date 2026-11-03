@@ -53,7 +53,7 @@ nwr["amenity"="parking"](around:4000,{lat},{lon}););out center tags;'''
     data = None
     for attempt in range(4):
         url = URLS[attempt % len(URLS)]
-        r = subprocess.run(["curl", "-s", "-m", "120", "-A", "YukiRadar/1.0 (personal ski trip planner)", url, "--data-urlencode", "data=" + q], capture_output=True, text=True)
+        r = subprocess.run(["curl", "-s", "-m", "120", "-A", "YukiReport/1.0 (personal ski trip planner)", url, "--data-urlencode", "data=" + q], capture_output=True, text=True)
         try:
             data = json.loads(r.stdout); break
         except Exception:
