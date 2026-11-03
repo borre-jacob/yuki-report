@@ -1,14 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="44 66 424 352">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 870">
   <!-- Yuki Radar logo without background: dark lines on light backgrounds, white on dark -->
   <style>
-    .arc{stroke:#2f6fd6} .ink-s{stroke:#14213a} .ink-f{fill:#14213a}
-    @media (prefers-color-scheme:dark){.arc{stroke:#6ea3ff} .ink-s{stroke:#ffffff} .ink-f{fill:#ffffff}}
+    .ink-s{stroke:#14213a} .ink-f{fill:#14213a}
+    @media (prefers-color-scheme:dark){.ink-s{stroke:#ffffff} .ink-f{fill:#ffffff}}
   </style>
-    <path d="M239.4 165.9 A60 60 0 0 1 328.6 165.9" fill="none" class="arc" stroke-width="22" stroke-linecap="round"/>
-    <path d="M200.8 131.1 A112 112 0 0 1 367.2 131.1" fill="none" class="arc" stroke-width="22" stroke-linecap="round" opacity=".6"/>
-    <g transform="translate(343.4 111) scale(.44) translate(-343.4 -111)">
-    <path d="M343.4 86.0 L343.4 136.0 M365.1 98.5 L321.7 123.5 M365.1 123.5 L321.7 98.5" fill="none" class="ink-s" stroke-width="13" stroke-linecap="round"/>
-    </g>
-    <path d="M60 400 L176 270 L222 318 L284 206 L452 400" fill="none" class="ink-s" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M284 206 L356.7 290 L330.5 280 L309.0 298 L285.2 280 L261.3 296 L237.5 290 ZM176 270 L214.3 310 L198.0 300 L184.7 318 L169.9 300 L155.1 316 L140.3 310 Z" class="ink-f" class="ink-s" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M40 110 V820 H805" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="miter"/>
+    <path d="M40 575 L148 428 L215 480 L330 275 L408 365 L525 45 L615 335 L685 280 L860 585" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M472 210 L525 45 L585 215 L560 232 L520 275 L480 230 Z M300 355 L330 275 L370 330 L355 345 L322 405 L295 380 Z M660 300 L685 280 L715 320 L712 368 L692 385 L668 330 Z" class="ink-f"/>
 </svg>
