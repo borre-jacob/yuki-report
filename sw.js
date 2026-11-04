@@ -1,5 +1,5 @@
 /* Yuki Report service worker: makes the app work offline.
-   - App files (index.html, manifest, icons) and the map libraries are precached. The page itself is
+   - App files (index.html, privacy page, manifest, icons, fonts) and the map libraries are precached. The page itself is
      network-first so the daily avalanche update is picked up.
    - Lifts and facilities per resort (data/osm/places/): stale-while-revalidate. A resort is kept once it
      has been opened, and the app's "Spara offline" button fetches a whole area.
@@ -10,15 +10,14 @@
      at most TILE_MAX of them (oldest removed first).
    - Google Maps tiles and scripts are never cached (Google's terms): they go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v6";
+const VERSION = "v7";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";
 const MAPMETA = "yuki-map-meta";
 const TILES = "yuki-tiles";
-const FONTS = "yuki-fonts";
 const PLACES = "yuki-places";
-const KEEP = [SHELL, LIBS, DATA, MAPMETA, TILES, FONTS, PLACES];
+const KEEP = [SHELL, LIBS, DATA, MAPMETA, TILES, PLACES];  // others (e.g. the old Google Fonts cache) are removed
 const TILE_MAX = 1500;
 const NET_TIMEOUT = 8000;
 
@@ -26,6 +25,19 @@ const SHELL_FILES = [
   "./", "index.html", "manifest.webmanifest",
   "icons/icon.svg", "icons/logo.svg", "icons/icon-192.png", "icons/icon-512.png",
   "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png",
+  "integritet.html", "fonts/fonts.css",
+  "fonts/ibm-plex-mono-400-latin-ext.woff2",
+  "fonts/ibm-plex-mono-400-latin.woff2",
+  "fonts/ibm-plex-mono-500-latin-ext.woff2",
+  "fonts/ibm-plex-mono-500-latin.woff2",
+  "fonts/ibm-plex-sans-latin-ext.woff2",
+  "fonts/ibm-plex-sans-latin.woff2",
+  "fonts/zen-kaku-gothic-new-500-latin-ext.woff2",
+  "fonts/zen-kaku-gothic-new-500-latin.woff2",
+  "fonts/zen-kaku-gothic-new-700-latin-ext.woff2",
+  "fonts/zen-kaku-gothic-new-700-latin.woff2",
+  "fonts/zen-kaku-gothic-new-900-latin-ext.woff2",
+  "fonts/zen-kaku-gothic-new-900-latin.woff2",
 ];
 // Versioned URLs, so they never change: cache-first
 const LIB_FILES = [
@@ -60,9 +72,8 @@ self.addEventListener("message", e => {
   if (e.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-// Google Maps (tiles, scripts, images) — but not Google Fonts, which may be cached
-const isGoogleMaps = h => /(^|\.)(google\.[a-z.]+|googleapis\.com|gstatic\.com|ggpht\.com|googleusercontent\.com)$/.test(h)
-  && !/^fonts\.(googleapis|gstatic)\.com$/.test(h);
+// Google Maps (tiles, scripts, images)
+const isGoogleMaps = h => /(^|\.)(google\.[a-z.]+|googleapis\.com|gstatic\.com|ggpht\.com|googleusercontent\.com)$/.test(h);
 
 self.addEventListener("fetch", e => {
   const req = e.request;
@@ -80,7 +91,6 @@ self.addEventListener("fetch", e => {
   if (h === "tiles.openfreemap.org"){
     return e.respondWith(/\.pbf$/.test(url.pathname) ? tile(req, e) : staleWhileRevalidate(req, MAPMETA));
   }
-  if (/^fonts\.(googleapis|gstatic)\.com$/.test(h)) return e.respondWith(staleWhileRevalidate(req, FONTS));
   if (["cdnjs.cloudflare.com", "cdn.jsdelivr.net", "unpkg.com"].includes(h)) return e.respondWith(cacheFirst(req, LIBS));
 });
 

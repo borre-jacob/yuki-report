@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Integritetspolicy för Yuki Report: appen samlar inte in några personuppgifter.">
+<title>Integritet – Yuki Report</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonts/fonts.css">
+<script>try{var t=localStorage.getItem("yr-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{
+  --bg:#f3f6f9; --surface:#ffffff; --ink:#14213a; --muted:#5b6b82; --line:#d9e1ea; --snow:#2f6fd6;
+  --display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a; --snow:#6ea3ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a; --snow:#6ea3ff; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);
+  padding:24px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:720px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px clamp(16px,4vw,36px)}
+h1,h2{font-family:var(--display);line-height:1.25;text-wrap:balance}
+h1{font-size:28px;margin:0 0 4px}
+h2{font-size:18px;margin:28px 0 6px}
+p,ul{margin:0 0 10px}
+ul{padding-left:20px}
+li{margin-bottom:4px}
+a{color:var(--snow)}
+.muted{color:var(--muted);font-size:13px}
+.back{display:inline-block;margin-bottom:16px}
+.lead{font-size:17px}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← Till Yuki Report</a>
+  <h1>Integritet</h1>
+  <p class="muted">Gäller från 4 november 2026</p>
+
+  <p class="lead"><b>Yuki Report samlar inte in några personuppgifter.</b> Appen har inga konton, inga kakor, ingen
+    statistik eller spårning och inga annonser, och den frågar aldrig efter din position.</p>
+
+  <h2>Det som sparas i din egen enhet</h2>
+  <p>För att appen ska gå snabbt och fungera offline sparar den några saker i webbläsarens lokala lagring på din
+    telefon eller dator. Inget av det skickas till oss.</p>
+  <ul>
+    <li>Dina val: ljust eller mörkt läge, vilket område och vilken region du tittade på senast och visningsläge.</li>
+    <li>Senast hämtade snöprognos och tidpunkten den hämtades.</li>
+    <li>Kartbitar, liftar och platser för de orter du öppnat eller sparat offline.</li>
+    <li>Om du själv lagt in en Google Maps-nyckel: nyckeln.</li>
+  </ul>
+  <p>Du tar bort allt genom att rensa webbplatsdata för sidan i webbläsarens inställningar, eller genom att ta bort
+    appen från hemskärmen.</p>
+
+  <h2>Tjänster som appen hämtar data från</h2>
+  <p>Appen hämtar prognoser, kartor och programbibliotek direkt från tjänsterna nedan. Som vid allt surfande ser de
+    din IP-adress och vilken webbläsare du använder när din enhet hämtar något. Vi får inte del av den informationen.
+    Varje tjänst har sin egen integritetspolicy.</p>
+  <ul>
+    <li><a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub Pages</a>: lagrar själva appen och snöprognoserna.</li>
+    <li><a href="https://open-meteo.com/en/terms" rel="noopener">Open-Meteo</a>: väderprognoserna, framför allt när du öppnar en ort.</li>
+    <li><a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a>: kartan.</li>
+    <li>Lavinprognoser: <a href="https://www.varsom.no/" rel="noopener">Varsom (NVE)</a> för Norge och
+      <a href="https://avalanche.report/" rel="noopener">avalanche.report</a> (EAWS) för Alperna. Prognoserna för Japan och Sverige
+      ligger redan i appen.</li>
+    <li>Programbibliotek för kartan från <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cdnjs (Cloudflare)</a>,
+      <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net" rel="noopener">jsDelivr</a> och
+      <a href="https://unpkg.com/" rel="noopener">unpkg</a>.</li>
+    <li><a href="https://policies.google.com/privacy" rel="noopener">Google Maps</a>: bara om du själv har lagt in en
+      Google Maps-nyckel, eller när du trycker på en vägbeskrivning och lämnar appen.</li>
+  </ul>
+  <p>Typsnitten ligger hos oss och hämtas inte från Google.</p>
+
+  <h2>Ansvar för innehållet</h2>
+  <p>Yuki Report är en privat hobbyapp och ingen officiell källa. Snö-, väder- och lavininformationen hämtas
+    automatiskt och kan vara fel eller inaktuell. Läs alltid den officiella lavinprognosen och fråga på plats innan
+    du åker utanför pisterna.</p>
+
+  <h2>Kontakt</h2>
+  <p>Appen drivs av Jacob Borre. Frågor om integritet eller appen kan ställas via
+    <a href="https://github.com/borre-jacob/yuki-report/issues" rel="noopener">GitHub</a>.
+    Ändras policyn uppdateras den här sidan och datumet ovan.</p>
+
+  <h2 lang="en">In English</h2>
+  <p lang="en">Yuki Report collects no personal data: no accounts, cookies, analytics, ads or location. Settings and
+    downloaded forecasts and maps are stored only on your device, and you can remove them by clearing the site data.
+    The app loads data directly from the services listed above (GitHub Pages, Open-Meteo, OpenFreeMap, Varsom,
+    avalanche.report, cdnjs, jsDelivr, unpkg, and Google Maps only if you add your own key), which see your IP address
+    as with any web request. Questions: <a href="https://github.com/borre-jacob/yuki-report/issues" rel="noopener">GitHub</a>.</p>
+</main>
+</body>
+</html>

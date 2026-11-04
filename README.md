@@ -14,7 +14,7 @@ Yuki Report är en PWA och fungerar offline: prognoser, lavinläge och kartdelar
 - **iPhone:** öppna sidan i Safari → Dela → *Lägg till på hemskärmen*.
 - **Android:** öppna sidan i Chrome → menyn ⋮ → *Installera app*.
 
-Service workern ligger i `sw.js`. Höj `VERSION` där när `sw.js`, ikonerna eller manifestet ändras. Då visar appen "Ny version finns – ladda om". Ändringar i `index.html` kommer med automatiskt.
+Service workern ligger i `sw.js`. Höj `VERSION` där när `sw.js`, ikonerna, typsnitten, `integritet.html` eller manifestet ändras. Då visar appen "Ny version finns – ladda om". Ändringar i `index.html` kommer med automatiskt.
 
 ## Datakällor
 
@@ -60,6 +60,10 @@ python3 tools/inject_avalanche.py index.html data/avalanche.json
 
 `fetch_pois.py` hoppar över orter som redan finns i `data/osm/pois.json`. Ta bort filen för att hämta allt på nytt. Overpass-servrarna är ofta överbelastade, så räkna med att det tar en stund.
 
+## Integritet
+
+Appen samlar inte in några personuppgifter. Integritetspolicyn ligger i [`integritet.html`](integritet.html) och länkas från sidfoten. Uppdatera den om appen börjar använda en ny extern tjänst.
+
 ## Licens och källor
 
 © 2026 Jacob Borre.
@@ -68,5 +72,6 @@ python3 tools/inject_avalanche.py index.html data/avalanche.json
 - **OpenStreetMap-data** (orter, liftar, onsen, toaletter, parkering) ligger i [`data/osm/`](data/osm/) (källfiler och en fil per ort i `places/`). Den är © OpenStreetMap-bidragsgivare och licensierad under [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), inte MIT. Se [data/osm/README.md](data/osm/README.md).
 - **Väder** från [Open-Meteo](https://open-meteo.com/) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - **Kartstil och kartrutor** från [OpenFreeMap](https://openfreemap.org/) (© OpenMapTiles, © OpenStreetMap-bidragsgivare).
-- **Lavinprognoser** från Japan Avalanche Network, Varsom (NVE) och Naturvårdsverket (lavinprognoser.se). Texterna tillhör respektive utgivare.
+- **Lavinprognoser** från Japan Avalanche Network, Varsom (NVE), Naturvårdsverket (lavinprognoser.se) och de europeiska lavinvarningstjänsterna i [EAWS](https://www.avalanches.org/). Texterna tillhör respektive utgivare.
+- **Typsnitten** IBM Plex Sans, IBM Plex Mono och Zen Kaku Gothic New ligger i [`fonts/`](fonts/) (bara latinska tecken) och är licensierade under SIL Open Font License 1.1, se licensfilerna där. De hämtas inte från Google Fonts, så inga besökares IP-adresser skickas dit.
 - **Google Maps** används bara med användarens egen API-nyckel. Kartrutor och skript från Google cachas aldrig av appen.

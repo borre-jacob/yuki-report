@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Yuki Report</title>
 <script>/* Chosen light/dark theme, set before the page paints */try{var t=localStorage.getItem("yr-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
@@ -221,6 +221,7 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
 .pill{display:inline-block;text-align:center;font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;border:1px solid var(--c);color:var(--c)}
 .pill.ok{--c:var(--toilet)} .pill.warn{--c:var(--warn)} .pill.bad{--c:var(--lift);background:var(--lift);color:#fff}
 .hint.caution{border-left:3px solid var(--warn);padding-left:10px}
+.panel .aval-note{margin-top:12px}
 .scale summary{cursor:pointer;font-size:14px;font-weight:600}
 .scale-list{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--muted)}
 .scale-list li{display:flex;gap:10px;align-items:flex-start}
@@ -256,8 +257,13 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
       Orter, liftar, onsen, toaletter och parkering: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-bidragsgivare</a>
       (<a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>).
       Kartstil: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>.
-      Lavinprognoser: Japan Avalanche Network, Varsom (NVE) och Naturvårdsverket.
+      Lavinprognoser: Japan Avalanche Network, Varsom (NVE), Naturvårdsverket och de europeiska lavinvarningstjänsterna i
+      <a href="https://www.avalanches.org/" target="_blank" rel="noopener">EAWS</a>.
       Koordinater för orterna är ungefärliga.</p>
+    <p class="src"><b>Ansvar:</b> Yuki Report är en privat hobbyapp och ingen officiell källa. Snö-, väder- och lavininformationen
+      kommer från källorna ovan, hämtas automatiskt och kan vara fel eller inaktuell. Kontrollera alltid den officiella
+      lavinprognosen och fråga på plats innan du åker utanför pisterna.
+      <a href="integritet.html">Integritet: appen samlar inte in några personuppgifter</a>.</p>
     <details class="gset" id="gset">
       <summary>Kartinställning: <span id="gstatus">OpenFreeMap</span></summary>
       <p>För att visa Google Maps i appen behövs en egen API-nyckel från Google (gratis upp till en generös månadsgräns, men kräver ett betalkort i Google Cloud).
@@ -1224,6 +1230,7 @@ async function renderDetail(id){
       <div class="panel" id="aval">
         <h3>Lavinläge</h3>
         ${avalOfficial(r)}
+        <p class="hint caution aval-note"><b>Läs alltid hela prognosen hos källan.</b> Den hämtas automatiskt och visas här förkortad. Den kan vara inaktuell eller ofullständig, och den gäller ett helt område, inte den enskilda sluttningen. Bedöm terrängen själv och bär sändare, sond och spade utanför pisterna. Du ansvarar själv för dina beslut i fjällen.</p>
         <details class="scale"><summary>Vad betyder färgerna och nivåerna?</summary>${AVAL_SCALE}</details>
         <div id="avalsignals"><div class="msg">Räknar på vädret…</div></div>
       </div>
