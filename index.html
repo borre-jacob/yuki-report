@@ -100,6 +100,8 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);
   border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;text-align:left;width:100%}
 .row:hover{border-color:var(--snow)}
+.more{border:1px dashed var(--line);background:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600;color:var(--snow)}
+.more:hover{border-color:var(--snow)}
 .rank{font-family:var(--mono);color:var(--muted);font-size:13px}
 .row .name{font-weight:600;font-size:15px;overflow-wrap:anywhere}
 .row .info{display:flex;flex-direction:column;min-width:0}
@@ -1036,7 +1038,7 @@ function renderOverview(){
     </div>`;
   $("#m-past").onclick = () => setMode("past");
   $("#m-fut").onclick = () => setMode("fut");
-  $("#region").onchange = e => { state.region = e.target.value; store.set("yr-region-" + state.area, state.region); renderOverview(); };
+  $("#region").onchange = e => { state.region = e.target.value; state.showAll = false; store.set("yr-region-" + state.area, state.region); renderOverview(); };
   document.querySelectorAll("[data-area]").forEach(b => b.onclick = () => setArea(b.dataset.area));
   showOfflineButton(state.area, true);
 
@@ -1053,10 +1055,28 @@ function renderOverview(){
   }).addTo(overviewMap);
   fillOverview();
 }
-function setMode(m){ state.mode = m; store.set("yr-mode", m); renderOverview(); }
+function setMode(m){ state.mode = m; state.showAll = false; store.set("yr-mode", m); renderOverview(); }
+
+// The list shows the top TOP_N resorts until "Visa alla" is pressed (the map always shows every resort).
+// The choice holds while browsing resorts and back, and resets when area, region or ranking changes.
+const TOP_N = 15;
+function listRows(rows, rowHtml){
+  const shown = state.showAll ? rows : rows.slice(0, TOP_N);
+  const rest = rows.length - TOP_N;
+  return shown.map(rowHtml).join("") + (rest > 0
+    ? `<button type="button" class="more" id="more">${state.showAll ? `Visa bara topp ${TOP_N}` : `Visa alla ${rows.length} orter`}</button>` : "");
+}
+function wireList(list, refill){
+  list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
+  const more = $("#more");
+  if (more) more.onclick = () => {
+    state.showAll = !state.showAll; refill();
+    if (!state.showAll) list.scrollIntoView({block:"nearest"});
+  };
+}
 function setArea(a){
   if (a === state.area) return;
-  state.area = a; store.set("yr-area", a);
+  state.area = a; state.showAll = false; store.set("yr-area", a);
   state.region = store.get("yr-region-" + a) || "all";
   if (!areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
   renderOverview();
@@ -1064,23 +1084,24 @@ function setArea(a){
 }
 
 // No forecast to rank by (offline on first visit, or the weather service refused): still list the resorts by name
-function listWithoutSnow(msg){
+function listWithoutSnow(msg, listOnly = false){
   const list = $("#list"); if (!list) return;
   const rows = areaResorts(state.area).filter(r => inRegion(r, state.region)).sort((a,b) => a.name.localeCompare(b.name, "sv"));
-  list.innerHTML = `<div class="msg err">${msg}</div>` + rows.map(r => `<button class="row" data-id="${r.id}">
+  list.innerHTML = `<div class="msg err">${msg}</div>` + listRows(rows, r => `<button class="row" data-id="${r.id}">
       <span class="info">
         <span class="name">${esc(r.name)}</span>
         <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(r.country) : ""} · ${r.base}–${r.top} m</span>
       </span>
-    </button>`).join("");
-  list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
+    </button>`);
+  wireList(list, () => listWithoutSnow(msg, true));
+  if (listOnly) return;
   markerLayer.clearLayers();
   maxPinVal = 1;
   markerLayer.addLayers(rows.map(r => L.marker([r.lat, r.lon], {icon: snowIcon(null, 1), title: r.name, snow: null})
     .bindTooltip(`<b>${esc(r.name)}</b>`, {direction:"top"}).on("click", () => go(r.id))));
   fitMap(rows);
 }
-function fillOverview(){
+function fillOverview(listOnly = false){
   const list = $("#list"); if (!list) return;
   if (!areaResorts(state.area).some(r => state.overview?.[r.id])){
     list.innerHTML = `<div class="msg">Hämtar snödata för ${areaResorts(state.area).length} orter…</div>`;
@@ -1091,7 +1112,7 @@ function fillOverview(){
     .map(r => ({r, o: state.overview[r.id]})).filter(x => x.o)
     .sort((a,b) => (b.o[key] - a.o[key]) || (b.o.next72 + b.o.past72 - a.o.next72 - a.o.past72));
   const maxDay = Math.max(1, ...rows.flatMap(x => x.o.daily.map(v => v||0)));
-  list.innerHTML = rows.map((x, i) => {
+  list.innerHTML = listRows(rows, (x, i) => {
     const {r, o} = x;
     const spark = o.daily.map((v, j) => {
       const h = Math.max(1, Math.round((v||0) / maxDay * 22));
@@ -1110,8 +1131,9 @@ function fillOverview(){
         <span class="sub">${state.mode==="past" ? "kommande 3 d" : "senaste 3 d"}: ${fmt(other)} cm</span>
       </span>
     </button>`;
-  }).join("") || `<div class="msg">Inga orter i den här regionen.</div>`;
-  list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
+  }) || `<div class="msg">Inga orter i den här regionen.</div>`;
+  wireList(list, () => fillOverview(true));
+  if (listOnly) return;
 
   // Map markers sized and coloured by the selected metric
   markerLayer.clearLayers();
