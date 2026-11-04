@@ -10,7 +10,7 @@
      at most TILE_MAX of them (oldest removed first).
    - Google Maps tiles and scripts are never cached (Google's terms): they go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v7";
+const VERSION = "v8";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";
@@ -98,15 +98,18 @@ function timeout(promise, ms){
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 }
 
-// The page: fresh from the network when possible (picks up new avalanche data), else the cached copy
+// A page (the app or the privacy page): fresh from the network when possible (picks up new avalanche data),
+// else the cached copy. Each page is stored under its own name, so the privacy page never replaces the app.
 async function page(req){
   const cache = await caches.open(SHELL);
+  const name = new URL(req.url).pathname.endsWith("/integritet.html") ? "integritet.html" : "index.html";
   try {
-    const res = await timeout(fetch(req), NET_TIMEOUT);
-    if (res.ok) cache.put("index.html", res.clone());
+    // no-cache: always ask GitHub (cheap 304 when unchanged) instead of the browser's 10-minute HTTP cache
+    const res = await timeout(fetch(req.url, {cache: "no-cache", credentials: "same-origin"}), NET_TIMEOUT);
+    if (res.ok) cache.put(name, res.clone());
     return res;
   } catch {
-    return (await cache.match("index.html")) || (await cache.match("./")) || Response.error();
+    return (await cache.match(name)) || (await cache.match("index.html")) || (await cache.match("./")) || Response.error();
   }
 }
 
