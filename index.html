@@ -176,7 +176,7 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .alv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 3px;border-radius:4px;
   font:600 10px var(--mono);vertical-align:2px;margin-left:6px;box-shadow:0 0 0 1.5px var(--surface)}
 .snowpin .alv{margin:0}
-.legend .alv{margin:0 4px 0 0}
+.legend .alv{margin:0 0 0 3px;min-width:14px;height:14px;font-size:9px;box-shadow:none}
 .snowpin.group small{position:absolute;right:-8px;top:-8px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--ink);color:var(--bg);font:600 10px/18px var(--mono);text-align:center}
 .ramp{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;gap:3px;font:11px var(--body);box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .ramp-t{font-weight:600}
@@ -1091,7 +1091,7 @@ function renderOverview(){
           <span style="--c:var(--snow)">${T("Fallit", "Fallen")}</span>
           <span style="--c:var(--future)">${T("Prognos", "Forecast")}</span>
           <span>${T("cm vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt", "cm at the middle of the slopes · bars: 3 days back + 7 ahead")}</span>
-          <span class="alv-key">${alvBadge(2)}${T("lavinfara idag (1–5)", "avalanche danger today (1–5)")}</span>
+          <span class="alv-key">${T("Lavinfara idag:", "Avalanche danger today:")} ${[1,2,3,4,5].map(l => `<span class="alv" style="background:${DANGER[l].c};color:${DANGER[l].ink}" title="${l} – ${DANGER[l].n}">${l}</span>`).join("")}</span>
         </div>
       </div>
       <div class="grid">
