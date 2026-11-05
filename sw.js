@@ -3,7 +3,8 @@
      network-first so the daily avalanche update is picked up.
    - Lifts and facilities per resort (data/osm/places/): stale-while-revalidate. A resort is kept once it
      has been opened, and the app's "Spara offline" button fetches a whole area.
-   - Snow for all resorts (data/snow/, fetched centrally every 3 hours), Open-Meteo, Varsom and EAWS: network-first,
+   - Snow and avalanche bulletins for all resorts (data/snow/, data/avalanche/, fetched centrally every 3 hours),
+     Open-Meteo, Varsom and EAWS: network-first,
      falling back to the last cached answer.
    - Overpass (OpenStreetMap): stale-while-revalidate.
    - OpenFreeMap: style, fonts and sprites stale-while-revalidate; visited map tiles are kept,
@@ -84,7 +85,7 @@ self.addEventListener("fetch", e => {
 
   if (req.mode === "navigate") return e.respondWith(page(req));
   if (url.origin === location.origin && url.pathname.includes("/data/osm/places/")) return e.respondWith(staleWhileRevalidate(req, PLACES));
-  if (url.origin === location.origin && url.pathname.includes("/data/snow/")) return e.respondWith(networkFirst(req, DATA));
+  if (url.origin === location.origin && /\/data\/(snow|avalanche)\//.test(url.pathname)) return e.respondWith(networkFirst(req, DATA));
   if (url.origin === location.origin) return e.respondWith(cacheFirst(req, SHELL));
   // Weather and avalanche bulletins: fresh when online, the last answer offline (out in the mountains)
   if (h === "api.open-meteo.com" || h === "api01.nve.no" || h === "static.avalanche.report") return e.respondWith(networkFirst(req, DATA));

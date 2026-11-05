@@ -1,6 +1,6 @@
-# Publish the app on GitHub Pages, with the snow forecast for every resort fetched once for all users.
-# Runs on every push to main, every 3 hours (fresh snow data) and after the daily avalanche update.
-# The snow files are published with the app but never committed, so the repo does not grow.
+# Publish the app on GitHub Pages, with the snow forecast and avalanche bulletins for every resort
+# fetched once for all users. Runs on every push to main and every 3 hours (fresh data).
+# The data files are published with the app but never committed, so the repo does not grow.
 # Needs Settings → Pages → Source: "GitHub Actions".
 name: Publicera appen
 
@@ -9,9 +9,6 @@ on:
     branches: [main]
   schedule:
     - cron: "15 */3 * * *"
-  workflow_run:
-    workflows: ["Uppdatera lavinprognos"]
-    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -41,6 +38,14 @@ jobs:
             curl -sSf "${{ steps.pages.outputs.base_url }}/data/snow/$area.json" -o "data/snow/$area.json" || rm -f "data/snow/$area.json"
           done
           python3 tools/fetch_snow.py index.html data/snow
+      - name: Hämta lavinprognoser för alla orter
+        run: |
+          mkdir -p data/avalanche
+          # Start from the published files, so a source that fails keeps its last bulletins
+          for area in japan scandinavia alps; do
+            curl -sSf "${{ steps.pages.outputs.base_url }}/data/avalanche/$area.json" -o "data/avalanche/$area.json" || rm -f "data/avalanche/$area.json"
+          done
+          python3 tools/fetch_avalanche.py index.html data/avalanche || echo "Lavinhämtningen misslyckades, behåller de senast publicerade filerna."
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

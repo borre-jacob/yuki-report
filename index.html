@@ -121,6 +121,7 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .mode-past .big b{color:var(--snow)} .mode-fut .big b{color:var(--future)}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 .legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+.legend .alv-key::before,.legend .alv::before{display:none}
 .msg{padding:14px;border-radius:12px;background:var(--surface);border:1px dashed var(--line);color:var(--muted)}
 .msg.err{border-color:var(--warn);color:var(--warn)}
 
@@ -170,6 +171,12 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .leaflet-container{font-family:var(--body)}
 .snowpin{display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font:600 11px var(--mono);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .snowpin.group{position:relative;outline:2px solid rgba(255,255,255,.6);outline-offset:2px}
+.snowpin{position:relative}
+.snowpin .alv{position:absolute;left:-7px;bottom:-7px}
+.alv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 3px;border-radius:4px;
+  font:600 10px var(--mono);vertical-align:2px;margin-left:6px;box-shadow:0 0 0 1.5px var(--surface)}
+.snowpin .alv{margin:0}
+.legend .alv{margin:0 4px 0 0}
 .snowpin.group small{position:absolute;right:-8px;top:-8px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--ink);color:var(--bg);font:600 10px/18px var(--mono);text-align:center}
 .ramp{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;gap:3px;font:11px var(--body);box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .ramp-t{font-weight:600}
@@ -983,6 +990,7 @@ const state = {
   area: AREAS[store.get("yr-area")] ? store.get("yr-area") : "japan",
   region: "all",                               // set from storage per area below
   overview: null,                              // {resortId: {past72, next72, daily, dailyTimes, todayIdx}}
+  avalLv: {},                                  // {resortId: today's avalanche danger 1-5}, from the bulletin files
   fetchedAt: null,
 };
 
@@ -1074,6 +1082,7 @@ function renderOverview(){
           <span style="--c:var(--snow)">${T("Fallit", "Fallen")}</span>
           <span style="--c:var(--future)">${T("Prognos", "Forecast")}</span>
           <span>${T("cm vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt", "cm at the middle of the slopes · bars: 3 days back + 7 ahead")}</span>
+          <span class="alv-key">${alvBadge(2)}${T("lavinfara idag (1–5)", "avalanche danger today (1–5)")}</span>
         </div>
       </div>
       <div class="grid">
@@ -1095,7 +1104,8 @@ function renderOverview(){
     iconCreateFunction: c => {
       const kids = c.getAllChildMarkers(), vals = kids.map(m => m.options.snow).filter(v => v != null);
       const v = vals.length ? Math.max(...vals) : null;
-      return snowIcon(v, maxPinVal, `<small>${kids.length}</small>`, "group");
+      const lv = Math.max(0, ...kids.map(m => m.options.aval || 0));
+      return snowIcon(v, maxPinVal, `<small>${kids.length}</small>`, "group", lv);
     },
   }).addTo(overviewMap);
   fillOverview();
@@ -1146,7 +1156,8 @@ function listWithoutSnow(msg, listOnly = false){
     .bindTooltip(`<b>${esc(r.name)}</b>`, {direction:"top"}).on("click", () => go(r.id))));
   fitMap(rows);
 }
-function fillOverview(listOnly = false){
+// keepView: redraw without moving the map (used when the avalanche levels arrive)
+function fillOverview(listOnly = false, keepView = false){
   const list = $("#list"); if (!list) return;
   if (!areaResorts(state.area).some(r => state.overview?.[r.id])){
     list.innerHTML = `<div class="msg">${T(`Hämtar snödata för ${areaResorts(state.area).length} orter…`, `Fetching snow data for ${areaResorts(state.area).length} resorts…`)}</div>`;
@@ -1167,7 +1178,7 @@ function fillOverview(listOnly = false){
     return `<button class="row" data-id="${r.id}">
       <span class="rank">${i+1}</span>
       <span class="info">
-        <span class="name">${esc(r.name)}</span>
+        <span class="name">${esc(r.name)}${alvBadge(state.avalLv[r.id])}</span>
         <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${r.base}–${r.top} m</span>
         <span class="spark" aria-hidden="true">${spark}</span>
       </span>
@@ -1185,21 +1196,61 @@ function fillOverview(listOnly = false){
   maxPinVal = Math.max(1, ...rows.map(x => x.o[key]));
   markerLayer.addLayers(rows.map(({r, o}) => {
     const v = o[key];
-    return L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal), title: r.name, snow: v})
-      .bindTooltip(`<b>${esc(r.name)}</b><br>${fmt(v)} cm`, {direction:"top"})
+    const lv = state.avalLv[r.id];
+    return L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", "", lv), title: r.name, snow: v, aval: lv})
+      .bindTooltip(`<b>${esc(r.name)}</b><br>${fmt(v)} cm${lv ? `<br>${T("Lavinfara", "Avalanche danger")} ${lv} – ${DANGER[lv].n.toLowerCase()}` : ""}`, {direction:"top"})
       .on("click", () => go(r.id));
   }));
   drawRampLegend(SNOW_RAMP[state.mode]);
-  fitMap(rows.map(x => x.r));
+  if (!keepView) fitMap(rows.map(x => x.r));
+  loadAvalLevels(state.area);
 }
 
+// Today's avalanche danger for every resort in an area, shown as a small coloured square in the list and on the pins.
+// Only where a bulletin covers the resort itself (not the "nearest area" ones) and is valid now.
+const avalLvLoaded = {};
+async function loadAvalLevels(area){
+  if (avalLvLoaded[area] && Date.now() - avalLvLoaded[area] < 10 * 60e3) return;
+  avalLvLoaded[area] = Date.now();
+  const d = await avalData(area);
+  if (!d){ delete avalLvLoaded[area]; return; }
+  let changed = false;
+  for (const r of areaResorts(area)){
+    const lv = avalLevel(r, d);
+    if ((state.avalLv[r.id] || 0) !== lv){ changed = true; if (lv) state.avalLv[r.id] = lv; else delete state.avalLv[r.id]; }
+  }
+  if (changed && !location.hash && state.area === area && markerLayer) fillOverview(false, true);
+}
+function avalLevel(r, d){
+  if (r.area === "japan"){
+    const v = AVAL[r.id], b = v && !v.near && d.jan?.[v.a];
+    const issued = b && new Date(b.date.replace(" ", "T") + ":00+09:00");
+    return issued && Date.now() - issued < 30 * 3600e3 ? Math.max(0, ...(b.levels || [])) : 0;
+  }
+  if (r.country === "Sverige"){
+    const v = SE_AVAL[r.id], b = v && !v.near && d.se?.[v.a];
+    return b && b.level > 0 && new Date(b.validTo) > Date.now() ? b.level : 0;
+  }
+  if (r.country === "Norge"){
+    const today = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Oslo"});
+    return +d.no?.warnings[d.no.resorts[r.id]?.[today]]?.DangerLevel || 0;
+  }
+  if (r.area === "alps" && d.eaws){
+    const day = off => new Date(Date.now() + off * 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Vienna"});
+    const b = [day(0), day(1)].map(x => d.eaws.bulletins[d.eaws.resorts[r.id]?.[x]]).find(b => b && new Date(b.validTime?.endTime) > Date.now());
+    return b ? eawsTop(b) : 0;
+  }
+  return 0;
+}
+const alvBadge = lv => lv ? `<span class="alv" style="background:${DANGER[lv].c};color:${DANGER[lv].ink}" title="${T("Lavinfara idag", "Avalanche danger today")}: ${lv} – ${DANGER[lv].n.toLowerCase()}">${lv}</span>` : "";
+
 let maxPinVal = 1;
-function snowIcon(v, maxVal, extra = "", cls = ""){
+function snowIcon(v, maxVal, extra = "", cls = "", lv = 0){
   // v null = no forecast: small neutral pin with a dash
   const size = v == null ? 24 : 24 + Math.round(Math.sqrt(v / maxVal) * 22);
   const {bg, ink} = v == null ? {bg: "var(--line)", ink: "var(--muted)"} : rampColor(SNOW_RAMP[state.mode], v);
   return L.divIcon({className:"", iconSize:[size,size],
-    html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${v == null ? "–" : Math.round(v)}${extra}</div>`});
+    html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${v == null ? "–" : Math.round(v)}${extra}${lv ? alvBadge(lv) : ""}</div>`});
 }
 
 // Colour scale for the overview pins: pale for a dusting, deep for a dump.
@@ -1398,8 +1449,20 @@ const AVAL = {
   rusutsu:{a:6}, kiroro:{a:6}, teine:{a:6,near:true}, kokusai:{a:6,near:true},
   furano:{a:7}, asahidake:{a:7}, kamui:{a:7,near:true}, tomamu:{a:7,near:true}, sahoro:{a:7,near:true},
 };
-// Latest JAN bulletin per area, fetched by tools/fetch_avalanche.py (daily on GitHub) and embedded here.
-const AVALANCHE = /*AVALANCHE*/{"2":{"name":"Hakuba","date":"2026-04-06 05:00","url":"https://data.nadare.jp/avalanche_informations/10574?locale=en","levels":[0,0,0],"advice":"The avalanche bulletin for the 2025/26 season is now closed. Whatever type of avalanche is present, we hope you enjoy the rest of the season, remembering that the most important aspect of avalanche safety is terrain selection.","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"3":{"name":"Myoko","date":"2026-03-30 06:00","url":"https://data.nadare.jp/avalanche_informations/10212?locale=en","levels":[0,0,0],"advice":"2025/26シーズンの雪崩情報を終了しました。どのような種類の雪崩が存在するにせよ、雪崩安全対策に最も重要なのは、地形の選択であることを忘れずに、残りのシーズンを楽しまれてください。","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"4":{"name":"Kagura Tanigawa Hotaka","date":"2026-04-06 05:00","url":"https://data.nadare.jp/avalanche_informations/10573?locale=en","levels":[0,0,0],"advice":"The avalanche bulletin for the 2025/26 season is now closed. Whatever type of avalanche is present, we hope you enjoy the rest of the season, remembering that the most important aspect of avalanche safety is terrain selection.","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"6":{"name":"SW Hokkaido","date":"2026-04-01 06:00","url":"https://data.nadare.jp/avalanche_informations/10376?locale=en","levels":[0,0,0],"advice":"2025/26シーズンの雪崩情報を終了しました。どのような種類の雪崩が存在するにせよ、雪崩安全対策に最も重要なのは、地形の選択であることを忘れずに、残りのシーズンを楽しまれてください。","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"7":{"name":"Central Hokkaido","date":"2026-03-15 05:00","url":"https://data.nadare.jp/avalanche_informations/9319?locale=en","levels":[0,0,0],"advice":"The avalanche bulletin for the 2025/26 season is now closed. Whatever type of avalanche is present, we hope you enjoy the rest of the season, remembering that the most important aspect of avalanche safety is terrain selection.","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"1":{"name":"Tateyama","date":"2025-12-01 13:00","url":"https://data.nadare.jp/avalanche_informations/7557?locale=en","levels":[0,0,0],"advice":"","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"se_abisko_riksgransfjallen":{"level":0,"label":"Ej bedömd","published":"2026-06-01T08:00:00+02:00","validTo":"2027-01-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Abisko Riksgränsenfjällen från och med 15 januari 2027.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/abisko_riksgransfjallen/","problems":[]},"se_kebnekaisefjallen":{"level":0,"label":"Ej bedömd","published":"2026-06-01T08:00:00+02:00","validTo":"2027-02-26T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Kebnekaisefjällen från och med 26 februari 2027.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/kebnekaisefjallen/","problems":[]},"se_sodra_jamtlandsfjallen":{"level":0,"label":"Ej bedömd","published":"2026-10-22T08:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Södra Jämtlandsfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/sodra_jamtlandsfjallen/","problems":[]},"se_sodra_lapplandsfjallen":{"level":0,"label":"Ej bedömd","published":"2026-06-01T08:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Södra Lapplandsfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/sodra_lapplandsfjallen/","problems":[]},"se_vastra_harjedalsfjallen":{"level":0,"label":"Ej bedömd","published":"2026-07-01T08:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Västra Härjedalsfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/vastra_harjedalsfjallen/","problems":[]},"se_vastra_vindelfjallen":{"level":0,"label":"Ej bedömd","published":"2026-10-22T18:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Här hittar du lavinprognoser för Västra Vindelfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/vastra_vindelfjallen/","problems":[]}}/*ENDAVALANCHE*/;
+// Avalanche bulletins for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_avalanche.py,
+// workflow "Publicera appen"): data/avalanche/<area>.json. Kept for 10 minutes per page load; "Uppdatera" fetches again.
+// Varsom and EAWS can also be asked directly, used when the file is missing or older than AVAL_LIVE_AGE.
+const avalFiles = {};
+const AVAL_LIVE_AGE = 6 * 3600e3;
+function avalData(area){
+  const c = avalFiles[area];
+  if (c && Date.now() - c.t < 10 * 60e3) return c.p;
+  const p = netFetch(`data/avalanche/${area}.json`).then(res => res.ok ? res.json() : null).catch(() => null);
+  avalFiles[area] = {p, t: Date.now()};
+  p.then(d => { if (!d) delete avalFiles[area]; });
+  return p;
+}
+const recentAval = d => d && Date.now() - new Date(d.at) < AVAL_LIVE_AGE ? d : null;
 const DANGER = [
   {n:T("Ingen nivå", "No rating"),   c:"#9aa5b4", ink:"#14213a"},
   {n:T("Låg", "Low"),                c:"#52b947", ink:"#0b2a07"},
@@ -1415,7 +1478,7 @@ const PROBLEM_SV = {"wind slab":"Vindflak","storm slab":"Nysnöflak","persistent
   "glide avalanche":"Glidsnö","cornice":"Snöhängdor"};
 const dangerBox = (lvl, big) => `<span class="dlvl${big?" big":""}" style="background:${DANGER[lvl].c};color:${DANGER[lvl].ink}">${lvl || "–"}</span>`;
 
-// Swedish forecast areas on lavinprognoser.se (fetched daily into AVALANCHE as "se_<slug>").
+// Swedish forecast areas on lavinprognoser.se (in data/avalanche/scandinavia.json under "se").
 const SE_AREAS = {
   abisko_riksgransfjallen: "Abisko/Riksgränsfjällen", sodra_jamtlandsfjallen: "Södra Jämtlandsfjällen",
   vastra_vindelfjallen: "Västra Vindelfjällen", sodra_lapplandsfjallen: "Södra Lapplandsfjällen",
@@ -1545,21 +1608,32 @@ const fmtLocalIso = (iso, withYear) => `${+iso.slice(8,10)} ${MONTHS[+iso.slice(
 const fmtWhen = (d, tz, withYear) => d.toLocaleString(LOCALE, {timeZone: tz, day:"numeric", month:"long", year: withYear ? "numeric" : undefined, hour:"2-digit", minute:"2-digit"});
 
 function avalOfficial(r){
-  if (r.area === "japan") return avalJapan(r);
-  if (r.area === "alps") return avalAlps(r);
-  if (r.country === "Norge") { setTimeout(() => loadVarsom(r), 0); return `<div id="varsom"><div class="msg">${T("Hämtar dagens lavinvarsel från Varsom…", "Fetching today's avalanche warning from Varsom…")}</div></div>`; }
-  if (r.country === "Sverige") return avalSweden(r);
+  if (r.area !== "scandinavia" || r.country === "Norge" || r.country === "Sverige"){
+    setTimeout(() => fillAval(r), 0);
+    return `<div id="avalbox"><div class="msg">${T("Hämtar dagens lavinprognos…", "Fetching today's avalanche bulletin…")}</div></div>`;
+  }
   return noForecast(T(`Finland har ingen nationell lavinprognos. Laviner kan ändå gå i branta fjällsluttningar, till exempel i fjällen kring Kilpisjärvi och på de branta delarna av fjällen kring skidorterna. Fråga pistpatrullen innan du åker utanför pisterna.`,
     `Finland has no national avalanche bulletin. Avalanches can still occur on steep fell slopes, for example around Kilpisjärvi and on the steep parts of the fells around the resorts. Ask the ski patrol before you ski off-piste.`));
 }
 
-function avalJapan(r){
+async function fillAval(r){
+  const d = await avalData(r.area);
+  const html = r.area === "japan" ? avalJapan(r, d?.jan)
+    : r.area === "alps" ? await avalAlps(r, recentAval(d)?.eaws)
+    : r.country === "Norge" ? await avalNorway(r, recentAval(d)?.no)
+    : avalSweden(r, d?.se);
+  if (location.hash.slice(1) === r.id && $("#avalbox")) $("#avalbox").innerHTML = html;
+}
+const avalMissing = links => `<p class="hint">${T("Kunde inte hämta lavinprognosen just nu. Försök igen med Uppdatera, eller läs den hos källan.", "Could not fetch the avalanche bulletin right now. Try again with Refresh, or read it at the source.")}</p><div class="dlinks">${links.join("")}</div>`;
+
+function avalJapan(r, jan){
   const v = AVAL[r.id];
   if (!v) return noForecast(T(`Det ges inte ut någon lavinprognos för det här området. Fråga ortens pistpatrull (ski patrol) om läget innan du åker utanför pisterna.`,
     `No avalanche bulletin is issued for this area. Ask the resort's ski patrol about conditions before you ski off-piste.`));
-  const bul = AVALANCHE[v.a];
+  const bul = jan?.[v.a];
   const links = [`<a class="dirbtn" href="${bul?.url || JAN(v.a)}" target="_blank" rel="noopener">${T("Hela prognosen hos JAN", "Full bulletin at JAN")} ↗</a>`];
   if (v.extra) links.push(`<a class="dirbtn cam" href="${v.extra.url}" target="_blank" rel="noopener">${esc(v.extra.label)} ↗</a>`);
+  if (!jan) return avalMissing(links);
   // Bulletins come out each morning; anything older than ~30 h is not today's.
   const issued = bul ? new Date(bul.date.replace(" ", "T") + ":00+09:00") : null;
   const fresh = issued && (Date.now() - issued) < 30 * 3600e3;
@@ -1572,12 +1646,13 @@ function avalJapan(r){
     advice: bul?.advice, adviceLabel: T(`JAN:s råd för dagen <span class="en">på engelska</span>`, "JAN's advice for the day"), links});
 }
 
-function avalSweden(r){
+function avalSweden(r, se){
   const v = SE_AVAL[r.id];
   const site = `<a class="dirbtn" href="https://www.lavinprognoser.se/oversikt-alla-omraden/${v ? v.a + "/" : ""}" target="_blank" rel="noopener">${T("Hela prognosen på lavinprognoser.se", "Full bulletin at lavinprognoser.se")} ↗</a>`;
   if (!v) return noForecast(T(`${esc(r.name)} ligger utanför Naturvårdsverkets prognosområden. Laviner kan ändå gå i branta sluttningar. Fråga pistpatrullen innan du åker utanför pisterna.`,
     `${esc(r.name)} is outside the Swedish forecast areas. Avalanches can still occur on steep slopes. Ask the ski patrol before you ski off-piste.`)) + `<div class="dlinks">${site}</div>`;
-  const bul = AVALANCHE["se_" + v.a];
+  if (!se) return avalMissing([site]);
+  const bul = se[v.a];
   const until = bul?.validTo ? new Date(bul.validTo) : null;
   const fresh = bul && until && until > Date.now() && bul.level > 0;
   return dangerCard({
@@ -1626,44 +1701,46 @@ const EAWS_SOURCE = {
   "IT-34": ["ARPA Veneto", "https://www.avalanches.org/"],
   "IT-36": ["Friuli Venezia Giulia", "https://www.avalanches.org/"],
 };
-function avalAlps(r){
+async function avalAlps(r, central){
   if (!r.eaws) return noForecast(T(`${esc(r.name)} ligger utanför de europeiska lavinprognosernas regioner. Fråga pistpatrullen om läget innan du åker utanför pisterna.`,
     `${esc(r.name)} is outside the European avalanche bulletin regions. Ask the ski patrol about conditions before you ski off-piste.`));
-  setTimeout(() => loadEaws(r), 0);
-  return `<div id="eaws"><div class="msg">${T("Hämtar dagens lavinprognos…", "Fetching today's avalanche bulletin…")}</div></div>`;
+  return eawsCard(r, central);
 }
 const elev = v => v === "treeline" ? T("trädgränsen", "the treeline") : v + " m";
 const eawsBand = el => el?.lowerBound && el?.upperBound ? `${elev(el.lowerBound)}–${elev(el.upperBound)}`
   : el?.lowerBound ? `${T("Över", "Above")} ${elev(el.lowerBound)}`
   : el?.upperBound ? `${T("Under", "Below")} ${elev(el.upperBound)}` : T("Alla höjder", "All elevations");
 const eawsLimit = v => v === "treeline" ? v : +v;
-async function loadEaws(r){
+// Ratings that apply now: with an earlier/later split (morning/afternoon), the earlier one
+const eawsRatings = b => (b.dangerRatings || []).filter(d => d.validTimePeriod !== "later" || !b.dangerRatings.some(x => x.validTimePeriod === "earlier"));
+const eawsTop = b => Math.max(0, ...eawsRatings(b).map(d => EAWS_LEVEL[d.mainValue] || 0));
+async function eawsCard(r, central){
   const svc = eawsService(r.eaws);
   const [srcName, srcUrl] = EAWS_SOURCE[svc] || ["EAWS", "https://www.avalanches.org/"];
   const links = [`<a class="dirbtn" href="${srcUrl}" target="_blank" rel="noopener">${T("Hela prognosen hos", "Full bulletin at")} ${esc(srcName)} ↗</a>`];
-  const box = html => { if ($("#eaws")) $("#eaws").outerHTML = `<div id="eaws">${html}</div>`; };
-  // Bulletins are named by the day they are valid; tomorrow's comes out around 17:00
+  // Bulletins are named by the (Vienna) day they are valid; tomorrow's comes out around 17:00
   const day = off => new Date(Date.now() + off * 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Vienna"});
+  const valid = b => b && new Date(b.validTime?.endTime) > Date.now();
   let bul = null;
-  try {
-    for (const d of [day(0), day(1)]){
-      const res = await netFetch(`https://static.avalanche.report/eaws_bulletins/${d}/${d}-${svc}.json`);
-      if (!res.ok) continue;
-      const b = ((await res.json()).bulletins || []).find(b => (b.regions || []).some(x => x.regionID === r.eaws));
-      if (b && new Date(b.validTime?.endTime) > Date.now()){ bul = b; break; }
+  if (central){
+    bul = [day(0), day(1)].map(d => central.bulletins[central.resorts[r.id]?.[d]]).find(valid) || null;
+  } else {
+    try {
+      for (const d of [day(0), day(1)]){
+        const res = await netFetch(`https://static.avalanche.report/eaws_bulletins/${d}/${d}-${svc}.json`);
+        if (!res.ok) continue;
+        const b = ((await res.json()).bulletins || []).find(b => (b.regions || []).some(x => x.regionID === r.eaws));
+        if (valid(b)){ bul = b; break; }
+      }
+    } catch (e){
+      return `<p class="hint">${T("Kunde inte hämta lavinprognosen", "Could not fetch the avalanche bulletin")} (${esc(e.message)}).</p><div class="dlinks">${links.join("")}</div>`;
     }
-  } catch (e){
-    box(`<p class="hint">${T("Kunde inte hämta lavinprognosen", "Could not fetch the avalanche bulletin")} (${esc(e.message)}).</p><div class="dlinks">${links.join("")}</div>`);
-    return;
   }
-  if (!bul){
-    box(dangerCard({top: 0, area: srcName, issued: "", source: srcName, links}));
-    return;
-  }
+  if (!bul) return dangerCard({top: 0, area: srcName, issued: "", source: srcName, links});
   const area = bul.regions.find(x => x.regionID === r.eaws)?.name || (svc === "FR" && FR_MASSIF[+r.eaws.slice(3)]) || srcName;
   const lang = bul.lang || (svc === "FR" ? "fr" : "en");
-  const ratings = (bul.dangerRatings || []).filter(d => d.validTimePeriod !== "later" || !bul.dangerRatings.some(x => x.validTimePeriod === "earlier"));
-  const top = Math.max(0, ...ratings.map(d => EAWS_LEVEL[d.mainValue] || 0));
+  const ratings = eawsRatings(bul);
+  const top = eawsTop(bul);
   // Highest terrain first, like the other services
   const order = el => el?.lowerBound && !el?.upperBound ? 0 : el?.upperBound && !el?.lowerBound ? 2 : 1;
   const bands = ratings.length > 1 || ratings[0]?.elevation ? [...ratings].sort((a, b) => order(a.elevation) - order(b.elevation))
@@ -1678,20 +1755,22 @@ async function loadEaws(r){
       grid: aspects.some(v => v) ? [aspects] : null, height};
   });
   const advice = [bul.avalancheActivity?.highlights, bul.avalancheActivity?.comment, bul.snowpackStructure?.comment].filter(Boolean).join(" ");
-  box(dangerCard({top, bands, area, issued: bul.publicationTime ? fmtWhen(new Date(bul.publicationTime), "Europe/Vienna") : "",
+  return dangerCard({top, bands, area, issued: bul.publicationTime ? fmtWhen(new Date(bul.publicationTime), "Europe/Vienna") : "",
     source: srcName, problems, advice: advice.replace(/<[^>]+>/g, " "), adviceLang: lang,
     adviceLabel: EN ? `Bulletin highlights${lang !== "en" ? ` <span class="en">in ${LANG_NAME[lang] || lang}</span>` : ""}`
-      : `Prognosens huvudbudskap <span class="en">på ${LANG_NAME[lang] || lang}</span>`, links}));
+      : `Prognosens huvudbudskap <span class="en">på ${LANG_NAME[lang] || lang}</span>`, links});
 }
 
-async function loadVarsom(r){
-  const box = $("#varsom"); if (!box) return;
+async function avalNorway(r, central){
   const today = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Oslo"});
   const site = `<a class="dirbtn" href="https://www.varsom.no/en/avalanche-bulletins/" target="_blank" rel="noopener">${T("Hela varslet på Varsom", "Full warning at Varsom")} ↗</a>`;
   try {
-    const res = await netFetch(`https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByCoordinates/Detail/${r.lat}/${r.lon}/2/${today}/${today}`);
-    if (!res.ok) throw new Error(T("Varsom svarade ", "Varsom answered ") + res.status);
-    const w = (await res.json())[0];
+    let w = central?.warnings[central.resorts[r.id]?.[today]];
+    if (!w){
+      const res = await netFetch(`https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByCoordinates/Detail/${r.lat}/${r.lon}/2/${today}/${today}`);
+      if (!res.ok) throw new Error(T("Varsom svarade ", "Varsom answered ") + res.status);
+      w = (await res.json())[0];
+    }
     if (!w) throw new Error(T("inget varsel", "no warning"));
     const lvl = +w.DangerLevel || 0;
     const problems = (w.AvalancheProblems || []).map(p => {
@@ -1701,13 +1780,13 @@ async function loadVarsom(r){
         grid: aspects.some(v => v) ? [aspects] : null,
         height: p.ExposedHeight1 ? {fill: +p.ExposedHeightFill || 1, h1: +p.ExposedHeight1, h2: +p.ExposedHeight2 || 0} : null};
     });
-    if ($("#varsom")) $("#varsom").outerHTML = `<div id="varsom">${dangerCard({
+    return dangerCard({
       top: lvl, area: w.RegionName || cname("Norge"),
       near: w.RegionTypeName === "B" ? T("grovt varslat B-område, mindre detaljerat", "B region with a coarse, less detailed warning") : "",
       issued: w.PublishTime ? fmtLocalIso(w.PublishTime, !lvl) : "", source: "Varsom (NVE)",
-      problems, advice: w.MainText, adviceLabel: T(`Varsoms huvudbudskap <span class="en">på engelska</span>`, "Varsom's main message"), links: [site]})}</div>`;
+      problems, advice: w.MainText, adviceLabel: T(`Varsoms huvudbudskap <span class="en">på engelska</span>`, "Varsom's main message"), links: [site]});
   } catch (e){
-    if ($("#varsom")) $("#varsom").innerHTML = `<p class="hint">${T("Kunde inte hämta lavinvarslet från Varsom", "Could not fetch the avalanche warning from Varsom")} (${esc(e.message)}).</p><div class="dlinks">${site}</div>`;
+    return `<p class="hint">${T("Kunde inte hämta lavinvarslet från Varsom", "Could not fetch the avalanche warning from Varsom")} (${esc(e.message)}).</p><div class="dlinks">${site}</div>`;
   }
 }
 
@@ -2130,6 +2209,8 @@ $("#lang").onclick = () => { store.set("yr-lang", EN ? "sv" : "en"); location.re
 $("#refresh").onclick = async e => {
   const btn = e.currentTarget;
   btn.disabled = true;
+  for (const k in avalFiles) delete avalFiles[k];
+  for (const k in avalLvLoaded) delete avalLvLoaded[k];
   navigator.serviceWorker?.getRegistration().then(reg => reg?.update()).catch(() => {});
   if (location.hash) route();
   await refreshOverview(true);

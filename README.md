@@ -20,10 +20,7 @@ Service workern ligger i `sw.js`. Höj `VERSION` där när `sw.js`, ikonerna, ty
 ## Datakällor
 
 - Väder: [Open-Meteo](https://open-meteo.com/). Snön för alla orter i översikten hämtas centralt var tredje timme av GitHub Actions (`.github/workflows/pages.yml` kör `tools/fetch_snow.py`) och publiceras som `data/snow/<område>.json` tillsammans med appen, utan att committas. Antalet anrop blir då detsamma hur många som än använder appen. Är filen äldre än 4 timmar hämtar appen direkt från Open-Meteo. Detaljsidan för en ort hämtar alltid live.
-- Lavinprognos Norge: [Varsom](https://www.varsom.no/) (NVE), hämtas live i appen.
-- Lavinprognos Alperna: de nationella och regionala lavintjänsterna (bl.a. SLF, Météo-France, Euregio/avalanche.report, AINEVA-regionerna) via [EAWS](https://www.avalanches.org/), som speglas på static.avalanche.report. Hämtas live i appen; varje ort är kopplad till sin prognosregion med `tools/assign_eaws.py`.
-- Lavinprognos Sverige: [lavinprognoser.se](https://www.lavinprognoser.se/) (Naturvårdsverket), hämtas varje morgon tillsammans med JAN.
-- Lavinprognos Japan: [Japan Avalanche Network](https://data.nadare.jp/avalanche_informations?locale=en). Hämtas varje morgon av GitHub Actions (`.github/workflows/avalanche.yml`) och byggs in i `index.html`.
+- Lavinprognoser: [Japan Avalanche Network](https://data.nadare.jp/avalanche_informations?locale=en), [lavinprognoser.se](https://www.lavinprognoser.se/) (Naturvårdsverket), [Varsom](https://www.varsom.no/) (NVE) och de nationella och regionala lavintjänsterna i Alperna (bl.a. SLF, Météo-France, Euregio/avalanche.report, AINEVA-regionerna) via [EAWS](https://www.avalanches.org/), som speglas på static.avalanche.report. Alla hämtas centralt var tredje timme i samma arbetsflöde som snön (`tools/fetch_avalanche.py`) och publiceras som `data/avalanche/<område>.json`, med dagens och morgondagens prognos för Norge och Alperna. Är filen äldre än 6 timmar frågar appen Varsom och EAWS direkt. Varje ort i Alperna är kopplad till sin prognosregion med `tools/assign_eaws.py`.
 
 Appen publiceras av arbetsflödet "Publicera appen" (`.github/workflows/pages.yml`), som kräver att Settings → Pages → Source är satt till "GitHub Actions".
 - Liftar, onsen, toaletter och parkering: [OpenStreetMap](https://www.openstreetmap.org/copyright) via Overpass API. Datan ligger i en fil per ort i `data/osm/places/` som appen hämtar när man öppnar orten. Service workern sparar orterna för användning utan täckning: små områden automatiskt, större med knappen "Spara offline".
@@ -55,8 +52,13 @@ python3 tools/refine_resorts.py data/scandinavia_approx.json data/osm/scandinavi
 python3 tools/fetch_pois_batch.py index.html data/osm/pois.json
 python3 tools/fetch_lifts.py index.html data/osm/lifts.json
 python3 tools/build_places.py data/osm/pois.json data/osm/lifts.json data/osm/places
-python3 tools/fetch_avalanche.py data/avalanche.json
-python3 tools/inject_avalanche.py index.html data/avalanche.json
+```
+
+Snö- och lavinfilerna kan hämtas lokalt för att testa appen (mapparna är gitignorerade):
+
+```bash
+python3 tools/fetch_snow.py index.html data/snow
+python3 tools/fetch_avalanche.py index.html data/avalanche
 ```
 
 `fetch_pois.py` hoppar över orter som redan finns i `data/osm/pois.json`. Ta bort filen för att hämta allt på nytt. Overpass-servrarna är ofta överbelastade, så räkna med att det tar en stund.
