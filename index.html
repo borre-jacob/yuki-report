@@ -212,6 +212,7 @@ footer .copy{color:var(--ink);font-weight:600}
 details.prob{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 details.prob summary{cursor:pointer;font-weight:600;font-size:14px}
 details.prob p{margin:6px 0 0;font-size:14px;color:var(--muted);max-width:70ch}
+details.prob p.trl{font-size:13px}
 .prob.rosed{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .rosebox{display:flex;align-items:flex-end;gap:6px}
 .rose{width:104px;height:104px;display:block}
@@ -1688,9 +1689,13 @@ function dangerCard({top, levels, bands, area, near, issued, source, problems = 
     ${forHill ? `<p class="forhill">${forHill}</p>` : ""}
     ${bands ? `<div class="bands">${bands.map(b => `<div class="band">${dangerBox(b.level)}<span>${esc(b.label)}</span><b>${DANGER[b.level].n}</b></div>`).join("")}</div>` : ""}
     ${probs ? `<div class="probs"><span class="label">${T("Lavinproblem idag", "Avalanche problems today")}</span>${probs}${roseHint}</div>` : ""}
-    ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="${adviceLang}">${esc(advice)}</p></details>` : ""}
+    ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="${adviceLang}">${esc(advice)}</p>${translateLink(advice, adviceLang)}</details>` : ""}
     ${linkHtml}`;
 }
+// Bulletin text that is neither English nor the app's language (Météo-France in French, Naturvårdsverket in
+// Swedish for English readers): a link that opens it in Google Translate. No key or cost; the text is public.
+const translateLink = (text, lang) => lang === "en" || lang === LANG ? "" :
+  `<p class="trl"><a href="https://translate.google.com/?sl=${lang}&tl=${LANG}&op=translate&text=${encodeURIComponent(text.slice(0, 4500))}" target="_blank" rel="noopener">${T("Översätt med Google Translate", "Translate with Google Translate")} ↗</a></p>`;
 const noForecast = text => `<div class="dcard none">${dangerBox(0, true)}<div><b class="dhead-t">${T("Ingen officiell lavinprognos", "No official avalanche bulletin")}</b><p>${text}</p></div></div>`;
 // Format a local time string without zone ("2026-02-28T20:59:23") as it is written, e.g. "28 februari kl. 20:59"
 const MONTHS = EN ? ["January","February","March","April","May","June","July","August","September","October","November","December"]
@@ -1734,7 +1739,11 @@ function avalJapan(r, jan){
     near: v.near ? T(`närmaste prognosområde, täcker inte ${r.name} direkt`, `nearest forecast area, does not cover ${r.name} directly`) : "",
     issued: issued ? fmtWhen(issued, "Asia/Tokyo", !fresh) : "", source: "Japan Avalanche Network",
     problems: (bul?.problems || []).map(p => ({name: p.name, sv: PROBLEM_SV[p.name.toLowerCase()], text: p.text, lang: "en", grid: p.grid})),
-    advice: bul?.advice, adviceLabel: T(`JAN:s råd för dagen <span class="en">på engelska</span>`, "JAN's advice for the day"), links});
+    // JAN sometimes writes the advice in Japanese only
+    ...(/[\u3040-\u30ff\u4e00-\u9fff]/.test(bul?.advice || "")
+      ? {adviceLang: "ja", adviceLabel: T(`JAN:s råd för dagen <span class="en">på japanska</span>`, `JAN's advice for the day <span class="en">in Japanese</span>`)}
+      : {adviceLabel: T(`JAN:s råd för dagen <span class="en">på engelska</span>`, "JAN's advice for the day")}),
+    advice: bul?.advice, links});
 }
 
 function avalSweden(r, se){
