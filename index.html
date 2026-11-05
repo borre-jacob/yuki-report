@@ -194,6 +194,11 @@ footer .copy{color:var(--ink);font-weight:600}
 .dlinks{display:flex;flex-wrap:wrap;gap:6px}
 .dcard{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;padding:14px;border-radius:12px;border:2px solid var(--dc,var(--line));background:var(--bg)}
 .dcard p{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:70ch}
+.dmeta{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 0;font-size:13px;color:var(--muted)}
+.dmeta b{color:var(--ink);font-weight:600}
+.dmeta .alv{margin:0 4px 0 0}
+.forhill{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14px}
+.forhill .alv{margin:0 4px 0 2px}
 .dcard.none{border-style:dashed}
 .dhead-t{font-family:var(--display);font-size:20px;font-weight:700}
 .dlvl{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;font:600 15px var(--mono);flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
@@ -1571,7 +1576,9 @@ function problemHtml(p, ringLabels){
       </div></div>`;
 }
 
-function dangerCard({top, levels, bands, area, near, issued, source, problems = [], advice, adviceLabel, adviceLang = "en", links, ringLabels = BANDS}){
+// validTo: when the bulletin ends (text). tomorrow: tomorrow's level when published. forHill: what the levels mean
+// for this resort's top and base (html), where the bulletin gives limits in metres.
+function dangerCard({top, levels, bands, area, near, issued, source, problems = [], advice, adviceLabel, adviceLang = "en", links, ringLabels = BANDS, validTo, tomorrow, forHill}){
   bands = bands || levels?.map((level, i) => ({label: BANDS[i], level}));
   const linkHtml = `<div class="dlinks">${links.join("")}</div>`;
   const areaHtml = `${esc(area)}${near ? ` <span class="near">${esc(near)}</span>` : ""}`;
@@ -1593,8 +1600,11 @@ function dangerCard({top, levels, bands, area, near, issued, source, problems = 
       <div>
         <b class="dhead-t">${top} – ${T(`${DANGER[top].n} lavinfara`, `${DANGER[top].n} avalanche danger`)}</b>
         <p>${T(`Högsta nivån idag i ${areaHtml}. Utfärdad ${issued} av ${esc(source)}.`, `Highest level today in ${areaHtml}. Issued ${issued} by ${esc(source)}.`)}</p>
+        ${validTo || tomorrow ? `<p class="dmeta">${validTo ? `<span>${T("Gäller till", "Valid until")} <b>${validTo}</b></span>` : ""}${tomorrow
+          ? `<span>${T("I morgon", "Tomorrow")}: ${alvBadge(tomorrow)}<b>${DANGER[tomorrow].n}</b>${tomorrow > top ? " ↑" : tomorrow < top ? " ↓" : ""}</span>` : ""}</p>` : ""}
       </div>
     </div>
+    ${forHill ? `<p class="forhill">${forHill}</p>` : ""}
     ${bands ? `<div class="bands">${bands.map(b => `<div class="band">${dangerBox(b.level)}<span>${esc(b.label)}</span><b>${DANGER[b.level].n}</b></div>`).join("")}</div>` : ""}
     ${probs ? `<div class="probs"><span class="label">${T("Lavinproblem idag", "Avalanche problems today")}</span>${probs}${roseHint}</div>` : ""}
     ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="${adviceLang}">${esc(advice)}</p></details>` : ""}
@@ -1659,6 +1669,7 @@ function avalSweden(r, se){
     top: fresh ? bul.level : 0, area: SE_AREAS[v.a],
     near: v.near ? T(`närmaste prognosområde, täcker inte ${r.name} direkt`, `nearest forecast area, does not cover ${r.name} directly`) : "",
     issued: bul?.published ? fmtWhen(new Date(bul.published), "Europe/Stockholm", !fresh) : "", source: T("Naturvårdsverket", "the Swedish Environmental Protection Agency"),
+    validTo: fresh ? fmtWhen(new Date(bul.validTo), "Europe/Stockholm") : "",
     problems: (bul?.problems || []).map(p => typeof p === "string" ? {name: p} : p)
       // Naturvårdsverket marks sectors on/off only: show them in the strong colour
       .map(p => ({...p, sv: p.name, en: SE_PROBLEM_EN[p.name] || p.name, text: T("Läs mer om lavinproblemet i hela prognosen.", "Read more about this problem in the full bulletin."), grid: p.grid?.map(r => r.map(v => v ? 2 : 0))})),
@@ -1722,8 +1733,12 @@ async function eawsCard(r, central){
   const day = off => new Date(Date.now() + off * 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Vienna"});
   const valid = b => b && new Date(b.validTime?.endTime) > Date.now();
   let bul = null;
+  let tomorrow = 0;
   if (central){
     bul = [day(0), day(1)].map(d => central.bulletins[central.resorts[r.id]?.[d]]).find(valid) || null;
+    // Tomorrow's bulletin, when it is out (around 17:00) and is not the one shown
+    const next = central.bulletins[central.resorts[r.id]?.[day(1)]];
+    if (next && next !== bul && new Date(next.validTime?.startTime) > Date.now()) tomorrow = eawsTop(next);
   } else {
     try {
       for (const d of [day(0), day(1)]){
@@ -1755,7 +1770,24 @@ async function eawsCard(r, central){
       grid: aspects.some(v => v) ? [aspects] : null, height};
   });
   const advice = [bul.avalancheActivity?.highlights, bul.avalancheActivity?.comment, bul.snowpackStructure?.comment].filter(Boolean).join(" ");
+  // Level at the resort's top and base, from the elevation limits (only when they are in metres)
+  const levelAt = m => {
+    if (ratings.length === 1 && !ratings[0].elevation) return EAWS_LEVEL[ratings[0].mainValue] || 0;
+    for (const d of ratings){
+      const lo = d.elevation?.lowerBound, hi = d.elevation?.upperBound;
+      if (lo === "treeline" || hi === "treeline") return null;
+      if ((lo == null || m >= +lo) && (hi == null || m <= +hi)) return EAWS_LEVEL[d.mainValue] || 0;
+    }
+    return null;
+  };
+  const lt = levelAt(r.top), lb = levelAt(r.base);
+  const lvText = l => `${alvBadge(l)}${DANGER[l].n.toLowerCase()}`;
+  const forHill = lt && lb && ratings.length > 1 ? (lt === lb
+    ? T(`<b>${esc(r.name)}:</b> hela backen (${r.base}–${r.top} m) ligger i nivå ${lvText(lt)}.`, `<b>${esc(r.name)}:</b> the whole ski area (${r.base}–${r.top} m) is at level ${lvText(lt)}.`)
+    : T(`<b>${esc(r.name)}:</b> toppen (${r.top} m) ligger i nivå ${lvText(lt)}, dalen (${r.base} m) i nivå ${lvText(lb)}.`,
+        `<b>${esc(r.name)}:</b> the top (${r.top} m) is at level ${lvText(lt)}, the base (${r.base} m) at level ${lvText(lb)}.`)) : "";
   return dangerCard({top, bands, area, issued: bul.publicationTime ? fmtWhen(new Date(bul.publicationTime), "Europe/Vienna") : "",
+    validTo: bul.validTime?.endTime ? fmtWhen(new Date(bul.validTime.endTime), "Europe/Vienna") : "", tomorrow, forHill,
     source: srcName, problems, advice: advice.replace(/<[^>]+>/g, " "), adviceLang: lang,
     adviceLabel: EN ? `Bulletin highlights${lang !== "en" ? ` <span class="en">in ${LANG_NAME[lang] || lang}</span>` : ""}`
       : `Prognosens huvudbudskap <span class="en">på ${LANG_NAME[lang] || lang}</span>`, links});
@@ -1766,6 +1798,8 @@ async function avalNorway(r, central){
   const site = `<a class="dirbtn" href="https://www.varsom.no/en/avalanche-bulletins/" target="_blank" rel="noopener">${T("Hela varslet på Varsom", "Full warning at Varsom")} ↗</a>`;
   try {
     let w = central?.warnings[central.resorts[r.id]?.[today]];
+    const tomorrowDay = new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Oslo"});
+    const tomorrow = +central?.warnings[central.resorts[r.id]?.[tomorrowDay]]?.DangerLevel || 0;
     if (!w){
       const res = await netFetch(`https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByCoordinates/Detail/${r.lat}/${r.lon}/2/${today}/${today}`);
       if (!res.ok) throw new Error(T("Varsom svarade ", "Varsom answered ") + res.status);
@@ -1784,6 +1818,7 @@ async function avalNorway(r, central){
       top: lvl, area: w.RegionName || cname("Norge"),
       near: w.RegionTypeName === "B" ? T("grovt varslat B-område, mindre detaljerat", "B region with a coarse, less detailed warning") : "",
       issued: w.PublishTime ? fmtLocalIso(w.PublishTime, !lvl) : "", source: "Varsom (NVE)",
+      validTo: w.ValidTo ? fmtLocalIso(w.ValidTo) : "", tomorrow: lvl ? tomorrow : 0,
       problems, advice: w.MainText, adviceLabel: T(`Varsoms huvudbudskap <span class="en">på engelska</span>`, "Varsom's main message"), links: [site]});
   } catch (e){
     return `<p class="hint">${T("Kunde inte hämta lavinvarslet från Varsom", "Could not fetch the avalanche warning from Varsom")} (${esc(e.message)}).</p><div class="dlinks">${site}</div>`;
