@@ -130,6 +130,9 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .stat b{display:block;font-family:var(--mono);font-size:26px;font-weight:500;margin-top:2px}
 .stat b small{font-size:13px;color:var(--muted)}
 .stat .sub{font-size:12px;color:var(--muted)}
+.stat .sub{display:block}
+.stat .sub b{display:inline;font:inherit;font-weight:600;color:var(--ink);margin:0}
+.stat .rain{display:block;margin-top:2px;font-size:12px;color:var(--warn)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .panel h3{font-size:18px;font-weight:700}
 .panel .hint{font-size:13px;color:var(--muted);margin:0}
@@ -1028,7 +1031,7 @@ function renderOverview(){
         <div class="legend">
           <span style="--c:var(--snow)">Fallit</span>
           <span style="--c:var(--future)">Prognos</span>
-          <span>Staplar: 3 dygn bakåt + 7 framåt</span>
+          <span>cm vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt</span>
         </div>
       </div>
       <div class="grid">
@@ -1724,11 +1727,23 @@ async function loadForecast(r){
   const depth = top.hourly.snow_depth?.[idx];
   const fl = mid.hourly.freezing_level_height.slice(idx, idx+72).filter(v => v != null);
   const s = (d, a, b) => sumRange(d.hourly.snowfall, a, b);
+  // Snow at the top (big number) with all three heights below. The list and map on the start page use the
+  // middle height, which is marked, so a difference between them is explained here.
+  const snowStat = (label, color, a, b) => {
+    const t = s(top, a, b), m = s(mid, a, b), d = s(base, a, b);
+    const rain = sumRange(base.hourly.rain, a, b);
+    const onlyHigh = t >= 2 && d < t / 4;
+    return `<div class="stat"><span class="label">${label}</span>
+      <b style="color:${color}">${fmt(t)}<small> cm</small></b>
+      <span class="sub" title="Listan och kartan på startsidan visar mellanhöjden (${r.mid} m)">mitt <b>${fmt(m)}</b> · dal <b>${fmt(d)}</b> cm</span>
+      ${onlyHigh ? `<span class="rain">${rain >= 1 ? "Regn i dalen, snö" : "Snö"} bara högt upp</span>` : ""}
+    </div>`;
+  };
 
   $("#stats").innerHTML = `
-    <div class="stat"><span class="label">Senaste 72 h</span><b style="color:var(--snow)">${fmt(s(top,idx-72,idx+1))}<small> cm</small></b><span class="sub">topp · dal ${fmt(s(base,idx-72,idx+1))} cm</span></div>
-    <div class="stat"><span class="label">Kommande 72 h</span><b style="color:var(--future)">${fmt(s(top,idx+1,idx+73))}<small> cm</small></b><span class="sub">topp · dal ${fmt(s(base,idx+1,idx+73))} cm</span></div>
-    <div class="stat"><span class="label">Kommande 7 dygn</span><b>${fmt(top.daily.snowfall_sum.slice(todayIdx, todayIdx+7).reduce((a,b)=>a+(b||0),0))}<small> cm</small></b><span class="sub">vid toppen</span></div>
+    ${snowStat("Senaste 72 h", "var(--snow)", idx - 72, idx + 1)}
+    ${snowStat("Kommande 72 h", "var(--future)", idx + 1, idx + 73)}
+    <div class="stat"><span class="label">Kommande 7 dygn</span><b>${fmt(top.daily.snowfall_sum.slice(todayIdx, todayIdx+7).reduce((a,b)=>a+(b||0),0))}<small> cm</small></b><span class="sub">vid toppen (${r.top} m)</span></div>
     <div class="stat"><span class="label">Snödjup (modell)</span><b>${depth == null ? "–" : fmt(depth*100)}<small> cm</small></b><span class="sub">uppskattat vid toppen, kan avvika från ortens mätning</span></div>
     <div class="stat"><span class="label">Nollgradersgräns 72 h</span><b>${fl.length ? fmt(Math.min(...fl)) + "–" + fmt(Math.max(...fl)) : "–"}<small> m</small></b><span class="sub">${fl.length && Math.max(...fl) > r.base ? "risk för regn i dalen" : "kallt hela vägen ner"}</span></div>`;
 
