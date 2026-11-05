@@ -4,6 +4,7 @@ Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidr
 
 - **Startsidan** har ett val mellan Japan, Skandinavien och Alperna och rankar orterna efter hur mycket snö som fallit de senaste 3 dygnen, eller hur mycket som väntas de kommande 3 dygnen.
 - **Varje ort** har en detaljerad prognos (topp och dal, timme för timme, nollgradersgräns) och en karta med liftar, onsen, toaletter, michi-no-eki och andra ställplatser, med vägbeskrivning i Google Maps.
+- **Svenska och engelska:** knappen i sidhuvudet byter språk. Svenska telefoner får svenska från början, alla andra engelska. Text i koden skrivs som `T("svenska", "English")`, och fast text i sidan som ett par med klasserna `t-sv` och `t-en`.
 
 Appen är `index.html`, med platsdata per ort i `data/osm/places/`. Kör den med en lokal webbserver (`python3 -m http.server`) eller publicera repot med GitHub Pages. Direkt från filen fungerar inte, eftersom platsdatan hämtas med fetch.
 

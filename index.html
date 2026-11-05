@@ -14,7 +14,11 @@
 <meta name="apple-mobile-web-app-title" content="Yuki Report">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Yuki Report</title>
-<script>/* Chosen light/dark theme, set before the page paints */try{var t=localStorage.getItem("yr-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>/* Chosen light/dark theme and language, set before the page paints. Language: the saved choice,
+   else Swedish on Swedish phones and English for everyone else. */
+try{var t=localStorage.getItem("yr-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}
+var l=null;try{l=JSON.parse(localStorage.getItem("yr-lang"))}catch(e){}
+document.documentElement.lang=l==="sv"||l==="en"?l:/^sv\b/i.test(navigator.language||"")?"sv":"en";</script>
 <link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -231,6 +235,8 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
 .scale-list{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--muted)}
 .scale-list li{display:flex;gap:10px;align-items:flex-start}
 .scale-list b{color:var(--ink);margin-right:6px}
+/* Fixed page text is written in both languages; only the chosen one shows */
+html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .dirbtn.cam{border-color:var(--line);color:var(--ink);font-weight:500}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -244,18 +250,21 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
     <path d="M40 575 L148 428 L215 480 L330 275 L408 365 L525 45 L615 335 L685 280 L860 585" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M472 210 L525 45 L585 215 L560 232 L520 275 L480 230 Z M300 355 L330 275 L370 330 L355 345 L322 405 L295 380 Z M660 300 L685 280 L715 320 L712 368 L692 385 L668 330 Z" class="ink-f"/>
       </svg>Yuki <span>Report</span></h1>
-      <p>Pudersnö, lavinläge och ställplatser för skidresan i Japan, Skandinavien och Alperna</p>
+      <p class="t-sv">Pudersnö, lavinläge och ställplatser för skidresan i Japan, Skandinavien och Alperna</p>
+      <p class="t-en">Powder, avalanche danger and places to park for your ski trip in Japan, Scandinavia and the Alps</p>
     </div>
     <div class="status">
-      <div class="updated" id="updated">Hämtar prognos…</div>
+      <div class="updated" id="updated"></div>
+      <button type="button" id="lang" lang="sv"></button>
       <button type="button" id="theme"></button>
-      <button type="button" id="refresh">Uppdatera</button>
+      <button type="button" id="refresh"><span class="t-sv">Uppdatera</span><span class="t-en">Refresh</span></button>
     </div>
   </header>
-  <div class="banner off" id="netbanner" role="status" hidden>Offline – visar senast hämtade data</div>
-  <div class="banner upd" id="swbanner" role="status" hidden>Ny version finns – <button type="button" id="swreload">ladda om</button></div>
+  <div class="banner off" id="netbanner" role="status" hidden><span class="t-sv">Offline – visar senast hämtade data</span><span class="t-en">Offline – showing the last downloaded data</span></div>
+  <div class="banner upd" id="swbanner" role="status" hidden><span class="t-sv">Ny version finns –</span><span class="t-en">New version available –</span> <button type="button" id="swreload"><span class="t-sv">ladda om</span><span class="t-en">reload</span></button></div>
   <main id="app"></main>
   <footer>
+    <div class="t-sv">
     <p class="copy">© 2026 Jacob Borre – Yuki Report. Koden är <a href="https://github.com/borre-jacob/yuki-report/blob/main/LICENSE" target="_blank" rel="noopener">MIT-licensierad</a>.</p>
     <p class="src">Väder: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
       (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), modelldata beräknad för backens mellanhöjd.
@@ -269,24 +278,56 @@ details.sig p{margin:0 0 12px 90px;font-size:14px;color:var(--muted);max-width:7
       kommer från källorna ovan, hämtas automatiskt och kan vara fel eller inaktuell. Kontrollera alltid den officiella
       lavinprognosen och fråga på plats innan du åker utanför pisterna.
       <a href="integritet.html">Integritet: appen samlar inte in några personuppgifter</a>.</p>
+    </div>
+    <div class="t-en">
+    <p class="copy">© 2026 Jacob Borre – Yuki Report. The code is <a href="https://github.com/borre-jacob/yuki-report/blob/main/LICENSE" target="_blank" rel="noopener">MIT licensed</a>.</p>
+    <p class="src">Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+      (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), model data for the middle height of the slopes.
+      Resorts, lifts, onsen, toilets and parking: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
+      (<a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>).
+      Map style: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>.
+      Avalanche bulletins: Japan Avalanche Network, Varsom (NVE), the Swedish Environmental Protection Agency and the European avalanche warning services in
+      <a href="https://www.avalanches.org/" target="_blank" rel="noopener">EAWS</a>.
+      Resort coordinates are approximate.</p>
+    <p class="src"><b>Disclaimer:</b> Yuki Report is a private hobby app and not an official source. The snow, weather and avalanche information
+      comes from the sources above, is fetched automatically and may be wrong or out of date. Always check the official
+      avalanche bulletin and ask locally before you ski off-piste.
+      <a href="integritet.html#en">Privacy: the app collects no personal data</a>.</p>
+    </div>
     <details class="gset" id="gset">
-      <summary>Kartinställning: <span id="gstatus">OpenFreeMap</span></summary>
-      <p>För att visa Google Maps i appen behövs en egen API-nyckel från Google (gratis upp till en generös månadsgräns, men kräver ett betalkort i Google Cloud).
+      <summary><span class="t-sv">Kartinställning:</span><span class="t-en">Map setting:</span> <span id="gstatus">OpenFreeMap</span></summary>
+      <p class="t-sv">För att visa Google Maps i appen behövs en egen API-nyckel från Google (gratis upp till en generös månadsgräns, men kräver ett betalkort i Google Cloud).
         <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">Så skaffar du en nyckel ↗</a>.
         Aktivera "Maps JavaScript API". Nyckeln sparas bara i den här webbläsaren.</p>
-      <p><b>Begränsa nyckeln</b> så att ingen annan kan använda den: i Google Cloud, under API:er och tjänster → Inloggningsuppgifter,
+      <p class="t-en">To show Google Maps in the app you need your own API key from Google (free up to a generous monthly limit, but it needs a payment card in Google Cloud).
+        <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">How to get a key ↗</a>.
+        Enable "Maps JavaScript API". The key is stored only in this browser.</p>
+      <p class="t-sv"><b>Begränsa nyckeln</b> så att ingen annan kan använda den: i Google Cloud, under API:er och tjänster → Inloggningsuppgifter,
         välj nyckeln och sätt <i>Programbegränsningar</i> till <i>Webbplatser</i> (HTTP-referrer) med bara din egen domän,
         t.ex. <code>https://borre-jacob.github.io/*</code>. Begränsa den gärna också till Maps JavaScript API.</p>
+      <p class="t-en"><b>Restrict the key</b> so nobody else can use it: in Google Cloud, under APIs &amp; Services → Credentials,
+        pick the key and set <i>Application restrictions</i> to <i>Websites</i> (HTTP referrers) with only your own domain,
+        e.g. <code>https://borre-jacob.github.io/*</code>. Preferably restrict it to the Maps JavaScript API as well.</p>
       <form id="gform" class="gform">
-        <input id="gkey" type="password" autocomplete="off" placeholder="Klistra in din Google Maps API-nyckel" aria-label="Google Maps API-nyckel">
-        <button type="submit">Spara och ladda om</button>
-        <button type="button" id="gclear">Ta bort nyckel</button>
+        <input id="gkey" type="password" autocomplete="off">
+        <button type="submit"><span class="t-sv">Spara och ladda om</span><span class="t-en">Save and reload</span></button>
+        <button type="button" id="gclear"><span class="t-sv">Ta bort nyckel</span><span class="t-en">Remove key</span></button>
       </form>
     </details>
   </footer>
 </div>
 
 <script>
+// ---------- Language ----------
+// "sv" or "en", set in <head> before paint. T(sv, en) picks the text; fixed page text uses .t-sv / .t-en.
+const LANG = document.documentElement.lang === "en" ? "en" : "sv";
+const EN = LANG === "en";
+const T = (sv, en) => EN ? en : sv;
+const LOCALE = EN ? "en-GB" : "sv-SE";
+// Country names are stored in Swedish (the code compares them); shown in the chosen language
+const COUNTRY_EN = {Sverige: "Sweden", Norge: "Norway", Frankrike: "France", Italien: "Italy", Schweiz: "Switzerland", "Österrike": "Austria"};
+const cname = c => EN ? COUNTRY_EN[c] || c : c;
+
 // ---------- Resorts (approximate centre coordinates, base/top elevation in m) ----------
 const RESORTS = [
   // Hokkaido
@@ -798,9 +839,9 @@ RESORTS.forEach(r => { r.area = r.area || "japan"; r.country = r.country || "Jap
 
 // Areas the app covers. Each has its own regions, map view, facility wording and avalanche services.
 const AREAS = {
-  japan:       {name:"Japan",       sauna:"Onsen",        flag:"JP"},
-  scandinavia: {name:"Skandinavien", sauna:"Bastu & bad", flag:"SE NO FI"},
-  alps:        {name:"Alperna",      sauna:"Bad & bastu", flag:"AT CH FR IT"},
+  japan:       {name:"Japan",                        sauna:"Onsen",                           flag:"JP"},
+  scandinavia: {name:T("Skandinavien", "Scandinavia"), sauna:T("Bastu & bad", "Sauna & pool"), flag:"SE NO FI"},
+  alps:        {name:T("Alperna", "The Alps"),        sauna:T("Bad & bastu", "Spa & sauna"),  flag:"AT CH FR IT"},
 };
 const areaResorts = a => RESORTS.filter(r => r.area === a);
 const regionsOf = a => [...new Set(areaResorts(a).map(r => r.region))];
@@ -810,21 +851,22 @@ const inRegion = (r, f) => f === "all" || f === "c:" + r.country || f === r.regi
 function regionOptions(a, sel){
   const cs = countriesOf(a);
   const opt = (v, t) => `<option value="${esc(v)}" ${sel === v ? "selected" : ""}>${esc(t)}</option>`;
-  if (cs.length < 2) return opt("all", "Alla regioner") + regionsOf(a).map(g => opt(g, g)).join("");
-  return opt("all", "Alla länder") + cs.map(c => `<optgroup label="${esc(c)}">${opt("c:" + c, "Hela " + c)}${
+  if (cs.length < 2) return opt("all", T("Alla regioner", "All regions")) + regionsOf(a).map(g => opt(g, g)).join("");
+  return opt("all", T("Alla länder", "All countries")) + cs.map(c => `<optgroup label="${esc(cname(c))}">${opt("c:" + c, T("Hela ", "All of ") + cname(c))}${
     [...new Set(areaResorts(a).filter(r => r.country === c).map(r => r.region))].sort().map(g => opt(g, g)).join("")}</optgroup>`).join("");
 }
 
 // Webcam pages per resort. The resort's own page first where one was found, then OpenSnow,
 // which collects the resorts' cameras (often several heights, including the top).
-const OS = id => ({label: "Webbkameror (OpenSnow)", url: `https://opensnow.com/location/jp${id}/cams`});
-const SS = path => ({label: "SkiStar, officiella kameror", url: `https://www.skistar.com/en/ski-destinations/${path}/`});
-const SR = slug => ({label: "Webbkameror (skiresort.com)", url: `https://www.skiresort.com/en/ski-resort/${slug}/webcams/`});
-const HAKUBA_CAMS = {label: "Hakuba Valley, officiella kameror", url: "https://www.hakubavalley.com/en/livecam/"};
+const OFFICIAL = T("officiella kameror", "official cameras");
+const OS = id => ({label: T("Webbkameror (OpenSnow)", "Webcams (OpenSnow)"), url: `https://opensnow.com/location/jp${id}/cams`});
+const SS = path => ({label: "SkiStar, " + OFFICIAL, url: `https://www.skistar.com/en/ski-destinations/${path}/`});
+const SR = slug => ({label: T("Webbkameror (skiresort.com)", "Webcams (skiresort.com)"), url: `https://www.skiresort.com/en/ski-resort/${slug}/webcams/`});
+const HAKUBA_CAMS = {label: "Hakuba Valley, " + OFFICIAL, url: "https://www.hakubavalley.com/en/livecam/"};
 const CAMS = {
-  hirafu:   [{label: "Niseko United, officiella kameror", url: "https://www.niseko.ne.jp/en/livecam/"}, OS("nisekograndhirafu")],
+  hirafu:   [{label: "Niseko United, " + OFFICIAL, url: "https://www.niseko.ne.jp/en/livecam/"}, OS("nisekograndhirafu")],
   rusutsu:  [OS("rusutsu")],
-  kiroro:   [{label: "Kiroro, officiella kameror", url: "https://www.kiroro.co.jp/en/winter/livecam/"}, OS("kiroro")],
+  kiroro:   [{label: "Kiroro, " + OFFICIAL, url: "https://www.kiroro.co.jp/en/winter/livecam/"}, OS("kiroro")],
   teine:    [OS("sapporoteine")],
   kokusai:  [OS("sapporokokusai")],
   furano:   [OS("furano")],
@@ -840,8 +882,8 @@ const CAMS = {
   akakura:  [OS("akakuraonsen"), OS("akakurakanko")],
   madarao:  [OS("madaraokogen")],
   nozawa:   [OS("nozawaonsen")],
-  shiga:    [{label: "Shiga Kogen, kameror inkl. toppstationen 2 307 m", url: "https://shigakogen.info/shiga-kogen-webcams/"}],
-  happo:    [{label: "Happo-one, officiella kameror", url: "https://www.happo-one.jp/livecam/"}, HAKUBA_CAMS, OS("hakubahappoone")],
+  shiga:    [{label: T("Shiga Kogen, kameror inkl. toppstationen 2 307 m", "Shiga Kogen, cameras incl. the 2,307 m top station"), url: "https://shigakogen.info/shiga-kogen-webcams/"}],
+  happo:    [{label: "Happo-one, " + OFFICIAL, url: "https://www.happo-one.jp/livecam/"}, HAKUBA_CAMS, OS("hakubahappoone")],
   goryu:    [HAKUBA_CAMS, OS("hakuba47"), OS("hakubagoryu")],
   iwatake:  [HAKUBA_CAMS, OS("hakubaiwatake")],
   tsugaike: [HAKUBA_CAMS, OS("tsugaike")],
@@ -867,8 +909,8 @@ const CAMS = {
   voss: [SR("voss-resort")], myrkdalen: [SR("myrkdalen")], beitostolen: [SR("beitostoelen")],
   norefjell: [SR("norefjell")], stranda: [SR("strandafjellet")],
   levi: [SR("levi")], yllas: [SR("yllaes")], ruka: [SR("ruka")], pyha: [SR("pyhae")], luosto: [SR("luosto")],
-  tahko: [{label: "Tahko, officiella kameror", url: "https://www.tahko.com/webkamerat/"}],
-  saariselka: [{label: "Saariselkä, officiella kameror", url: "https://www.saariselka.fi/webkamerat/"}],
+  tahko: [{label: "Tahko, " + OFFICIAL, url: "https://www.tahko.com/webkamerat/"}],
+  saariselka: [{label: "Saariselkä, " + OFFICIAL, url: "https://www.saariselka.fi/webkamerat/"}],
 };
 
 // ---------- Helpers ----------
@@ -882,7 +924,7 @@ const fmt = (v, d=0) => { if (v == null || isNaN(v)) return "–"; const x = Num
 // Current hour in Japan, matching Open-Meteo's local ISO strings ("2026-01-20T14:00")
 // Current hour at a location, matching Open-Meteo's local ISO strings ("2026-01-20T14:00")
 const localHourKey = offsetSec => new Date(Date.now() + offsetSec*1000).toISOString().slice(0,13) + ":00";
-const WD = ["sön","mån","tis","ons","tor","fre","lör"];
+const WD = EN ? ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] : ["sön","mån","tis","ons","tor","fre","lör"];
 const dayLabel = iso => { const d = new Date(iso + "T12:00:00Z"); return WD[d.getUTCDay()] + " " + d.getUTCDate() + "/" + (d.getUTCMonth()+1); };
 const sumRange = (arr, a, b) => { let s = 0; for (let i = Math.max(0,a); i < Math.min(arr.length,b); i++) s += arr[i] || 0; return s; };
 function distKm(a, b, c, d){
@@ -903,7 +945,7 @@ function loadGoogle(){
   if (!key) return Promise.resolve(false);
   return new Promise(res => {
     const done = ok => { googleOk = ok; res(ok); };
-    window.gm_authFailure = () => { googleOk = false; $("#gstatus").textContent = "Google-nyckeln nekades, visar OpenFreeMap"; route(); };
+    window.gm_authFailure = () => { googleOk = false; $("#gstatus").textContent = T("Google-nyckeln nekades, visar OpenFreeMap", "Google key refused, showing OpenFreeMap"); route(); };
     window.__gmReady = () => done(true);
     const sc = document.createElement("script");
     sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=en&region=JP&loading=async&callback=__gmReady`;
@@ -915,8 +957,8 @@ function loadGoogle(){
 function addBasemap(map){
   if (googleOk && L.gridLayer.googleMutant){
     const road = L.gridLayer.googleMutant({type:"roadmap"}).addTo(map);
-    L.control.layers({"Karta": road, "Terräng": L.gridLayer.googleMutant({type:"terrain"}),
-      "Satellit": L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
+    L.control.layers({[T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
+      [T("Satellit", "Satellite")]: L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
     return road;
   }
   return addOpenFreeMap(map);
@@ -982,7 +1024,7 @@ async function loadOverview(){
       past_days: "3", forecast_days: "7", timezone: "auto",
     });
     const res = await netFetch("https://api.open-meteo.com/v1/forecast?" + p);
-    if (!res.ok) throw new Error("Open-Meteo svarade " + res.status);
+    if (!res.ok) throw new Error(T("Open-Meteo svarade ", "Open-Meteo answered ") + res.status);
     const data = await res.json();
     return {part, arr: Array.isArray(data) ? data : [data], cachedAt: res.cachedAt};
   }));
@@ -1018,25 +1060,25 @@ function renderOverview(){
   const app = $("#app");
   app.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="seg area" role="group" aria-label="Område">
+      <div class="seg area" role="group" aria-label="${T("Område", "Area")}">
         ${Object.entries(AREAS).map(([k, a]) => `<button data-area="${k}" aria-pressed="${state.area===k}">${a.name}</button>`).join("")}
       </div>
       <div class="controls">
-        <div class="seg" role="group" aria-label="Sortera på">
-          <button id="m-past" class="past" aria-pressed="${state.mode==="past"}">Fallit senaste 3 dygnen</button>
-          <button id="m-fut" class="fut" aria-pressed="${state.mode==="fut"}">Väntas kommande 3 dygn</button>
+        <div class="seg" role="group" aria-label="${T("Sortera på", "Sort by")}">
+          <button id="m-past" class="past" aria-pressed="${state.mode==="past"}">${T("Fallit senaste 3 dygnen", "Fallen last 3 days")}</button>
+          <button id="m-fut" class="fut" aria-pressed="${state.mode==="fut"}">${T("Väntas kommande 3 dygn", "Expected next 3 days")}</button>
         </div>
         <select id="region" aria-label="Region">${regionOptions(state.area, state.region)}</select>
         <button type="button" class="offbtn" id="offline" hidden></button>
         <div class="legend">
-          <span style="--c:var(--snow)">Fallit</span>
-          <span style="--c:var(--future)">Prognos</span>
-          <span>cm vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt</span>
+          <span style="--c:var(--snow)">${T("Fallit", "Fallen")}</span>
+          <span style="--c:var(--future)">${T("Prognos", "Forecast")}</span>
+          <span>${T("cm vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt", "cm at the middle of the slopes · bars: 3 days back + 7 ahead")}</span>
         </div>
       </div>
       <div class="grid">
         <div class="list ${state.mode==="past"?"mode-past":"mode-fut"}" id="list"></div>
-        <div class="mapbox"><div id="map" role="region" aria-label="Karta över skidorter"></div></div>
+        <div class="mapbox"><div id="map" role="region" aria-label="${T("Karta över skidorter", "Map of ski resorts")}"></div></div>
       </div>
     </div>`;
   $("#m-past").onclick = () => setMode("past");
@@ -1067,7 +1109,7 @@ function listRows(rows, rowHtml){
   const shown = state.showAll ? rows : rows.slice(0, TOP_N);
   const rest = rows.length - TOP_N;
   return shown.map(rowHtml).join("") + (rest > 0
-    ? `<button type="button" class="more" id="more">${state.showAll ? `Visa bara topp ${TOP_N}` : `Visa alla ${rows.length} orter`}</button>` : "");
+    ? `<button type="button" class="more" id="more">${state.showAll ? T(`Visa bara topp ${TOP_N}`, `Show only top ${TOP_N}`) : T(`Visa alla ${rows.length} orter`, `Show all ${rows.length} resorts`)}</button>` : "");
 }
 function wireList(list, refill){
   list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
@@ -1089,11 +1131,11 @@ function setArea(a){
 // No forecast to rank by (offline on first visit, or the weather service refused): still list the resorts by name
 function listWithoutSnow(msg, listOnly = false){
   const list = $("#list"); if (!list) return;
-  const rows = areaResorts(state.area).filter(r => inRegion(r, state.region)).sort((a,b) => a.name.localeCompare(b.name, "sv"));
+  const rows = areaResorts(state.area).filter(r => inRegion(r, state.region)).sort((a,b) => a.name.localeCompare(b.name, LANG));
   list.innerHTML = `<div class="msg err">${msg}</div>` + listRows(rows, r => `<button class="row" data-id="${r.id}">
       <span class="info">
         <span class="name">${esc(r.name)}</span>
-        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(r.country) : ""} · ${r.base}–${r.top} m</span>
+        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${r.base}–${r.top} m</span>
       </span>
     </button>`);
   wireList(list, () => listWithoutSnow(msg, true));
@@ -1107,7 +1149,7 @@ function listWithoutSnow(msg, listOnly = false){
 function fillOverview(listOnly = false){
   const list = $("#list"); if (!list) return;
   if (!areaResorts(state.area).some(r => state.overview?.[r.id])){
-    list.innerHTML = `<div class="msg">Hämtar snödata för ${areaResorts(state.area).length} orter…</div>`;
+    list.innerHTML = `<div class="msg">${T(`Hämtar snödata för ${areaResorts(state.area).length} orter…`, `Fetching snow data for ${areaResorts(state.area).length} resorts…`)}</div>`;
     fitMap(areaResorts(state.area)); return;
   }
   const key = state.mode === "past" ? "past72" : "next72";
@@ -1126,15 +1168,15 @@ function fillOverview(listOnly = false){
       <span class="rank">${i+1}</span>
       <span class="info">
         <span class="name">${esc(r.name)}</span>
-        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(r.country) : ""} · ${r.base}–${r.top} m</span>
+        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${r.base}–${r.top} m</span>
         <span class="spark" aria-hidden="true">${spark}</span>
       </span>
       <span class="big">
         <b>${fmt(main)}<small> cm</small></b>
-        <span class="sub">${state.mode==="past" ? "kommande 3 d" : "senaste 3 d"}: ${fmt(other)} cm</span>
+        <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${fmt(other)} cm</span>
       </span>
     </button>`;
-  }) || `<div class="msg">Inga orter i den här regionen.</div>`;
+  }) || `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`;
   wireList(list, () => fillOverview(true));
   if (listOnly) return;
 
@@ -1183,7 +1225,7 @@ function drawRampLegend(ramp){
   rampLegend = L.control({position: "bottomleft"});
   rampLegend.onAdd = () => {
     const d = L.DomUtil.create("div", "ramp");
-    d.innerHTML = `<span class="ramp-t">${state.mode === "past" ? "Fallit, 3 dygn" : "Prognos, 3 dygn"}</span>
+    d.innerHTML = `<span class="ramp-t">${state.mode === "past" ? T("Fallit, 3 dygn", "Fallen, 3 days") : T("Prognos, 3 dygn", "Forecast, 3 days")}</span>
       <span class="ramp-bar" style="background:linear-gradient(90deg,${ramp.join(",")})"></span>
       <span class="ramp-l">${RAMP_CM.map((c, i) => `<span>${c}${i === RAMP_CM.length-1 ? "+ cm" : ""}</span>`).join("")}</span>`;
     return d;
@@ -1199,24 +1241,40 @@ function fitMap(rs){
 // ---------- Detail view ----------
 let poiMap = null;
 const POI_TYPES = {
-  onsen:  {label:"Onsen",                 c:"--onsen"},   // label switched to "Bastu & bad" outside Japan
-  toilet: {label:"Toaletter",             c:"--toilet"},
-  park:   {label:"Parkering & övernattning", c:"--park"},
+  onsen:  {label:"Onsen",                                                c:"--onsen"},   // label switched to "Bastu & bad" outside Japan
+  toilet: {label:T("Toaletter", "Toilets"),                              c:"--toilet"},
+  park:   {label:T("Parkering & övernattning", "Parking & overnight"),   c:"--park"},
 };
 const poiOn = {onsen:true, toilet:true, park:true};
-const TIPS_JAPAN = [
+const TIPS_JAPAN = EN ? [
+  `<b>Michi-no-eki</b> (道の駅, roadside stations) have free parking and toilets around the clock. Resting overnight in the car is usually fine, but don't camp (no chairs, no cooking outside).`,
+  `<b>RV Parks</b> (RVパーク) are paid motorhome sites, often with power and a toilet. Also search <a href="https://www.kurumatabi.com/rvpark/" target="_blank" rel="noopener">kurumatabi.com/rvpark</a>.`,
+  `Many ski resort car parks don't allow overnight stays. Ask at the information desk.`,
+  `Tattoo bans are common at onsen. Check beforehand if it affects you.`,
+] : [
   `<b>Michi-no-eki</b> (道の駅, vägstationer) har gratis parkering och toaletter dygnet runt. Att vila över natten i bilen är oftast okej, men campa inte (inga stolar, ingen matlagning ute).`,
   `<b>RV Park</b> (RVパーク) är betalda ställplatser för husbilar, ofta med el och toalett. Sök även på <a href="https://www.kurumatabi.com/rvpark/" target="_blank" rel="noopener">kurumatabi.com/rvpark</a>.`,
   `Många skidorters parkeringar tillåter inte övernattning. Fråga i informationen.`,
   `Onsen med tatueringsförbud är vanligt. Kolla innan om det berör dig.`,
 ];
-const TIPS_SCANDINAVIA = [
+const TIPS_SCANDINAVIA = EN ? [
+  `Many resorts have <b>motorhome parking or campsites with power</b>, handy for heaters and engine warmers. Book ahead for the winter school holidays and Easter.`,
+  `Sleeping one night in a motorhome in public car parks and rest areas is generally fine unless signs say otherwise. Don't put out tables and chairs.`,
+  `Mind the cold: protect the water from freezing, carry plenty of gas or diesel for the heater and check that the toilet cassette doesn't freeze.`,
+  `Saunas are often found at campsites, swimming pools and hotels in the resorts. Ask about a day ticket.`,
+] : [
   `Många skidorter har <b>husbilsparkering eller camping med el</b>, bra för värmare och motorvärmare. Boka i förväg under sportlov och påsk.`,
   `På allmänna parkeringar och rastplatser går det i regel bra att sova en natt i husbilen om inga skyltar säger annat. Ställ inte ut bord och stolar.`,
   `Tänk på kylan: frostskydda vattnet, ha gott om gasol eller diesel till värmaren och kolla att toalettkassetten inte fryser.`,
   `Bastu finns ofta på campingar, i simhallar och på hotell i skidorterna. Fråga om dagsbiljett.`,
 ];
-const TIPS_ALPS = [
+const TIPS_ALPS = EN ? [
+  `Look for motorhome sites: <b>Stellplatz</b> (Austria, Switzerland), <b>aire de camping-car</b> (France) and <b>area di sosta camper</b> (Italy). Many resorts have one by the lifts, often with power. Apps such as park4night show more.`,
+  `Sleeping in a motorhome in ordinary car parks is banned in many places, especially in Switzerland and several Austrian states such as Tyrol. Follow the signs and use motorhome sites or winter campsites.`,
+  `Winter equipment is a must in the mountains: winter tyres and snow chains in the car (required by law in mountain areas in France and Italy during the winter season). Chain signs apply to motorhomes too.`,
+  `Austria and Switzerland require a road toll sticker (vignette), and Italy and France have toll motorways. Motorhomes over 3.5 tonnes have their own rules in Austria (GO-Box).`,
+  `Thermal baths (Therme, terme) and pools with saunas are found in many Alpine valleys, often open in the evening after skiing.`,
+] : [
   `Leta efter ställplatser: <b>Stellplatz</b> (Österrike, Schweiz), <b>aire de camping-car</b> (Frankrike) och <b>area di sosta camper</b> (Italien). Många skidorter har en egen vid liften, ofta med el. Appar som park4night visar fler.`,
   `Att sova i husbilen på vanliga parkeringar är förbjudet på många håll, särskilt i Schweiz och i flera österrikiska förbundsländer som Tyrolen. Följ skyltarna och använd ställplatser eller vintercamping.`,
   `Vinterutrustning är ett krav i bergen: vinterdäck och snökedjor i bilen (i Frankrike och Italien under vintersäsongen enligt lag i bergsområden). Kedjeskyltar gäller även husbilar.`,
@@ -1231,46 +1289,47 @@ async function renderDetail(id){
   const app = $("#app");
   app.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div><button class="back" id="back">← Alla orter</button></div>
+      <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
       <div class="dhead">
-        <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(r.country) : ""} · dal ${r.base} m · topp ${r.top} m</span>
+        <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${T("dal", "base")} ${r.base} m · ${T("topp", "top")} ${r.top} m</span>
         <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span></h2>
         <div class="dlinks">
-          <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">Vägbeskrivning till backen ↗</a>
+          <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
           ${(CAMS[r.id] || []).map(c => `<a class="dirbtn cam" href="${esc(c.url)}" target="_blank" rel="noopener">📷 ${esc(c.label)} ↗</a>`).join("")}
         </div>
-        ${CAMS[r.id] ? "" : `<span class="label" style="text-transform:none;letter-spacing:0">Ingen webbkamera hittad för den här orten.</span>`}
+        ${CAMS[r.id] ? "" : `<span class="label" style="text-transform:none;letter-spacing:0">${T("Ingen webbkamera hittad för den här orten.", "No webcam found for this resort.")}</span>`}
       </div>
-      <div class="stats" id="stats"><div class="msg">Hämtar detaljerad prognos…</div></div>
+      <div class="stats" id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="panel">
-        <h3>Snöfall per dygn</h3>
-        <p class="hint">Mörk stapel = toppen (${r.top} m), ljus = dalen (${r.base} m). Linjen visar max/min-temperatur vid toppen.</p>
+        <h3>${T("Snöfall per dygn", "Snowfall per day")}</h3>
+        <p class="hint">${T(`Mörk stapel = toppen (${r.top} m), ljus = dalen (${r.base} m). Linjen visar max/min-temperatur vid toppen.`, `Dark bar = top (${r.top} m), light = base (${r.base} m). The line shows max/min temperature at the top.`)}</p>
         <div class="chart" id="daily"></div>
       </div>
       <div class="panel">
-        <h3>Timme för timme, kommande 72 h</h3>
-        <p class="hint">Snöfall vid mellanhöjd (${r.mid} m) och nollgradersgränsen. Ligger nollgradersgränsen över dalstationen blir det blötsnö eller regn längre ner.</p>
+        <h3>${T("Timme för timme, kommande 72 h", "Hour by hour, next 72 h")}</h3>
+        <p class="hint">${T(`Snöfall vid mellanhöjd (${r.mid} m) och nollgradersgränsen. Ligger nollgradersgränsen över dalstationen blir det blötsnö eller regn längre ner.`, `Snowfall at mid height (${r.mid} m) and the freezing level. When the freezing level is above the base station, it turns to wet snow or rain lower down.`)}</p>
         <div class="chart" id="hourly"></div>
       </div>
       <div class="panel" id="aval">
-        <h3>Lavinläge</h3>
+        <h3>${T("Lavinläge", "Avalanche danger")}</h3>
         ${avalOfficial(r)}
-        <p class="hint caution aval-note"><b>Läs alltid hela prognosen hos källan.</b> Den hämtas automatiskt och visas här förkortad. Den kan vara inaktuell eller ofullständig, och den gäller ett helt område, inte den enskilda sluttningen. Bedöm terrängen själv och bär sändare, sond och spade utanför pisterna. Du ansvarar själv för dina beslut i fjällen.</p>
-        <details class="scale"><summary>Vad betyder färgerna och nivåerna?</summary>${AVAL_SCALE}</details>
-        <div id="avalsignals"><div class="msg">Räknar på vädret…</div></div>
+        <p class="hint caution aval-note">${T("<b>Läs alltid hela prognosen hos källan.</b> Den hämtas automatiskt och visas här förkortad. Den kan vara inaktuell eller ofullständig, och den gäller ett helt område, inte den enskilda sluttningen. Bedöm terrängen själv och bär sändare, sond och spade utanför pisterna. Du ansvarar själv för dina beslut i fjällen.",
+          "<b>Always read the full bulletin at the source.</b> It is fetched automatically and shortened here. It may be out of date or incomplete, and it covers a whole region, not the individual slope. Judge the terrain yourself and carry a transceiver, probe and shovel off-piste. You are responsible for your own decisions in the mountains.")}</p>
+        <details class="scale"><summary>${T("Vad betyder färgerna och nivåerna?", "What do the colours and levels mean?")}</summary>${AVAL_SCALE}</details>
+        <div id="avalsignals"><div class="msg">${T("Räknar på vädret…", "Working out the weather…")}</div></div>
       </div>
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <h3>Liftar, ${AREAS[r.area].sauna.toLowerCase()}, toaletter och parkering</h3>
+          <h3>${T(`Liftar, ${AREAS[r.area].sauna.toLowerCase()}, toaletter och parkering`, `Lifts, ${AREAS[r.area].sauna.toLowerCase()}, toilets and parking`)}</h3>
           <div class="chips" id="chips">
-            <button class="chip" id="chip-lift" aria-pressed="${liftOn}" style="--c:var(--lift)"><i></i>Liftar <span class="num" id="cnt-lift"></span></button>
+            <button class="chip" id="chip-lift" aria-pressed="${liftOn}" style="--c:var(--lift)"><i></i>${T("Liftar", "Lifts")} <span class="num" id="cnt-lift"></span></button>
             ${Object.entries(POI_TYPES).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${k === "onsen" ? AREAS[r.area].sauna : t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
           </div>
         </div>
         <div class="dgrid">
-          <div class="poimapbox"><div id="poimap" role="region" aria-label="Karta med faciliteter"></div></div>
+          <div class="poimapbox"><div id="poimap" role="region" aria-label="${T("Karta med faciliteter", "Map of facilities")}"></div></div>
           <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
-            <div class="pois" id="pois"><div class="msg">Laddar platser…</div></div>
+            <div class="pois" id="pois"><div class="msg">${T("Laddar platser…", "Loading places…")}</div></div>
             <ul class="tips">${TIPS[r.area].map(t => `<li>${t}</li>`).join("")}</ul>
           </div>
         </div>
@@ -1309,8 +1368,8 @@ async function renderDetail(id){
   loadForecast(r).catch(e => {
     // fetch() throws a TypeError when there is no network and no saved answer
     $("#stats").innerHTML = e instanceof TypeError
-      ? `<div class="msg err">Ingen sparad prognos för ${esc(r.name)}. Öppna orten en gång med täckning, så finns den kvar offline.</div>`
-      : `<div class="msg err">Kunde inte hämta prognosen: ${esc(e.message)}. Kontrollera uppkopplingen och ladda om.</div>`;
+      ? `<div class="msg err">${T(`Ingen sparad prognos för ${esc(r.name)}. Öppna orten en gång med täckning, så finns den kvar offline.`, `No saved forecast for ${esc(r.name)}. Open the resort once with coverage and it stays available offline.`)}</div>`
+      : `<div class="msg err">${T(`Kunde inte hämta prognosen: ${esc(e.message)}. Kontrollera uppkopplingen och ladda om.`, `Could not fetch the forecast: ${esc(e.message)}. Check your connection and reload.`)}</div>`;
   });
   loadPlaces(r).then(pl => {
     if (!poiMap || location.hash.slice(1) !== r.id) return;
@@ -1320,7 +1379,7 @@ async function renderDetail(id){
     liftPts = pl.lifts.flatMap(l => l[2]);
     if (!touched) startView();
     drawPois(r);
-  }).catch(e => { $("#pois").innerHTML = `<div class="msg err">Inga platser sparade för den här orten (${esc(e.message)}).</div>`; });
+  }).catch(e => { $("#pois").innerHTML = `<div class="msg err">${T(`Inga platser sparade för den här orten (${esc(e.message)}).`, `No places saved for this resort (${esc(e.message)}).`)}</div>`; });
 }
 
 // ---------- Avalanche ----------
@@ -1329,27 +1388,27 @@ async function renderDetail(id){
 const JAN = id => `https://data.nadare.jp/avalanche_informations?area_id=${id}&locale=en`;
 const JAN_AREAS = {
   2: "Hakuba", 3: "Myoko", 4: "Kagura / Tanigawa / Hotaka",
-  6: "sydvästra Hokkaido (Niseko, Yotei, Yoichi)", 7: "centrala Hokkaido (Daisetsuzan, Furano, Tokachi)",
+  6: T("sydvästra Hokkaido", "southwest Hokkaido") + " (Niseko, Yotei, Yoichi)", 7: T("centrala Hokkaido", "central Hokkaido") + " (Daisetsuzan, Furano, Tokachi)",
 };
 const AVAL = {
   happo:{a:2}, goryu:{a:2}, iwatake:{a:2}, tsugaike:{a:2}, cortina:{a:2},
   akakura:{a:3}, arai:{a:3}, madarao:{a:3,near:true}, nozawa:{a:3,near:true}, shiga:{a:3,near:true},
   kagura:{a:4}, tanigawa:{a:4}, hodaigi:{a:4}, naeba:{a:4,near:true}, gala:{a:4,near:true},
-  hirafu:{a:6, extra:{label:"Niseko Avalanche Research Center, daglig rapport", url:"https://niseko.nadare.info/"}},
+  hirafu:{a:6, extra:{label:"Niseko Avalanche Research Center, " + T("daglig rapport", "daily report"), url:"https://niseko.nadare.info/"}},
   rusutsu:{a:6}, kiroro:{a:6}, teine:{a:6,near:true}, kokusai:{a:6,near:true},
   furano:{a:7}, asahidake:{a:7}, kamui:{a:7,near:true}, tomamu:{a:7,near:true}, sahoro:{a:7,near:true},
 };
 // Latest JAN bulletin per area, fetched by tools/fetch_avalanche.py (daily on GitHub) and embedded here.
 const AVALANCHE = /*AVALANCHE*/{"2":{"name":"Hakuba","date":"2026-04-06 05:00","url":"https://data.nadare.jp/avalanche_informations/10574?locale=en","levels":[0,0,0],"advice":"The avalanche bulletin for the 2025/26 season is now closed. Whatever type of avalanche is present, we hope you enjoy the rest of the season, remembering that the most important aspect of avalanche safety is terrain selection.","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"3":{"name":"Myoko","date":"2026-03-30 06:00","url":"https://data.nadare.jp/avalanche_informations/10212?locale=en","levels":[0,0,0],"advice":"2025/26シーズンの雪崩情報を終了しました。どのような種類の雪崩が存在するにせよ、雪崩安全対策に最も重要なのは、地形の選択であることを忘れずに、残りのシーズンを楽しまれてください。","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"4":{"name":"Kagura Tanigawa Hotaka","date":"2026-04-06 05:00","url":"https://data.nadare.jp/avalanche_informations/10573?locale=en","levels":[0,0,0],"advice":"The avalanche bulletin for the 2025/26 season is now closed. Whatever type of avalanche is present, we hope you enjoy the rest of the season, remembering that the most important aspect of avalanche safety is terrain selection.","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"6":{"name":"SW Hokkaido","date":"2026-04-01 06:00","url":"https://data.nadare.jp/avalanche_informations/10376?locale=en","levels":[0,0,0],"advice":"2025/26シーズンの雪崩情報を終了しました。どのような種類の雪崩が存在するにせよ、雪崩安全対策に最も重要なのは、地形の選択であることを忘れずに、残りのシーズンを楽しまれてください。","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"7":{"name":"Central Hokkaido","date":"2026-03-15 05:00","url":"https://data.nadare.jp/avalanche_informations/9319?locale=en","levels":[0,0,0],"advice":"The avalanche bulletin for the 2025/26 season is now closed. Whatever type of avalanche is present, we hope you enjoy the rest of the season, remembering that the most important aspect of avalanche safety is terrain selection.","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"1":{"name":"Tateyama","date":"2025-12-01 13:00","url":"https://data.nadare.jp/avalanche_informations/7557?locale=en","levels":[0,0,0],"advice":"","problems":[],"summary":{"Avalanche":"","Snowpack":"","Weather":""}},"se_abisko_riksgransfjallen":{"level":0,"label":"Ej bedömd","published":"2026-06-01T08:00:00+02:00","validTo":"2027-01-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Abisko Riksgränsenfjällen från och med 15 januari 2027.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/abisko_riksgransfjallen/","problems":[]},"se_kebnekaisefjallen":{"level":0,"label":"Ej bedömd","published":"2026-06-01T08:00:00+02:00","validTo":"2027-02-26T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Kebnekaisefjällen från och med 26 februari 2027.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/kebnekaisefjallen/","problems":[]},"se_sodra_jamtlandsfjallen":{"level":0,"label":"Ej bedömd","published":"2026-10-22T08:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Södra Jämtlandsfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/sodra_jamtlandsfjallen/","problems":[]},"se_sodra_lapplandsfjallen":{"level":0,"label":"Ej bedömd","published":"2026-06-01T08:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Södra Lapplandsfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/sodra_lapplandsfjallen/","problems":[]},"se_vastra_harjedalsfjallen":{"level":0,"label":"Ej bedömd","published":"2026-07-01T08:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Prognossäsongen är avslutad Här hittar du lavinprognoser för Västra Härjedalsfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/vastra_harjedalsfjallen/","problems":[]},"se_vastra_vindelfjallen":{"level":0,"label":"Ej bedömd","published":"2026-10-22T18:00:00+02:00","validTo":"2026-12-15T18:00:00+01:00","message":"Här hittar du lavinprognoser för Västra Vindelfjällen från och med 15 december.","url":"https://www.lavinprognoser.se/oversikt-alla-omraden/vastra_vindelfjallen/","problems":[]}}/*ENDAVALANCHE*/;
 const DANGER = [
-  {n:"Ingen nivå", c:"#9aa5b4", ink:"#14213a"},
-  {n:"Låg",        c:"#52b947", ink:"#0b2a07"},
-  {n:"Måttlig",    c:"#fff200", ink:"#2a2600"},
-  {n:"Betydande",  c:"#f7941e", ink:"#2b1500"},
-  {n:"Stor",       c:"#ed1c24", ink:"#ffffff"},
-  {n:"Mycket stor",c:"#231f20", ink:"#ffffff"},
+  {n:T("Ingen nivå", "No rating"),   c:"#9aa5b4", ink:"#14213a"},
+  {n:T("Låg", "Low"),                c:"#52b947", ink:"#0b2a07"},
+  {n:T("Måttlig", "Moderate"),       c:"#fff200", ink:"#2a2600"},
+  {n:T("Betydande", "Considerable"), c:"#f7941e", ink:"#2b1500"},
+  {n:T("Stor", "High"),              c:"#ed1c24", ink:"#ffffff"},
+  {n:T("Mycket stor", "Very high"),  c:"#231f20", ink:"#ffffff"},
 ];
-const BANDS = ["Alpint (ovanför träden)", "Trädgränsen", "Under trädgränsen"];
+const BANDS = EN ? ["Alpine (above the trees)", "Treeline", "Below treeline"] : ["Alpint (ovanför träden)", "Trädgränsen", "Under trädgränsen"];
 const PROBLEM_SV = {"wind slab":"Vindflak","storm slab":"Nysnöflak","persistent slab":"Ihållande svagt lager",
   "deep persistent slab":"Djupt liggande svagt lager","dry loose snow":"Torr lössnö","dry loose":"Torr lössnö",
   "wet loose snow":"Våt lössnö","wet loose":"Våt lössnö","wet slab":"Vått flak","glide slab":"Glidsnö",
@@ -1380,7 +1439,12 @@ const VARSOM_PROBLEM = {
   "wind drifted snow (slab avalanches)":"Vindflak (drevsnö)", "persistent weak layer (slab avalanches)":"Ihållande svagt lager",
   "wet snow (slab avalanches)":"Vått flak", "wet snow (loose snow avalanches)":"Våt lössnö", "gliding snow":"Glidsnö",
 };
-const EXPO = ["N","NO","O","SO","S","SV","V","NV"];
+const EXPO = EN ? ["N","NE","E","SE","S","SW","W","NW"] : ["N","NO","O","SO","S","SV","V","NV"];
+// Swedish problem names from lavinprognoser.se, in English
+const SE_PROBLEM_EN = {"Vindflak": "Wind slab", "Nysnöflak": "Storm slab", "Nysnö": "New snow", "Ihållande svagt lager": "Persistent weak layer",
+  "Våt lössnö": "Wet loose snow", "Vått flak": "Wet slab", "Våt snö": "Wet snow", "Glidsnö": "Gliding snow", "Torr lössnö": "Dry loose snow",
+  "Snöhängdor": "Cornices", "Djupt liggande svagt lager": "Deep persistent weak layer"};
+const cap = t => t ? t[0].toUpperCase() + t.slice(1) : "";
 
 // Shared danger card: big level, optional per-height levels, problems and advice.
 // Aspect rose like the official bulletins. grid = rings of 8 sectors (N, NO, O, SO, S, SV, V, NV),
@@ -1393,16 +1457,18 @@ function aspectRose(grid){
     const a0 = i * 45 - 22.5, a1 = i * 45 + 22.5, ri = R[k], ro = R[k + 1];
     return `<path class="e${v}" d="M${pt(ro, a0)} A${ro} ${ro} 0 0 1 ${pt(ro, a1)} L${pt(ri, a1)} A${ri} ${ri} 0 0 0 ${pt(ri, a0)} Z"/>`;
   }));
-  const labels = [["N", 0], ["O", 90], ["S", 180], ["V", 270]].map(([t, d]) => `<text x="${pt(59, d).split(" ")[0]}" y="${pt(59, d).split(" ")[1]}">${t}</text>`);
-  return `<svg class="rose" viewBox="-6 -6 132 132" role="img" aria-label="Utsatta sluttningsriktningar">${paths.join("")}${labels.join("")}</svg>`;
+  const labels = [["N", 0], [EXPO[2], 90], ["S", 180], [EXPO[6], 270]].map(([t, d]) => `<text x="${pt(59, d).split(" ")[0]}" y="${pt(59, d).split(" ")[1]}">${t}</text>`);
+  return `<svg class="rose" viewBox="-6 -6 132 132" role="img" aria-label="${T("Utsatta sluttningsriktningar", "Exposed aspects")}">${paths.join("")}${labels.join("")}</svg>`;
 }
 // Varsom's height limits: fill 1 = above h1, 2 = below h1, 3 = above the higher and below the lower, 4 = between
 // Limits are metres, or "treeline" from EAWS bulletins (then h1 is the upper and h2 the lower limit)
 function heightInfo({fill, h1, h2}){
   const num = typeof h1 === "number" && typeof (h2 || h1) === "number";
   const hi = num ? Math.max(h1, h2 || h1) : h1, lo = num ? Math.min(h1, h2 || h1) : h2;
-  const m = v => v === "treeline" ? "trädgränsen" : `${v} m`;
-  const text = {1: `över ${m(h1)}`, 2: `under ${m(h1)}`, 3: `över ${m(hi)} och under ${m(lo)}`, 4: `mellan ${m(lo)} och ${m(hi)}`}[fill];
+  const m = v => v === "treeline" ? T("trädgränsen", "the treeline") : `${v} m`;
+  const text = (EN
+    ? {1: `above ${m(h1)}`, 2: `below ${m(h1)}`, 3: `above ${m(hi)} and below ${m(lo)}`, 4: `between ${m(lo)} and ${m(hi)}`}
+    : {1: `över ${m(h1)}`, 2: `under ${m(h1)}`, 3: `över ${m(hi)} och under ${m(lo)}`, 4: `mellan ${m(lo)} och ${m(hi)}`})[fill];
   if (!text) return null;
   const band = (y0, y1) => `<rect class="on" x="0" y="${y0}" width="46" height="${y1 - y0}"/>`;
   const on = {1: band(0, 22), 2: band(22, 40), 3: band(0, 15) + band(29, 40), 4: band(15, 29)}[fill];
@@ -1415,28 +1481,30 @@ const EXPO_NAMES = grid => ({
   most: EXPO.filter((_, i) => grid.some(r => r[i] === 2)),
 });
 function problemHtml(p, ringLabels){
-  const head = `${esc(p.sv || p.name)}${p.sv && p.sv !== p.name ? ` <span class="en">${esc(p.name)}</span>` : ""}`;
+  // Swedish: our name with the source's (usually English) name beside it. English: the source's name.
+  const head = EN ? esc(p.en || cap(p.name)) : `${esc(p.sv || p.name)}${p.sv && p.sv !== p.name ? ` <span class="en">${esc(p.name)}</span>` : ""}`;
   if (!p.grid){
     return `<details class="prob"><summary>${head}</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text || "")}</p></details>`;
   }
   const {any, most} = EXPO_NAMES(p.grid);
-  const dirs = list => list.length === 8 ? "alla väderstreck" : list.join(", ");
+  const dirs = list => list.length === 8 ? T("alla väderstreck", "all aspects") : list.join(", ");
+  const and = T(" och ", " and ");
   const ringsOn = labels => p.grid.map((r, k) => r.some(v => v) ? labels[k] : null).filter(Boolean);
   let where = "";
   if (p.grid.length === 3){
     const on = ringsOn(ringLabels);
-    where = on.length === 3 ? "alla höjder" : on.join(" och ").toLowerCase();
+    where = on.length === 3 ? T("alla höjder", "all elevations") : on.join(and).toLowerCase();
   }
   const h = p.height ? heightInfo(p.height) : null;
   if (h) where = h.text;
-  if (p.meters) where = [p.meters[0] && `över ${p.meters[0]} m`, p.meters[1] && `under ${p.meters[1]} m`].filter(Boolean).join(" och ") || where;
+  if (p.meters) where = [p.meters[0] && `${T("över", "above")} ${p.meters[0]} m`, p.meters[1] && `${T("under", "below")} ${p.meters[1]} m`].filter(Boolean).join(and) || where;
   const mostRings = p.grid.length === 3 ? ringLabels.filter((_, k) => p.grid[k].includes(2)) : [];
   return `<div class="prob rosed">
       <div class="rosebox">${aspectRose(p.grid)}${h ? h.pic : ""}</div>
       <div class="pbody"><b>${head}</b>
-        <p class="exp"><span>Utsatt:</span> ${dirs(any)}${where ? ` · ${esc(where)}` : ""}</p>
-        ${most.length && most.length < any.length ? `<p class="exp"><span>Mest utsatt:</span> ${dirs(most)}${mostRings.length ? ` · ${esc(mostRings.join(" och ").toLowerCase())}` : ""}</p>` : ""}
-        ${p.text ? `<details><summary>Läs mer</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text)}</p></details>` : ""}
+        <p class="exp"><span>${T("Utsatt:", "Exposed:")}</span> ${dirs(any)}${where ? ` · ${esc(where)}` : ""}</p>
+        ${most.length && most.length < any.length ? `<p class="exp"><span>${T("Mest utsatt:", "Most exposed:")}</span> ${dirs(most)}${mostRings.length ? ` · ${esc(mostRings.join(and).toLowerCase())}` : ""}</p>` : ""}
+        ${p.text ? `<details><summary>${T("Läs mer", "Read more")}</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text)}</p></details>` : ""}
       </div></div>`;
 }
 
@@ -1446,46 +1514,51 @@ function dangerCard({top, levels, bands, area, near, issued, source, problems = 
   const areaHtml = `${esc(area)}${near ? ` <span class="near">${esc(near)}</span>` : ""}`;
   if (!top){
     return `<div class="dcard none">${dangerBox(0, true)}<div>
-        <b class="dhead-t">Ingen aktuell lavinprognos</b>
-        <p>${issued ? `Senaste prognosen för ${areaHtml} kom ${issued}. ` : `Område: ${areaHtml}. `}Prognoser ges ut under skidsäsongen. När säsongen är igång visas dagens faronivå här med färg.</p>
+        <b class="dhead-t">${T("Ingen aktuell lavinprognos", "No current avalanche bulletin")}</b>
+        <p>${EN
+          ? `${issued ? `The latest bulletin for ${areaHtml} came out ${issued}. ` : `Area: ${areaHtml}. `}Bulletins are issued during the ski season. Once the season is under way, today's danger level shows here in colour.`
+          : `${issued ? `Senaste prognosen för ${areaHtml} kom ${issued}. ` : `Område: ${areaHtml}. `}Prognoser ges ut under skidsäsongen. När säsongen är igång visas dagens faronivå här med färg.`}</p>
       </div></div>${linkHtml}`;
   }
   const probs = problems.map(p => problemHtml(p, ringLabels)).join("");
   const roseHint = problems.some(p => p.grid?.length === 3)
-    ? `<p class="hint">Rosen visar sluttningsriktningar. Mitten är högst upp på fjället, yttre ringen under trädgränsen. Starkast färg = mest utsatt.</p>`
-    : problems.some(p => p.grid) ? `<p class="hint">Fyllda sektorer i rosen = utsatta sluttningsriktningar. Berget bredvid visar vilka höjder som är utsatta.</p>` : "";
+    ? `<p class="hint">${T("Rosen visar sluttningsriktningar. Mitten är högst upp på fjället, yttre ringen under trädgränsen. Starkast färg = mest utsatt.", "The rose shows slope aspects. The centre is the highest terrain, the outer ring below the treeline. Strongest colour = most exposed.")}</p>`
+    : problems.some(p => p.grid) ? `<p class="hint">${T("Fyllda sektorer i rosen = utsatta sluttningsriktningar. Berget bredvid visar vilka höjder som är utsatta.", "Filled sectors in the rose = exposed aspects. The mountain beside it shows which elevations are exposed.")}</p>` : "";
   return `
     <div class="dcard" style="--dc:${DANGER[top].c}">
       ${dangerBox(top, true)}
       <div>
-        <b class="dhead-t">${top} – ${DANGER[top].n} lavinfara</b>
-        <p>Högsta nivån idag i ${areaHtml}. Utfärdad ${issued} av ${esc(source)}.</p>
+        <b class="dhead-t">${top} – ${T(`${DANGER[top].n} lavinfara`, `${DANGER[top].n} avalanche danger`)}</b>
+        <p>${T(`Högsta nivån idag i ${areaHtml}. Utfärdad ${issued} av ${esc(source)}.`, `Highest level today in ${areaHtml}. Issued ${issued} by ${esc(source)}.`)}</p>
       </div>
     </div>
     ${bands ? `<div class="bands">${bands.map(b => `<div class="band">${dangerBox(b.level)}<span>${esc(b.label)}</span><b>${DANGER[b.level].n}</b></div>`).join("")}</div>` : ""}
-    ${probs ? `<div class="probs"><span class="label">Lavinproblem idag</span>${probs}${roseHint}</div>` : ""}
+    ${probs ? `<div class="probs"><span class="label">${T("Lavinproblem idag", "Avalanche problems today")}</span>${probs}${roseHint}</div>` : ""}
     ${advice ? `<details class="prob"><summary>${adviceLabel}</summary><p lang="${adviceLang}">${esc(advice)}</p></details>` : ""}
     ${linkHtml}`;
 }
-const noForecast = text => `<div class="dcard none">${dangerBox(0, true)}<div><b class="dhead-t">Ingen officiell lavinprognos</b><p>${text}</p></div></div>`;
+const noForecast = text => `<div class="dcard none">${dangerBox(0, true)}<div><b class="dhead-t">${T("Ingen officiell lavinprognos", "No official avalanche bulletin")}</b><p>${text}</p></div></div>`;
 // Format a local time string without zone ("2026-02-28T20:59:23") as it is written, e.g. "28 februari kl. 20:59"
-const MONTHS = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
-const fmtLocalIso = (iso, withYear) => `${+iso.slice(8,10)} ${MONTHS[+iso.slice(5,7)-1]}${withYear ? " " + iso.slice(0,4) : ""} kl. ${iso.slice(11,16)}`;
-const fmtWhen = (d, tz, withYear) => d.toLocaleString("sv-SE", {timeZone: tz, day:"numeric", month:"long", year: withYear ? "numeric" : undefined, hour:"2-digit", minute:"2-digit"});
+const MONTHS = EN ? ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  : ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
+const fmtLocalIso = (iso, withYear) => `${+iso.slice(8,10)} ${MONTHS[+iso.slice(5,7)-1]}${withYear ? " " + iso.slice(0,4) : ""} ${T("kl.", "at")} ${iso.slice(11,16)}`;
+const fmtWhen = (d, tz, withYear) => d.toLocaleString(LOCALE, {timeZone: tz, day:"numeric", month:"long", year: withYear ? "numeric" : undefined, hour:"2-digit", minute:"2-digit"});
 
 function avalOfficial(r){
   if (r.area === "japan") return avalJapan(r);
   if (r.area === "alps") return avalAlps(r);
-  if (r.country === "Norge") { setTimeout(() => loadVarsom(r), 0); return `<div id="varsom"><div class="msg">Hämtar dagens lavinvarsel från Varsom…</div></div>`; }
+  if (r.country === "Norge") { setTimeout(() => loadVarsom(r), 0); return `<div id="varsom"><div class="msg">${T("Hämtar dagens lavinvarsel från Varsom…", "Fetching today's avalanche warning from Varsom…")}</div></div>`; }
   if (r.country === "Sverige") return avalSweden(r);
-  return noForecast(`Finland har ingen nationell lavinprognos. Laviner kan ändå gå i branta fjällsluttningar, till exempel i fjällen kring Kilpisjärvi och på de branta delarna av fjällen kring skidorterna. Fråga pistpatrullen innan du åker utanför pisterna.`);
+  return noForecast(T(`Finland har ingen nationell lavinprognos. Laviner kan ändå gå i branta fjällsluttningar, till exempel i fjällen kring Kilpisjärvi och på de branta delarna av fjällen kring skidorterna. Fråga pistpatrullen innan du åker utanför pisterna.`,
+    `Finland has no national avalanche bulletin. Avalanches can still occur on steep fell slopes, for example around Kilpisjärvi and on the steep parts of the fells around the resorts. Ask the ski patrol before you ski off-piste.`));
 }
 
 function avalJapan(r){
   const v = AVAL[r.id];
-  if (!v) return noForecast(`Det ges inte ut någon lavinprognos för det här området. Fråga ortens pistpatrull (ski patrol) om läget innan du åker utanför pisterna.`);
+  if (!v) return noForecast(T(`Det ges inte ut någon lavinprognos för det här området. Fråga ortens pistpatrull (ski patrol) om läget innan du åker utanför pisterna.`,
+    `No avalanche bulletin is issued for this area. Ask the resort's ski patrol about conditions before you ski off-piste.`));
   const bul = AVALANCHE[v.a];
-  const links = [`<a class="dirbtn" href="${bul?.url || JAN(v.a)}" target="_blank" rel="noopener">Hela prognosen hos JAN ↗</a>`];
+  const links = [`<a class="dirbtn" href="${bul?.url || JAN(v.a)}" target="_blank" rel="noopener">${T("Hela prognosen hos JAN", "Full bulletin at JAN")} ↗</a>`];
   if (v.extra) links.push(`<a class="dirbtn cam" href="${v.extra.url}" target="_blank" rel="noopener">${esc(v.extra.label)} ↗</a>`);
   // Bulletins come out each morning; anything older than ~30 h is not today's.
   const issued = bul ? new Date(bul.date.replace(" ", "T") + ":00+09:00") : null;
@@ -1493,28 +1566,29 @@ function avalJapan(r){
   const levels = bul?.levels?.length === 3 ? bul.levels : [0, 0, 0];
   return dangerCard({
     top: fresh ? Math.max(...levels) : 0, levels, area: JAN_AREAS[v.a],
-    near: v.near ? `närmaste prognosområde, täcker inte ${r.name} direkt` : "",
+    near: v.near ? T(`närmaste prognosområde, täcker inte ${r.name} direkt`, `nearest forecast area, does not cover ${r.name} directly`) : "",
     issued: issued ? fmtWhen(issued, "Asia/Tokyo", !fresh) : "", source: "Japan Avalanche Network",
     problems: (bul?.problems || []).map(p => ({name: p.name, sv: PROBLEM_SV[p.name.toLowerCase()], text: p.text, lang: "en", grid: p.grid})),
-    advice: bul?.advice, adviceLabel: `JAN:s råd för dagen <span class="en">på engelska</span>`, links});
+    advice: bul?.advice, adviceLabel: T(`JAN:s råd för dagen <span class="en">på engelska</span>`, "JAN's advice for the day"), links});
 }
 
 function avalSweden(r){
   const v = SE_AVAL[r.id];
-  const site = `<a class="dirbtn" href="https://www.lavinprognoser.se/oversikt-alla-omraden/${v ? v.a + "/" : ""}" target="_blank" rel="noopener">Hela prognosen på lavinprognoser.se ↗</a>`;
-  if (!v) return noForecast(`${esc(r.name)} ligger utanför Naturvårdsverkets prognosområden. Laviner kan ändå gå i branta sluttningar. Fråga pistpatrullen innan du åker utanför pisterna.`) + `<div class="dlinks">${site}</div>`;
+  const site = `<a class="dirbtn" href="https://www.lavinprognoser.se/oversikt-alla-omraden/${v ? v.a + "/" : ""}" target="_blank" rel="noopener">${T("Hela prognosen på lavinprognoser.se", "Full bulletin at lavinprognoser.se")} ↗</a>`;
+  if (!v) return noForecast(T(`${esc(r.name)} ligger utanför Naturvårdsverkets prognosområden. Laviner kan ändå gå i branta sluttningar. Fråga pistpatrullen innan du åker utanför pisterna.`,
+    `${esc(r.name)} is outside the Swedish forecast areas. Avalanches can still occur on steep slopes. Ask the ski patrol before you ski off-piste.`)) + `<div class="dlinks">${site}</div>`;
   const bul = AVALANCHE["se_" + v.a];
   const until = bul?.validTo ? new Date(bul.validTo) : null;
   const fresh = bul && until && until > Date.now() && bul.level > 0;
   return dangerCard({
     top: fresh ? bul.level : 0, area: SE_AREAS[v.a],
-    near: v.near ? `närmaste prognosområde, täcker inte ${r.name} direkt` : "",
-    issued: bul?.published ? fmtWhen(new Date(bul.published), "Europe/Stockholm", !fresh) : "", source: "Naturvårdsverket",
+    near: v.near ? T(`närmaste prognosområde, täcker inte ${r.name} direkt`, `nearest forecast area, does not cover ${r.name} directly`) : "",
+    issued: bul?.published ? fmtWhen(new Date(bul.published), "Europe/Stockholm", !fresh) : "", source: T("Naturvårdsverket", "the Swedish Environmental Protection Agency"),
     problems: (bul?.problems || []).map(p => typeof p === "string" ? {name: p} : p)
       // Naturvårdsverket marks sectors on/off only: show them in the strong colour
-      .map(p => ({...p, sv: p.name, text: "Läs mer om lavinproblemet i hela prognosen.", grid: p.grid?.map(r => r.map(v => v ? 2 : 0))})),
-    advice: bul?.message, adviceLabel: "Dagens huvudbudskap", links: [site],
-    ringLabels: ["Kalfjället", "Trädgränsen", "Under trädgränsen"]});
+      .map(p => ({...p, sv: p.name, en: SE_PROBLEM_EN[p.name] || p.name, text: T("Läs mer om lavinproblemet i hela prognosen.", "Read more about this problem in the full bulletin."), grid: p.grid?.map(r => r.map(v => v ? 2 : 0))})),
+    advice: bul?.message, adviceLabel: T("Dagens huvudbudskap", `Today's main message <span class="en">in Swedish</span>`), adviceLang: "sv", links: [site],
+    ringLabels: EN ? ["Bare mountain", "Treeline", "Below treeline"] : ["Kalfjället", "Trädgränsen", "Under trädgränsen"]});
 }
 
 // ---- Alps: EAWS bulletins (CAAML v6), mirrored for every member service at static.avalanche.report.
@@ -1523,15 +1597,16 @@ const EAWS_LEVEL = {low: 1, moderate: 2, considerable: 3, high: 4, very_high: 5}
 const EAWS_PROBLEM = {new_snow: "Nysnö", wind_slab: "Vindflak", persistent_weak_layers: "Ihållande svagt lager",
   wet_snow: "Våt snö", gliding_snow: "Glidsnö", cornices: "Snöhängdor",
   no_distinct_avalanche_problem: "Inget tydligt lavinproblem", favourable_situation: "Gynnsamt läge"};
-const EAWS_SIZE = ["", "liten", "medelstor", "stor", "mycket stor", "extremt stor"];
-const EAWS_FREQ = {none: "nästan inga platser", few: "enstaka platser", some: "några platser", many: "många platser"};
+const EAWS_SIZE = EN ? ["", "small", "medium", "large", "very large", "extremely large"] : ["", "liten", "medelstor", "stor", "mycket stor", "extremt stor"];
+const EAWS_FREQ = EN ? {none: "hardly any places", few: "a few places", some: "some places", many: "many places"}
+  : {none: "nästan inga platser", few: "enstaka platser", some: "några platser", many: "många platser"};
 const EAWS_ASPECTS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 // Service file per micro-region, its name and the page with the full bulletin
 // Météo-France massifs (EAWS ids FR-01 … FR-23 in the Alps); the French bulletins carry no region names
 const FR_MASSIF = ["", "Chablais", "Aravis", "Mont-Blanc", "Bauges", "Beaufortain", "Haute-Tarentaise", "Chartreuse",
   "Belledonne", "Maurienne", "Vanoise", "Haute-Maurienne", "Grandes-Rousses", "Thabor", "Vercors", "Oisans", "Pelvoux",
   "Queyras", "Dévoluy", "Champsaur", "Embrunais-Parpaillon", "Ubaye", "Haut-Var/Haut-Verdon", "Mercantour"];
-const LANG_SV = {en: "engelska", de: "tyska", fr: "franska", it: "italienska"};
+const LANG_NAME = EN ? {de: "German", fr: "French", it: "Italian", sv: "Swedish"} : {en: "engelska", de: "tyska", fr: "franska", it: "italienska"};
 const eawsService = id => /^(CH|FR)/.test(id) ? id.slice(0, 2) : /^IT-32-/.test(id) ? id.slice(0, 8) : id.slice(0, 5);
 const EAWS_SOURCE = {
   "AT-02": ["Lawinenwarndienst Kärnten", "https://lawinenwarndienst.ktn.gv.at/"],
@@ -1552,18 +1627,20 @@ const EAWS_SOURCE = {
   "IT-36": ["Friuli Venezia Giulia", "https://www.avalanches.org/"],
 };
 function avalAlps(r){
-  if (!r.eaws) return noForecast(`${esc(r.name)} ligger utanför de europeiska lavinprognosernas regioner. Fråga pistpatrullen om läget innan du åker utanför pisterna.`);
+  if (!r.eaws) return noForecast(T(`${esc(r.name)} ligger utanför de europeiska lavinprognosernas regioner. Fråga pistpatrullen om läget innan du åker utanför pisterna.`,
+    `${esc(r.name)} is outside the European avalanche bulletin regions. Ask the ski patrol about conditions before you ski off-piste.`));
   setTimeout(() => loadEaws(r), 0);
-  return `<div id="eaws"><div class="msg">Hämtar dagens lavinprognos…</div></div>`;
+  return `<div id="eaws"><div class="msg">${T("Hämtar dagens lavinprognos…", "Fetching today's avalanche bulletin…")}</div></div>`;
 }
-const eawsBand = el => el?.lowerBound && el?.upperBound ? `${el.lowerBound === "treeline" ? "trädgränsen" : el.lowerBound + " m"}–${el.upperBound === "treeline" ? "trädgränsen" : el.upperBound + " m"}`
-  : el?.lowerBound ? `Över ${el.lowerBound === "treeline" ? "trädgränsen" : el.lowerBound + " m"}`
-  : el?.upperBound ? `Under ${el.upperBound === "treeline" ? "trädgränsen" : el.upperBound + " m"}` : "Alla höjder";
+const elev = v => v === "treeline" ? T("trädgränsen", "the treeline") : v + " m";
+const eawsBand = el => el?.lowerBound && el?.upperBound ? `${elev(el.lowerBound)}–${elev(el.upperBound)}`
+  : el?.lowerBound ? `${T("Över", "Above")} ${elev(el.lowerBound)}`
+  : el?.upperBound ? `${T("Under", "Below")} ${elev(el.upperBound)}` : T("Alla höjder", "All elevations");
 const eawsLimit = v => v === "treeline" ? v : +v;
 async function loadEaws(r){
   const svc = eawsService(r.eaws);
   const [srcName, srcUrl] = EAWS_SOURCE[svc] || ["EAWS", "https://www.avalanches.org/"];
-  const links = [`<a class="dirbtn" href="${srcUrl}" target="_blank" rel="noopener">Hela prognosen hos ${esc(srcName)} ↗</a>`];
+  const links = [`<a class="dirbtn" href="${srcUrl}" target="_blank" rel="noopener">${T("Hela prognosen hos", "Full bulletin at")} ${esc(srcName)} ↗</a>`];
   const box = html => { if ($("#eaws")) $("#eaws").outerHTML = `<div id="eaws">${html}</div>`; };
   // Bulletins are named by the day they are valid; tomorrow's comes out around 17:00
   const day = off => new Date(Date.now() + off * 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Vienna"});
@@ -1576,7 +1653,7 @@ async function loadEaws(r){
       if (b && new Date(b.validTime?.endTime) > Date.now()){ bul = b; break; }
     }
   } catch (e){
-    box(`<p class="hint">Kunde inte hämta lavinprognosen (${esc(e.message)}).</p><div class="dlinks">${links.join("")}</div>`);
+    box(`<p class="hint">${T("Kunde inte hämta lavinprognosen", "Could not fetch the avalanche bulletin")} (${esc(e.message)}).</p><div class="dlinks">${links.join("")}</div>`);
     return;
   }
   if (!bul){
@@ -1596,25 +1673,26 @@ async function loadEaws(r){
     const el = p.elevation || {};
     const height = el.lowerBound && el.upperBound ? {fill: 4, h1: eawsLimit(el.upperBound), h2: eawsLimit(el.lowerBound)}
       : el.lowerBound ? {fill: 1, h1: eawsLimit(el.lowerBound)} : el.upperBound ? {fill: 2, h1: eawsLimit(el.upperBound)} : null;
-    const facts = [p.avalancheSize && `Lavinstorlek: ${EAWS_SIZE[p.avalancheSize]}`, EAWS_FREQ[p.frequency] && `utbredning: ${EAWS_FREQ[p.frequency]}`].filter(Boolean);
+    const facts = [p.avalancheSize && `${T("Lavinstorlek", "Avalanche size")}: ${EAWS_SIZE[p.avalancheSize]}`, EAWS_FREQ[p.frequency] && `${T("utbredning", "distribution")}: ${EAWS_FREQ[p.frequency]}`].filter(Boolean);
     return {name: (p.problemType || "").replace(/_/g, " "), sv: EAWS_PROBLEM[p.problemType] || p.problemType, text: facts.length ? facts.join(", ") + "." : "",
       grid: aspects.some(v => v) ? [aspects] : null, height};
   });
   const advice = [bul.avalancheActivity?.highlights, bul.avalancheActivity?.comment, bul.snowpackStructure?.comment].filter(Boolean).join(" ");
   box(dangerCard({top, bands, area, issued: bul.publicationTime ? fmtWhen(new Date(bul.publicationTime), "Europe/Vienna") : "",
     source: srcName, problems, advice: advice.replace(/<[^>]+>/g, " "), adviceLang: lang,
-    adviceLabel: `Prognosens huvudbudskap <span class="en">på ${LANG_SV[lang] || lang}</span>`, links}));
+    adviceLabel: EN ? `Bulletin highlights${lang !== "en" ? ` <span class="en">in ${LANG_NAME[lang] || lang}</span>` : ""}`
+      : `Prognosens huvudbudskap <span class="en">på ${LANG_NAME[lang] || lang}</span>`, links}));
 }
 
 async function loadVarsom(r){
   const box = $("#varsom"); if (!box) return;
   const today = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Oslo"});
-  const site = `<a class="dirbtn" href="https://www.varsom.no/en/avalanche-bulletins/" target="_blank" rel="noopener">Hela varslet på Varsom ↗</a>`;
+  const site = `<a class="dirbtn" href="https://www.varsom.no/en/avalanche-bulletins/" target="_blank" rel="noopener">${T("Hela varslet på Varsom", "Full warning at Varsom")} ↗</a>`;
   try {
     const res = await netFetch(`https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByCoordinates/Detail/${r.lat}/${r.lon}/2/${today}/${today}`);
-    if (!res.ok) throw new Error("Varsom svarade " + res.status);
+    if (!res.ok) throw new Error(T("Varsom svarade ", "Varsom answered ") + res.status);
     const w = (await res.json())[0];
-    if (!w) throw new Error("inget varsel");
+    if (!w) throw new Error(T("inget varsel", "no warning"));
     const lvl = +w.DangerLevel || 0;
     const problems = (w.AvalancheProblems || []).map(p => {
       const aspects = (p.ValidExpositions || "").padEnd(8, "0").slice(0, 8).split("").map(c => c === "1" ? 2 : 0);  // Varsom has no "most exposed": use the strong colour
@@ -1624,49 +1702,57 @@ async function loadVarsom(r){
         height: p.ExposedHeight1 ? {fill: +p.ExposedHeightFill || 1, h1: +p.ExposedHeight1, h2: +p.ExposedHeight2 || 0} : null};
     });
     if ($("#varsom")) $("#varsom").outerHTML = `<div id="varsom">${dangerCard({
-      top: lvl, area: w.RegionName || "Norge",
-      near: w.RegionTypeName === "B" ? "grovt varslat B-område, mindre detaljerat" : "",
+      top: lvl, area: w.RegionName || cname("Norge"),
+      near: w.RegionTypeName === "B" ? T("grovt varslat B-område, mindre detaljerat", "B region with a coarse, less detailed warning") : "",
       issued: w.PublishTime ? fmtLocalIso(w.PublishTime, !lvl) : "", source: "Varsom (NVE)",
-      problems, advice: w.MainText, adviceLabel: `Varsoms huvudbudskap <span class="en">på engelska</span>`, links: [site]})}</div>`;
+      problems, advice: w.MainText, adviceLabel: T(`Varsoms huvudbudskap <span class="en">på engelska</span>`, "Varsom's main message"), links: [site]})}</div>`;
   } catch (e){
-    if ($("#varsom")) $("#varsom").innerHTML = `<p class="hint">Kunde inte hämta lavinvarslet från Varsom (${esc(e.message)}).</p><div class="dlinks">${site}</div>`;
+    if ($("#varsom")) $("#varsom").innerHTML = `<p class="hint">${T("Kunde inte hämta lavinvarslet från Varsom", "Could not fetch the avalanche warning from Varsom")} (${esc(e.message)}).</p><div class="dlinks">${site}</div>`;
   }
 }
 
 const AVAL_SCALE = `<ol class="scale-list">
-  ${[1,2,3,4,5].map(l => `<li>${dangerBox(l)}<span><b>${DANGER[l].n}</b> ${[
+  ${[1,2,3,4,5].map(l => `<li>${dangerBox(l)}<span><b>${DANGER[l].n}</b> ${(EN ? [
+    "", "The snowpack is generally stable. Avalanches mainly in isolated, very steep spots.",
+    "Increased danger on some steep slopes. Choose terrain carefully.",
+    "Avalanches can be triggered by a single skier. Most accidents happen at this level. Requires experience.",
+    "Avalanches are easily triggered on many steep slopes. Avoid avalanche terrain.",
+    "Many large avalanches release on their own. Stay away from all avalanche terrain."] : [
     "", "Snötäcket är i regel stabilt. Laviner främst i enstaka mycket branta partier.",
     "Förhöjd fara i vissa branta sluttningar. Välj terräng med omsorg.",
     "Laviner kan lösas ut av en enda skidåkare. Här sker flest olyckor. Kräver erfarenhet.",
     "Laviner löses lätt ut i många branta sluttningar. Undvik lavinterräng.",
-    "Många stora laviner går av sig själva. Håll dig borta från all lavinterräng."][l]}</span></li>`).join("")}
+    "Många stora laviner går av sig själva. Håll dig borta från all lavinterräng."])[l]}</span></li>`).join("")}
 </ol>
-<p class="hint">Prognosen gäller terrängen utanför pisterna. Inne på pisterna sköter orten lavinsäkringen.</p>`;
+<p class="hint">${T("Prognosen gäller terrängen utanför pisterna. Inne på pisterna sköter orten lavinsäkringen.", "The bulletin covers terrain off the pistes. On the pistes the resort handles avalanche control.")}</p>`;
 
 // Weather signals that raise avalanche danger, from the top-of-mountain model forecast.
 // Window: the last 72 hours and the next 48 hours.
-const COMPASS = ["nord","nordost","ost","sydost","syd","sydväst","väst","nordväst"];
+const COMPASS = EN ? ["north","northeast","east","southeast","south","southwest","west","northwest"] : ["nord","nordost","ost","sydost","syd","sydväst","väst","nordväst"];
 const compass = deg => COMPASS[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
 function drawAvalSignals(top, mid, idx){
   const a = Math.max(0, idx - 72), b = Math.min(top.hourly.time.length, idx + 49);
   const H = top.hourly, M = mid.hourly, rng = [];
   for (let i = a; i < b; i++) rng.push(i);
-  const when = i => { const t = H.time[i]; return `${dayLabel(t.slice(0,10))} kl ${t.slice(11,13)}`; };
+  const when = i => { const t = H.time[i]; return EN ? `${dayLabel(t.slice(0,10))} ${t.slice(11,16)}` : `${dayLabel(t.slice(0,10))} kl ${t.slice(11,13)}`; };
   const sig = [];
 
   // 1. New snow, worst 24 h
   let best = 0, bestEnd = idx;
   for (let i = a + 24; i <= b; i++){ const v = sumRange(H.snowfall, i - 24, i); if (v > best){ best = v; bestEnd = i - 1; } }
   const past72 = sumRange(H.snowfall, idx - 72, idx + 1), next48 = sumRange(H.snowfall, idx + 1, idx + 49);
-  sig.push({lvl: best >= 30 ? 2 : best >= 15 ? 1 : 0, t: "Nysnö", v: `max ${fmt(best)} cm/24 h`,
+  sig.push({lvl: best >= 30 ? 2 : best >= 15 ? 1 : 0, t: T("Nysnö", "New snow"), v: `max ${fmt(best)} cm/24 h`,
     why: best >= 15
-      ? `Upp till ${fmt(best)} cm på 24 timmar runt ${when(bestEnd)}. Mycket nysnö på kort tid hinner inte binda till underlaget och ger flakrisk, särskilt de första 1–2 dygnen.`
-      : `${fmt(past72)} cm senaste 3 dygnen och ${fmt(next48)} cm väntas de närmaste 2 dygnen vid toppen. Inga stora nysnömängder.`});
+      ? T(`Upp till ${fmt(best)} cm på 24 timmar runt ${when(bestEnd)}. Mycket nysnö på kort tid hinner inte binda till underlaget och ger flakrisk, särskilt de första 1–2 dygnen.`,
+          `Up to ${fmt(best)} cm in 24 hours around ${when(bestEnd)}. A lot of new snow in a short time does not have time to bond to the layer below and gives a slab risk, especially in the first 1–2 days.`)
+      : T(`${fmt(past72)} cm senaste 3 dygnen och ${fmt(next48)} cm väntas de närmaste 2 dygnen vid toppen. Inga stora nysnömängder.`,
+          `${fmt(past72)} cm in the last 3 days and ${fmt(next48)} cm expected in the next 2 days at the top. No large amounts of new snow.`)});
 
   // 2. Snowfall intensity
   const maxRate = Math.max(0, ...rng.map(i => H.snowfall[i] || 0));
-  if (maxRate >= 3) sig.push({lvl: maxRate >= 5 ? 2 : 1, t: "Intensivt snöfall", v: `${fmt(maxRate,1)} cm/h`,
-    why: `Upp till ${fmt(maxRate,1)} cm i timmen. Snabb pålagring belastar snötäcket fortare än det hinner stabiliseras.`});
+  if (maxRate >= 3) sig.push({lvl: maxRate >= 5 ? 2 : 1, t: T("Intensivt snöfall", "Heavy snowfall"), v: `${fmt(maxRate,1)} cm/h`,
+    why: T(`Upp till ${fmt(maxRate,1)} cm i timmen. Snabb pålagring belastar snötäcket fortare än det hinner stabiliseras.`,
+           `Up to ${fmt(maxRate,1)} cm an hour. Fast loading stresses the snowpack faster than it can stabilise.`)});
 
   // 3. Wind transport
   const gust = Math.max(0, ...rng.map(i => H.wind_gusts_10m?.[i] || 0));
@@ -1675,38 +1761,50 @@ function drawAvalSignals(top, mid, idx){
   const hasWindDir = x || y, from = hasWindDir ? (Math.atan2(x, y) * 180 / Math.PI + 360) % 360 : null;
   const snowToMove = past72 + next48 >= 5;
   const windLvl = !snowToMove ? 0 : gust >= 20 ? 2 : gust >= 12 ? 1 : 0;
-  sig.push({lvl: windLvl, t: "Vind och snödrev", v: `byar ${fmt(gust)} m/s${hasWindDir ? " från " + compass(from) : ""}`,
-    why: windLvl
-      ? `Vindbyar upp till ${fmt(gust)} m/s vid toppen${hasWindDir ? `, mest från ${compass(from)}. Snön blåser då över till läsidor mot <b>${compass(from + 180)}</b>, där det bildas vindflak` : ". Vinden flyttar lös snö och bygger vindflak på läsidor"}. Vindflak är en av de vanligaste orsakerna till skidåkarutlösta laviner.`
-      : snowToMove ? `Vindbyar upp till ${fmt(gust)} m/s. Måttlig vind, liten risk för nya vindflak.` : `Vindbyar upp till ${fmt(gust)} m/s, men lite lös nysnö att flytta.`});
+  sig.push({lvl: windLvl, t: T("Vind och snödrev", "Wind and drifting snow"), v: `${T("byar", "gusts")} ${fmt(gust)} m/s${hasWindDir ? T(" från ", " from ") + compass(from) : ""}`,
+    why: EN
+      ? (windLvl
+        ? `Gusts up to ${fmt(gust)} m/s at the top${hasWindDir ? `, mostly from the ${compass(from)}. Snow then blows over to lee slopes facing <b>${compass(from + 180)}</b>, where wind slabs form` : ". The wind moves loose snow and builds wind slabs on lee slopes"}. Wind slabs are one of the most common causes of skier-triggered avalanches.`
+        : snowToMove ? `Gusts up to ${fmt(gust)} m/s. Moderate wind, little risk of new wind slabs.` : `Gusts up to ${fmt(gust)} m/s, but little loose new snow to move.`)
+      : (windLvl
+        ? `Vindbyar upp till ${fmt(gust)} m/s vid toppen${hasWindDir ? `, mest från ${compass(from)}. Snön blåser då över till läsidor mot <b>${compass(from + 180)}</b>, där det bildas vindflak` : ". Vinden flyttar lös snö och bygger vindflak på läsidor"}. Vindflak är en av de vanligaste orsakerna till skidåkarutlösta laviner.`
+        : snowToMove ? `Vindbyar upp till ${fmt(gust)} m/s. Måttlig vind, liten risk för nya vindflak.` : `Vindbyar upp till ${fmt(gust)} m/s, men lite lös nysnö att flytta.`)});
 
   // 4. Rain on snow
   const rainTop = rng.reduce((s, i) => s + (H.rain?.[i] || 0), 0), rainMid = rng.reduce((s, i) => s + (M.rain?.[i] || 0), 0);
-  if (rainTop >= 1 || rainMid >= 1) sig.push({lvl: rainTop >= 1 ? 2 : 1, t: "Regn på snö", v: `${fmt(rainTop >= 1 ? rainTop : rainMid, 1)} mm${rainTop >= 1 ? " vid toppen" : " på mellanhöjd"}`,
-    why: rainTop >= 1 ? `Regn ända upp till toppen (${fmt(rainTop,1)} mm). Regn tynger och försvagar snötäcket snabbt och kan ge våta laviner och glidsnölaviner.`
-                      : `Regn upp till mellanhöjd (${fmt(rainMid,1)} mm). Lägre ner blir snön tung och blöt, och risken för våta laviner ökar där.`});
+  if (rainTop >= 1 || rainMid >= 1) sig.push({lvl: rainTop >= 1 ? 2 : 1, t: T("Regn på snö", "Rain on snow"), v: `${fmt(rainTop >= 1 ? rainTop : rainMid, 1)} mm${rainTop >= 1 ? T(" vid toppen", " at the top") : T(" på mellanhöjd", " at mid height")}`,
+    why: rainTop >= 1 ? T(`Regn ända upp till toppen (${fmt(rainTop,1)} mm). Regn tynger och försvagar snötäcket snabbt och kan ge våta laviner och glidsnölaviner.`,
+                          `Rain all the way to the top (${fmt(rainTop,1)} mm). Rain loads and weakens the snowpack quickly and can cause wet and glide avalanches.`)
+                      : T(`Regn upp till mellanhöjd (${fmt(rainMid,1)} mm). Lägre ner blir snön tung och blöt, och risken för våta laviner ökar där.`,
+                          `Rain up to mid height (${fmt(rainMid,1)} mm). Lower down the snow turns heavy and wet, and the risk of wet avalanches rises there.`)});
 
   // 5. Warming
   const temps = rng.map(i => H.temperature_2m[i]).filter(v => v != null);
   const tMax = Math.max(...temps);
   let jump = 0; for (let k = 24; k < temps.length; k++) jump = Math.max(jump, temps[k] - Math.min(...temps.slice(k - 24, k)));
   const warmLvl = tMax > 2 ? 1 : jump >= 10 ? 1 : 0;
-  sig.push({lvl: warmLvl, t: "Temperatur", v: `${fmt(Math.min(...temps))} till ${fmt(tMax)} °C`,
-    why: warmLvl
-      ? `${tMax > 2 ? `Upp till ${fmt(tMax)} °C vid toppen` : `Temperaturen stiger ${fmt(jump)} grader på ett dygn`}. Snabb uppvärmning och sol gör snön blöt och tung och kan lösa ut laviner, särskilt i sydsluttningar mitt på dagen.`
-      : `Mellan ${fmt(Math.min(...temps))} och ${fmt(tMax)} °C vid toppen. Ingen kraftig uppvärmning.`});
+  sig.push({lvl: warmLvl, t: T("Temperatur", "Temperature"), v: `${fmt(Math.min(...temps))} ${T("till", "to")} ${fmt(tMax)} °C`,
+    why: EN
+      ? (warmLvl
+        ? `${tMax > 2 ? `Up to ${fmt(tMax)} °C at the top` : `The temperature rises ${fmt(jump)} degrees in a day`}. Fast warming and sun make the snow wet and heavy and can release avalanches, especially on south-facing slopes in the middle of the day.`
+        : `Between ${fmt(Math.min(...temps))} and ${fmt(tMax)} °C at the top. No strong warming.`)
+      : (warmLvl
+        ? `${tMax > 2 ? `Upp till ${fmt(tMax)} °C vid toppen` : `Temperaturen stiger ${fmt(jump)} grader på ett dygn`}. Snabb uppvärmning och sol gör snön blöt och tung och kan lösa ut laviner, särskilt i sydsluttningar mitt på dagen.`
+        : `Mellan ${fmt(Math.min(...temps))} och ${fmt(tMax)} °C vid toppen. Ingen kraftig uppvärmning.`)});
 
   const depth = H.snow_depth?.[idx];
   const thin = depth != null && depth < 0.3;
-  const LV = [["Lugnt","ok"],["Förhöjt","warn"],["Kraftigt","bad"]];
+  const LV = EN ? [["Calm","ok"],["Raised","warn"],["Strong","bad"]] : [["Lugnt","ok"],["Förhöjt","warn"],["Kraftigt","bad"]];
   const worst = Math.max(...sig.map(x => x.lvl));
   $("#avalsignals").innerHTML = `
-    ${thin ? `<p class="hint caution">Vädermodellen räknar med bara ca ${fmt(depth*100)} cm snö vid toppen just nu. Med så tunt snötäcke är lavinrisken liten, och signalerna nedan visar mest hur vädret ser ut. De blir viktiga när snötäcket byggts upp.</p>` : ""}
-    <p class="hint"><b>Vädersignaler som påverkar lavinfaran</b>, senaste 3 dygnen och 2 dygn framåt vid toppen. Tryck på en rad för att läsa mer.</p>
+    ${thin ? `<p class="hint caution">${T(`Vädermodellen räknar med bara ca ${fmt(depth*100)} cm snö vid toppen just nu. Med så tunt snötäcke är lavinrisken liten, och signalerna nedan visar mest hur vädret ser ut. De blir viktiga när snötäcket byggts upp.`,
+      `The weather model has only about ${fmt(depth*100)} cm of snow at the top right now. With such a thin snowpack the avalanche risk is small, and the signals below mostly describe the weather. They matter once the snowpack has built up.`)}</p>` : ""}
+    <p class="hint">${T("<b>Vädersignaler som påverkar lavinfaran</b>, senaste 3 dygnen och 2 dygn framåt vid toppen. Tryck på en rad för att läsa mer.", "<b>Weather signals that affect avalanche danger</b>, last 3 days and 2 days ahead at the top. Tap a row to read more.")}</p>
     <div class="sigs">${sig.sort((p,q) => q.lvl - p.lvl).map(x => `
       <details class="sig"><summary><span class="pill ${LV[x.lvl][1]}">${LV[x.lvl][0]}</span><b>${x.t}</b><span class="sv">${x.v}</span></summary>
         <p>${x.why}</p></details>`).join("")}</div>
-    <p class="hint caution">${worst >= 2 && !thin ? "<b>Vädret talar för förhöjd lavinfara.</b> " : ""}Det här är ingen lavinprognos. Appen ser bara vädret, inte snötäckets svaga lager, och vädermodellen kan ha fel i bergen. Läs den officiella prognosen och fråga pistpatrullen innan du åker utanför pisterna, och ha alltid lavinutrustning och kunskap att använda den.</p>`;
+    <p class="hint caution">${worst >= 2 && !thin ? T("<b>Vädret talar för förhöjd lavinfara.</b> ", "<b>The weather points to raised avalanche danger.</b> ") : ""}${T("Det här är ingen lavinprognos. Appen ser bara vädret, inte snötäckets svaga lager, och vädermodellen kan ha fel i bergen. Läs den officiella prognosen och fråga pistpatrullen innan du åker utanför pisterna, och ha alltid lavinutrustning och kunskap att använda den.",
+      "This is not an avalanche bulletin. The app only sees the weather, not weak layers in the snowpack, and the weather model can be wrong in the mountains. Read the official bulletin and ask the ski patrol before you ski off-piste, and always carry avalanche gear and know how to use it.")}</p>`;
 }
 
 async function loadForecast(r){
@@ -1718,7 +1816,7 @@ async function loadForecast(r){
     past_days: "3", forecast_days: "10", timezone: "auto", wind_speed_unit: "ms",
   });
   const res = await netFetch("https://api.open-meteo.com/v1/forecast?" + p);
-  if (!res.ok) throw new Error("Open-Meteo svarade " + res.status);
+  if (!res.ok) throw new Error(T("Open-Meteo svarade ", "Open-Meteo answered ") + res.status);
   const [top, base, mid] = await res.json();
   setForecastAt(res.cachedAt || new Date());
   const now = localHourKey(mid.utc_offset_seconds || 0);
@@ -1735,17 +1833,17 @@ async function loadForecast(r){
     const onlyHigh = t >= 2 && d < t / 4;
     return `<div class="stat"><span class="label">${label}</span>
       <b style="color:${color}">${fmt(t)}<small> cm</small></b>
-      <span class="sub" title="Listan och kartan på startsidan visar mellanhöjden (${r.mid} m)">mitt <b>${fmt(m)}</b> · dal <b>${fmt(d)}</b> cm</span>
-      ${onlyHigh ? `<span class="rain">${rain >= 1 ? "Regn i dalen, snö" : "Snö"} bara högt upp</span>` : ""}
+      <span class="sub" title="${T(`Listan och kartan på startsidan visar mellanhöjden (${r.mid} m)`, `The list and map on the start page show the middle height (${r.mid} m)`)}">${T("mitt", "mid")} <b>${fmt(m)}</b> · ${T("dal", "base")} <b>${fmt(d)}</b> cm</span>
+      ${onlyHigh ? `<span class="rain">${rain >= 1 ? T("Regn i dalen, snö bara högt upp", "Rain at the base, snow only up high") : T("Snö bara högt upp", "Snow only up high")}</span>` : ""}
     </div>`;
   };
 
   $("#stats").innerHTML = `
-    ${snowStat("Senaste 72 h", "var(--snow)", idx - 72, idx + 1)}
-    ${snowStat("Kommande 72 h", "var(--future)", idx + 1, idx + 73)}
-    <div class="stat"><span class="label">Kommande 7 dygn</span><b>${fmt(top.daily.snowfall_sum.slice(todayIdx, todayIdx+7).reduce((a,b)=>a+(b||0),0))}<small> cm</small></b><span class="sub">vid toppen (${r.top} m)</span></div>
-    <div class="stat"><span class="label">Snödjup (modell)</span><b>${depth == null ? "–" : fmt(depth*100)}<small> cm</small></b><span class="sub">uppskattat vid toppen, kan avvika från ortens mätning</span></div>
-    <div class="stat"><span class="label">Nollgradersgräns 72 h</span><b>${fl.length ? fmt(Math.min(...fl)) + "–" + fmt(Math.max(...fl)) : "–"}<small> m</small></b><span class="sub">${fl.length && Math.max(...fl) > r.base ? "risk för regn i dalen" : "kallt hela vägen ner"}</span></div>`;
+    ${snowStat(T("Senaste 72 h", "Last 72 h"), "var(--snow)", idx - 72, idx + 1)}
+    ${snowStat(T("Kommande 72 h", "Next 72 h"), "var(--future)", idx + 1, idx + 73)}
+    <div class="stat"><span class="label">${T("Kommande 7 dygn", "Next 7 days")}</span><b>${fmt(top.daily.snowfall_sum.slice(todayIdx, todayIdx+7).reduce((a,b)=>a+(b||0),0))}<small> cm</small></b><span class="sub">${T("vid toppen", "at the top")} (${r.top} m)</span></div>
+    <div class="stat"><span class="label">${T("Snödjup (modell)", "Snow depth (model)")}</span><b>${depth == null ? "–" : fmt(depth*100)}<small> cm</small></b><span class="sub">${T("uppskattat vid toppen, kan avvika från ortens mätning", "estimated at the top, may differ from the resort's measurement")}</span></div>
+    <div class="stat"><span class="label">${T("Nollgradersgräns 72 h", "Freezing level 72 h")}</span><b>${fl.length ? fmt(Math.min(...fl)) + "–" + fmt(Math.max(...fl)) : "–"}<small> m</small></b><span class="sub">${fl.length && Math.max(...fl) > r.base ? T("risk för regn i dalen", "risk of rain at the base") : T("kallt hela vägen ner", "cold all the way down")}</span></div>`;
 
   drawDaily(top, base, todayIdx);
   drawHourly(mid, idx, r);
@@ -1772,17 +1870,17 @@ function drawDaily(top, base, todayIdx){
     const col = past ? "var(--snow)" : "var(--future)", soft = past ? "var(--snow-soft)" : "var(--future-soft)";
     const vt = top.daily.snowfall_sum[i] || 0, vb = base.daily.snowfall_sum[i] || 0;
     const bw = (cw - 8) / 2;
-    bars += `<rect x="${x+4}" y="${y(vt)}" width="${bw}" height="${y(0)-y(vt)}" fill="${col}" rx="2"><title>${dayLabel(t)} topp: ${fmt(vt,1)} cm</title></rect>`;
-    bars += `<rect x="${x+4+bw}" y="${y(vb)}" width="${bw}" height="${y(0)-y(vb)}" fill="${soft}" rx="2"><title>${dayLabel(t)} dal: ${fmt(vb,1)} cm</title></rect>`;
+    bars += `<rect x="${x+4}" y="${y(vt)}" width="${bw}" height="${y(0)-y(vt)}" fill="${col}" rx="2"><title>${dayLabel(t)} ${T("topp", "top")}: ${fmt(vt,1)} cm</title></rect>`;
+    bars += `<rect x="${x+4+bw}" y="${y(vb)}" width="${bw}" height="${y(0)-y(vb)}" fill="${soft}" rx="2"><title>${dayLabel(t)} ${T("dal", "base")}: ${fmt(vb,1)} cm</title></rect>`;
     if (vt >= 1) bars += `<text x="${x+4+bw/2}" y="${y(vt)-4}" text-anchor="middle" style="fill:var(--ink)">${Math.round(vt)}</text>`;
-    bars += `<text x="${x+cw/2}" y="${H-padB+16}" text-anchor="middle" style="${i===todayIdx?"fill:var(--ink);font-weight:600":""}">${i===todayIdx?"idag":dayLabel(t).split(" ")[0]}</text>`;
+    bars += `<text x="${x+cw/2}" y="${H-padB+16}" text-anchor="middle" style="${i===todayIdx?"fill:var(--ink);font-weight:600":""}">${i===todayIdx?T("idag", "today"):dayLabel(t).split(" ")[0]}</text>`;
     bars += `<text x="${x+cw/2}" y="${H-padB+29}" text-anchor="middle">${dayLabel(t).split(" ")[1]}</text>`;
   });
   const line = arr => arr.map((v,i) => `${i?"L":"M"}${padL + i*cw + cw/2},${yt(v)}`).join("");
   const tl = `<path d="${line(top.daily.temperature_2m_max)}" fill="none" stroke="var(--onsen)" stroke-width="1.5"/>
               <path d="${line(top.daily.temperature_2m_min)}" fill="none" stroke="var(--onsen)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
   const sep = todayIdx > 0 ? `<line x1="${padL+todayIdx*cw}" x2="${padL+todayIdx*cw}" y1="${padT}" y2="${H-padB}" stroke="var(--muted)" stroke-dasharray="2 3"/>` : "";
-  $("#daily").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Snöfall per dygn">${g}${sep}${bars}${tl}</svg>`;
+  $("#daily").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Snöfall per dygn", "Snowfall per day")}">${g}${sep}${bars}${tl}</svg>`;
 }
 
 function drawHourly(mid, idx, r){
@@ -1800,11 +1898,11 @@ function drawHourly(mid, idx, r){
   tm.forEach((t,i) => { if (t.endsWith("T00:00")) bars += `<line x1="${padL+i*cw}" x2="${padL+i*cw}" y1="${padT}" y2="${H-padB}" stroke="var(--line)"/><text x="${padL+i*cw+3}" y="${H-padB+14}">${dayLabel(t.slice(0,10))}</text>`; });
   const fpath = fl.map((v,i) => `${i?"L":"M"}${padL+i*cw+cw/2},${yf(v ?? 0)}`).join("");
   const baseY = yf(r.base), topY = yf(r.top);
-  const ref = `<line x1="${padL}" x2="${W-padR}" y1="${baseY}" y2="${baseY}" stroke="var(--toilet)" stroke-dasharray="4 4"/><text x="${W-padR+4}" y="${baseY+3}" style="fill:var(--toilet)">dal</text>
-               <line x1="${padL}" x2="${W-padR}" y1="${topY}" y2="${topY}" stroke="var(--toilet)" stroke-dasharray="4 4"/><text x="${W-padR+4}" y="${topY+3}" style="fill:var(--toilet)">topp</text>`;
-  $("#hourly").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Snöfall per timme">${g}${bars}${ref}
+  const ref = `<line x1="${padL}" x2="${W-padR}" y1="${baseY}" y2="${baseY}" stroke="var(--toilet)" stroke-dasharray="4 4"/><text x="${W-padR+4}" y="${baseY+3}" style="fill:var(--toilet)">${T("dal", "base")}</text>
+               <line x1="${padL}" x2="${W-padR}" y1="${topY}" y2="${topY}" stroke="var(--toilet)" stroke-dasharray="4 4"/><text x="${W-padR+4}" y="${topY+3}" style="fill:var(--toilet)">${T("topp", "top")}</text>`;
+  $("#hourly").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Snöfall per timme", "Snowfall per hour")}">${g}${bars}${ref}
     <path d="${fpath}" fill="none" stroke="var(--onsen)" stroke-width="1.6"/>
-    <text x="${padL+4}" y="${padT+10}" style="fill:var(--onsen)">— nollgradersgräns (m)</text></svg>`;
+    <text x="${padL+4}" y="${padT+10}" style="fill:var(--onsen)">— ${T("nollgradersgräns (m)", "freezing level (m)")}</text></svg>`;
 }
 
 // ---------- Facilities from OpenStreetMap ----------
@@ -1819,13 +1917,22 @@ const placeCache = {};
 async function loadPlaces(r){
   if (placeCache[r.id]) return placeCache[r.id];
   const res = await fetch(PLACES_DIR + r.id + ".json");
-  if (!res.ok) throw new Error(res.status === 404 ? "ingen sparad data för orten" : "kunde inte hämta platserna");
+  if (!res.ok) throw new Error(res.status === 404 ? T("ingen sparad data för orten", "no saved data for the resort") : T("kunde inte hämta platserna", "could not fetch the places"));
   const {pois = [], lifts = []} = await res.json();
   return placeCache[r.id] = {lifts, pois: pois.map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
-    ({type, name: name || sub, named: !!name, jp, lat, lon, sub, hours, d, web: safeUrl(web), phone: phone || ""}))};
+    ({type, name: name || subText(sub), named: !!name, jp, lat, lon, sub: subText(sub), hours, d, web: safeUrl(web), phone: phone || ""}))};
 }
-const LIFT_NAMES = {chair_lift:"Stollift", gondola:"Gondol", cable_car:"Kabinbana", mixed_lift:"Gondol + stollift",
-  drag_lift:"Släplift", "t-bar":"Ankarlift", "j-bar":"Släplift", platter:"Tallrikslift", rope_tow:"Replift", magic_carpet:"Rullband"};
+// Facility descriptions in the place files are Swedish ("Parkering · gratis · 50 platser"); translated word by word
+const SUB_EN = {"Camping": "Campsite", "Toalett": "Toilet", "Rastplats": "Rest area", "Husbilsplats": "Motorhome site",
+  "Bastu": "Sauna", "Äventyrsbad": "Water park", "Parkering": "Parking", "Serviceområde (motorväg)": "Motorway services",
+  "Badhus": "Public bath", "gratis": "free", "avgift": "paid", "parkering + toalett 24 h": "parking + toilet 24 h",
+  "Gratis bad": "Free bath", "dygnet runt": "24 h", "Badhus / sento": "Public bath / sento", "ställplats": "motorhome site"};
+const subText = sub => !EN || !sub ? sub || "" : sub.split(" · ").map(t => SUB_EN[t] || t.replace(/ platser$/, " spaces")).join(" · ");
+const LIFT_NAMES = EN
+  ? {chair_lift:"Chairlift", gondola:"Gondola", cable_car:"Cable car", mixed_lift:"Gondola + chairlift",
+     drag_lift:"Drag lift", "t-bar":"T-bar", "j-bar":"J-bar", platter:"Platter lift", rope_tow:"Rope tow", magic_carpet:"Magic carpet"}
+  : {chair_lift:"Stollift", gondola:"Gondol", cable_car:"Kabinbana", mixed_lift:"Gondol + stollift",
+     drag_lift:"Släplift", "t-bar":"Ankarlift", "j-bar":"Släplift", platter:"Tallrikslift", rope_tow:"Replift", magic_carpet:"Rullband"};
 const SURFACE_LIFTS = new Set(["drag_lift","t-bar","j-bar","platter","rope_tow","magic_carpet"]);
 function drawLifts(r){
   const g = L.featureGroup(), c = css("--lift");
@@ -1846,10 +1953,10 @@ const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
 function onsenLinks(i){
   if (i.type !== "onsen") return "";
   const out = [];
-  if (i.web) out.push(`<a href="${esc(i.web)}" target="_blank" rel="noopener">Webbplats ↗</a>`);
+  if (i.web) out.push(`<a href="${esc(i.web)}" target="_blank" rel="noopener">${T("Webbplats", "Website")} ↗</a>`);
   if (i.phone) out.push(`<span class="num">☎ ${esc(i.phone)}</span>`);
   if (!i.web && i.named){
-    out.push(`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.jp || i.name)}" target="_blank" rel="noopener">Info &amp; kontakt på Google ↗</a>`);
+    out.push(`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.jp || i.name)}" target="_blank" rel="noopener">${T("Info &amp; kontakt på Google", "Info &amp; contact on Google")} ↗</a>`);
   }
   return out.length ? `<div class="links">${out.join(" · ")}</div>` : "";
 }
@@ -1865,15 +1972,15 @@ function drawPois(r){
     return L.circleMarker([i.lat, i.lon], {radius:5, color:"#fff", weight:1.5, fillColor:c, fillOpacity:1})
       .addTo(poiLayer)
       .on("click", () => selectPoi(n, false))
-      .bindPopup(`<b>${esc(i.name)}</b>${i.jp?`<br>${esc(i.jp)}`:""}<br>${esc(i.sub)}${i.hours?`<br>Öppet: ${esc(i.hours)}`:""}<br>${fmt(i.d,1)} km från backen${onsenLinks(i)}<a href="${gmapsDir(i.lat,i.lon)}" target="_blank" rel="noopener">Vägbeskrivning i Google Maps ↗</a>`);
+      .bindPopup(`<b>${esc(i.name)}</b>${i.jp?`<br>${esc(i.jp)}`:""}<br>${esc(i.sub)}${i.hours?`<br>${T("Öppet", "Open")}: ${esc(i.hours)}`:""}<br>${fmt(i.d,1)} ${T("km från backen", "km from the slopes")}${onsenLinks(i)}<a href="${gmapsDir(i.lat,i.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning i Google Maps", "Directions in Google Maps")} ↗</a>`);
   });
   $("#pois").innerHTML = shown.slice(0, 120).map((i, n) => `
     <div class="poi" data-n="${n}" style="--c:var(${POI_TYPES[i.type].c})">
       <i></i>
-      <div style="min-width:0"><div class="n"><button type="button" title="Visa på kartan">${esc(i.name)}</button>${i.jp?` <span class="t">${esc(i.jp)}</span>`:""}</div>
+      <div style="min-width:0"><div class="n"><button type="button" title="${T("Visa på kartan", "Show on the map")}">${esc(i.name)}</button>${i.jp?` <span class="t">${esc(i.jp)}</span>`:""}</div>
         <div class="t">${esc(i.sub)}${i.hours?` · ${esc(i.hours)}`:""}</div>${onsenLinks(i)}</div>
-      <div class="d">${fmt(i.d,1)} km<br><a href="${gmapsDir(i.lat,i.lon)}" target="_blank" rel="noopener">Vägbeskrivning ↗</a></div>
-    </div>`).join("") || `<div class="msg">Inget hittat i OpenStreetMap för de valda kategorierna. Prova att slå på fler kategorier.</div>`;
+      <div class="d">${fmt(i.d,1)} km<br><a href="${gmapsDir(i.lat,i.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning", "Directions")} ↗</a></div>
+    </div>`).join("") || `<div class="msg">${T("Inget hittat i OpenStreetMap för de valda kategorierna. Prova att slå på fler kategorier.", "Nothing found in OpenStreetMap for the chosen categories. Try switching on more categories.")}</div>`;
 }
 
 // Highlight one facility: bigger dot with a halo, map pans to it, list row is marked
@@ -1915,7 +2022,9 @@ addEventListener("hashchange", route);
 
 function setupGoogleForm(){
   const has = !!store.get("yr-gkey");
-  $("#gstatus").textContent = has ? "Google Maps (laddar…)" : "OpenFreeMap (lägg till Google-nyckel för Google Maps)";
+  $("#gstatus").textContent = has ? T("Google Maps (laddar…)", "Google Maps (loading…)") : T("OpenFreeMap (lägg till Google-nyckel för Google Maps)", "OpenFreeMap (add a Google key for Google Maps)");
+  $("#gkey").placeholder = T("Klistra in din Google Maps API-nyckel", "Paste your Google Maps API key");
+  $("#gkey").setAttribute("aria-label", T("Google Maps API-nyckel", "Google Maps API key"));
   $("#gform").onsubmit = e => {
     e.preventDefault();
     const k = $("#gkey").value.trim();
@@ -1957,7 +2066,7 @@ async function saveArea(area, st){
   saving = area;
   let done = st.ids.length - st.missing.length;
   const queue = [...st.missing];
-  const label = () => { const b = $("#offline"); if (b && state.area === area) { b.disabled = true; b.textContent = `Sparar ${done}/${st.ids.length} orter…`; } };
+  const label = () => { const b = $("#offline"); if (b && state.area === area) { b.disabled = true; b.textContent = T(`Sparar ${done}/${st.ids.length} orter…`, `Saving ${done}/${st.ids.length} resorts…`); } };
   label();
   await Promise.all([1, 2, 3, 4].map(async () => {
     for (let id; (id = queue.shift()); ){
@@ -1975,14 +2084,14 @@ async function showOfflineButton(area, auto){
   if (!b || state.area !== area || !st) return;
   b.hidden = false;
   if (saving === area) return;
-  const mb = (st.bytes / 1e6).toLocaleString("sv-SE", {maximumFractionDigits: 1});
+  const mb = (st.bytes / 1e6).toLocaleString(LOCALE, {maximumFractionDigits: 1});
   if (!st.missing.length){
     b.className = "offbtn done"; b.disabled = true;
-    b.textContent = `✓ Liftar och platser sparade offline`;
+    b.textContent = T("✓ Liftar och platser sparade offline", "✓ Lifts and places saved offline");
     return;
   }
   b.className = "offbtn"; b.disabled = false;
-  b.textContent = `Spara offline (${st.ids.length} orter, ${mb} MB)`;
+  b.textContent = T(`Spara offline (${st.ids.length} orter, ${mb} MB)`, `Save offline (${st.ids.length} resorts, ${mb} MB)`);
   b.onclick = () => saveArea(area, st);
   if (auto && navigator.onLine && st.bytes < AUTO_SAVE_BYTES && !saving) saveArea(area, st);
 }
@@ -1999,8 +2108,8 @@ const darkMq = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => (document.documentElement.dataset.theme || (darkMq.matches ? "dark" : "light")) === "dark";
 function showTheme(){
   const dark = isDark();
-  $("#theme").textContent = dark ? "☀ Ljust läge" : "☾ Mörkt läge";
-  $("#theme").setAttribute("aria-label", dark ? "Byt till ljust läge" : "Byt till mörkt läge");
+  $("#theme").textContent = dark ? T("☀ Ljust läge", "☀ Light mode") : T("☾ Mörkt läge", "☾ Dark mode");
+  $("#theme").setAttribute("aria-label", dark ? T("Byt till ljust läge", "Switch to light mode") : T("Byt till mörkt läge", "Switch to dark mode"));
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = dark ? "#0b1220" : "#f3f6f9");
 }
 $("#theme").onclick = () => {
@@ -2012,6 +2121,11 @@ $("#theme").onclick = () => {
 };
 darkMq.addEventListener("change", () => { showTheme(); if (!document.documentElement.dataset.theme) route(); });
 showTheme();
+
+// Language button: shows the other language in its own words; the page reloads in that language
+$("#lang").textContent = EN ? "Svenska" : "English";
+$("#lang").lang = EN ? "sv" : "en";
+$("#lang").onclick = () => { store.set("yr-lang", EN ? "sv" : "en"); location.reload(); };
 
 $("#refresh").onclick = async e => {
   const btn = e.currentTarget;
@@ -2052,7 +2166,7 @@ if ("serviceWorker" in navigator && location.protocol !== "file:"){
 })();
 function stamp(){
   $("#updated").textContent = state.fetchedAt
-    ? "Prognos uppdaterad " + state.fetchedAt.toLocaleString("sv-SE", {weekday:"short", hour:"2-digit", minute:"2-digit"}) : "";
+    ? T("Prognos uppdaterad ", "Forecast updated ") + state.fetchedAt.toLocaleString(LOCALE, {weekday:"short", hour:"2-digit", minute:"2-digit"}) : T("Hämtar prognos…", "Fetching forecast…");
 }
 // Forecasts change at most hourly and every resort costs one Open-Meteo call (daily quota per user),
 // so opening the app or switching area within the hour reuses the saved data. "Uppdatera" always fetches.
@@ -2068,8 +2182,8 @@ async function refreshOverview(force = false){
   catch (e){
     const have = areaResorts(area).some(r => state.overview?.[r.id]);
     if (have){ net.fallback = true; showNet(); }
-    $("#updated").textContent = have ? "Visar sparad data, kunde inte uppdatera" : "";
-    if (!have && !location.hash && area === state.area) listWithoutSnow(`Kunde inte hämta snödata (${esc(e.message)}). Orterna visas utan snö – försök igen senare med Uppdatera.`);
+    $("#updated").textContent = have ? T("Visar sparad data, kunde inte uppdatera", "Showing saved data, could not refresh") : "";
+    if (!have && !location.hash && area === state.area) listWithoutSnow(T(`Kunde inte hämta snödata (${esc(e.message)}). Orterna visas utan snö – försök igen senare med Uppdatera.`, `Could not fetch snow data (${esc(e.message)}). The resorts are shown without snow – try again later with Refresh.`));
   }
 }
 </script>
