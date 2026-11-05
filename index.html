@@ -226,6 +226,10 @@ details.prob p{margin:6px 0 0;font-size:14px;color:var(--muted);max-width:70ch}
 .pbody .exp span{color:var(--muted)}
 .pbody details{margin-top:6px} .pbody summary{cursor:pointer;font-size:13px;color:var(--snow)}
 .pbody details p{margin:4px 0 0;font-size:14px;color:var(--muted);max-width:70ch}
+.pexp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;margin:6px 0 0;font-size:14px;max-width:70ch}
+.pexp dt{color:var(--ink);font-weight:600}
+.pexp dd{margin:0;color:var(--muted)}
+@media (max-width:520px){.pexp dl{grid-template-columns:1fr}.pexp dd{margin-bottom:4px}}
 @media (max-width:420px){.rose{width:88px;height:88px}}
 .en{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
 #avalsignals{display:flex;flex-direction:column;gap:10px}
@@ -1548,11 +1552,87 @@ const EXPO_NAMES = grid => ({
   any: EXPO.filter((_, i) => grid.some(r => r[i])),
   most: EXPO.filter((_, i) => grid.some(r => r[i] === 2)),
 });
+// What each kind of avalanche problem is, where it is found and how to deal with it. The services name them
+// differently (JAN and Varsom in English, Naturvårdsverket in Swedish, EAWS as codes); problemKind() maps
+// them all onto these.
+const PROBLEM_INFO = {
+  new_snow: {
+    sv: ["Ett flak av nysnö som ännu inte har bundit till snön under. Uppstår under och strax efter ett kraftigt snöfall, särskilt med 30 cm eller mer.",
+         "Överallt där det har snöat mycket, oftast i alla väderstreck. Störst risk under snöfallet och de första 1–2 dygnen efter.",
+         "Vänta ett eller ett par dygn efter stora snöfall innan du åker brant terräng. Välj flackare backar under 30 grader."],
+    en: ["A slab of new snow that has not yet bonded to the snow below. Forms during and just after heavy snowfall, especially 30 cm or more.",
+         "Anywhere it has snowed a lot, usually on all aspects. Worst during the snowfall and for the first 1–2 days after.",
+         "Wait a day or two after big snowfalls before skiing steep terrain. Choose slopes under 30 degrees."]},
+  wind_slab: {
+    sv: ["Vinden har blåst ihop snö till ett packat flak på läsidan av krön, åsar och i rännor. Flaket kan släppa när någon belastar det.",
+         "Bakom krön och åsar, i rännor och skålar på sidan som vinden blåser mot. Snön känns ofta hård och kritig eller låter ihålig under skidorna.",
+         "Undvik nyligen vindpackad snö, särskilt i branta läsluttningar. Sprickor som skjuter ut från skidorna är en tydlig varning."],
+    en: ["Wind has packed snow into a firm slab on the lee side of ridges, crests and in gullies. The slab can release when someone loads it.",
+         "Behind crests and ridges, in gullies and bowls on the side the wind blows towards. The snow often feels firm and chalky or sounds hollow under the skis.",
+         "Avoid freshly wind-packed snow, especially on steep lee slopes. Cracks shooting out from your skis are a clear warning."]},
+  persistent: {
+    sv: ["Ett svagt lager djupt i snötäcket, till exempel kantkorn, ytrim eller djuprim, som kan hålla sig instabilt i veckor. Lavinerna blir ofta stora.",
+         "Oftast i skuggiga nordsluttningar och i terräng där snötäcket är tunt och varierar. Kan lösas ut på avstånd, även från flackare mark.",
+         "Svårt att bedöma på plats. Håll dig till måttligt branta backar, undvik tunna partier vid stenar och buskar, och åk en i taget."],
+    en: ["A weak layer deep in the snowpack, such as facets, surface hoar or depth hoar, which can stay unstable for weeks. Avalanches are often large.",
+         "Most often on shady north-facing slopes and where the snowpack is thin and variable. Can be triggered remotely, even from flatter ground.",
+         "Hard to judge on the spot. Stick to moderately steep slopes, avoid thin spots near rocks and bushes, and ski one at a time."]},
+  wet_snow: {
+    sv: ["Vatten från sol, värme eller regn försvagar snötäcket så att blöt, tung snö släpper, som lössnölaviner eller som flak.",
+         "Sluttningar mot sol mitt på dagen och på eftermiddagen, och överallt vid regn eller när det är varmt även på natten.",
+         "Åk tidigt på dagen och var ute ur branta solsidor innan snön blir blöt och djup. Sjunker du igenom snön är det dags att lämna."],
+    en: ["Water from sun, warmth or rain weakens the snowpack so wet, heavy snow releases, as loose snow avalanches or as slabs.",
+         "Sun-facing slopes in the middle of the day and the afternoon, and everywhere with rain or when it stays warm at night.",
+         "Ski early in the day and be off steep sunny slopes before the snow turns wet and deep. If you sink through the surface, it is time to leave."]},
+  gliding: {
+    sv: ["Hela snötäcket glider sakta på slät mark, som gräs eller släta hällar, och kan plötsligt släppa som en glidsnölavin.",
+         "Branta gräsbranter och släta berghällar. Syns ofta som öppna sprickor i snön, så kallade glidsnösprickor eller fiskmun.",
+         "Lavinerna går när som helst på dygnet och kan inte lösas ut eller förutses. Stanna aldrig under öppna glidsnösprickor."],
+    en: ["The whole snowpack slowly slides on smooth ground, such as grass or slabs of rock, and can suddenly release as a glide avalanche.",
+         "Steep grassy slopes and smooth rock slabs. Often visible as open cracks in the snow, called glide cracks or fish mouths.",
+         "They release at any time of day and cannot be triggered or predicted. Never stop below open glide cracks."]},
+  dry_loose: {
+    sv: ["Lös, torr snö som släpper från en punkt och sprider sig nedåt som en solfjäder. Oftast små, men kan dra med sig skidåkare.",
+         "Mycket branta sluttningar med lös pudersnö, ofta strax efter snöfall och i kyla.",
+         "Farligast ovanför stup, raviner och träd. Åk inte i mycket brant terräng där ett fall eller en liten lavin får svåra följder."],
+    en: ["Loose, dry snow that releases from a point and spreads downhill in a fan. Usually small, but can sweep a skier along.",
+         "Very steep slopes with loose powder, often just after snowfall and in cold weather.",
+         "Most dangerous above cliffs, gullies and trees. Avoid very steep terrain where a fall or a small slide has serious consequences."]},
+  cornice: {
+    sv: ["Ett överhäng av vindpackad snö på läsidan av ett krön. Det kan brista längre in än man tror och utlösa laviner nedanför.",
+         "Längs krön och kanter på läsidan, ofta ovanför branta rännor.",
+         "Håll god marginal från kanten när du går på ett krön, och stanna inte under snöhängdor."],
+    en: ["An overhang of wind-packed snow on the lee side of a crest. It can break further back than you expect and trigger avalanches below.",
+         "Along crests and edges on the lee side, often above steep gullies.",
+         "Keep well back from the edge on a ridge, and do not stop below cornices."]},
+};
+function problemKind(p){
+  const n = `${p.name || ""} ${p.sv || ""}`.toLowerCase();
+  if (/no distinct|inget tydligt|favourable|gynnsamt/.test(n)) return null;
+  if (/cornice|snöhäng/.test(n)) return "cornice";
+  if (/glid/.test(n)) return "gliding";
+  if (/persistent|ihållande|djupt/.test(n)) return "persistent";
+  if (/wind|vind/.test(n)) return "wind_slab";
+  if (/wet|våt|vått/.test(n)) return "wet_snow";
+  if (/dry loose|torr lössnö/.test(n)) return "dry_loose";
+  if (/new snow|storm|nysnö/.test(n)) return "new_snow";
+  return null;
+}
+function problemExplain(p){
+  const info = PROBLEM_INFO[problemKind(p)];
+  if (!info) return "";
+  const [what, where, how] = info[LANG];
+  return `<details class="pexp"><summary>${T("Vad innebär det?", "What does it mean?")}</summary><dl>
+    <dt>${T("Vad", "What")}</dt><dd>${what}</dd>
+    <dt>${T("Var och när", "Where and when")}</dt><dd>${where}</dd>
+    <dt>${T("Så undviker du det", "How to avoid it")}</dt><dd>${how}</dd></dl></details>`;
+}
+
 function problemHtml(p, ringLabels){
   // Swedish: our name with the source's (usually English) name beside it. English: the source's name.
   const head = EN ? esc(p.en || cap(p.name)) : `${esc(p.sv || p.name)}${p.sv && p.sv !== p.name ? ` <span class="en">${esc(p.name)}</span>` : ""}`;
   if (!p.grid){
-    return `<details class="prob"><summary>${head}</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text || "")}</p></details>`;
+    return `<details class="prob"><summary>${head}</summary>${p.text ? `<p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text)}</p>` : ""}${problemExplain(p).replace(/^<details class="pexp"><summary>[^<]*<\/summary>|<\/details>$/g, "")}</details>`;
   }
   const {any, most} = EXPO_NAMES(p.grid);
   const dirs = list => list.length === 8 ? T("alla väderstreck", "all aspects") : list.join(", ");
@@ -1573,6 +1653,7 @@ function problemHtml(p, ringLabels){
         <p class="exp"><span>${T("Utsatt:", "Exposed:")}</span> ${dirs(any)}${where ? ` · ${esc(where)}` : ""}</p>
         ${most.length && most.length < any.length ? `<p class="exp"><span>${T("Mest utsatt:", "Most exposed:")}</span> ${dirs(most)}${mostRings.length ? ` · ${esc(mostRings.join(and).toLowerCase())}` : ""}</p>` : ""}
         ${p.text ? `<details><summary>${T("Läs mer", "Read more")}</summary><p${p.lang ? ` lang="${p.lang}"` : ""}>${esc(p.text)}</p></details>` : ""}
+        ${problemExplain(p)}
       </div></div>`;
 }
 
