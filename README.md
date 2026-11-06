@@ -1,5 +1,7 @@
 # Yuki Report
 
+https://yukireport.com
+
 Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidresor med husbil i **Japan**, **Skandinavien** (Sverige, Norge, Finland) och **Alperna** (Österrike, Schweiz, Frankrike, Italien).
 
 - **Startsidan** har ett val mellan Japan, Skandinavien och Alperna och rankar orterna efter hur mycket snö som fallit de senaste 3 dygnen, eller hur mycket som väntas de kommande 3 dygnen.

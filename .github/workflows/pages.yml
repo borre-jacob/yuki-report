@@ -30,9 +30,10 @@ jobs:
     steps:
       - id: age
         name: Är den publicerade datan gammal nog?
+        # -L follows GitHub's redirect from the github.io address to the custom domain
         run: |
           if [ "${{ github.event_name }}" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          at=$(curl -sSf "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/snow/japan.json" \
+          at=$(curl -sSfL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/snow/japan.json" \
             | python3 -c 'import json,sys; print(json.load(sys.stdin)["at"])' || echo "")
           age=$(python3 -c 'import sys,datetime as d; a=sys.argv[1]; print(int((d.datetime.now(d.timezone.utc)-d.datetime.fromisoformat(a.replace("Z","+00:00"))).total_seconds()) if a else 999999)' "$at")
           echo "Datan hämtades $at, $((age/60)) minuter sedan."
