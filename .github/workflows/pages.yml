@@ -1,5 +1,7 @@
 # Publish the app on GitHub Pages, with the snow forecast and avalanche bulletins for every resort
-# fetched once for all users. Runs on every push to main and every 3 hours (fresh data).
+# fetched once for all users. Runs on every push to main, and the schedule refreshes the data about every 3 hours.
+# GitHub delays and skips scheduled runs, so the schedule fires every hour and the check job lets a run through
+# only when the published data is older than 2.5 hours. Open-Meteo calls stay the same as with a 3-hour schedule.
 # The data files are published with the app but never committed, so the repo does not grow.
 # Needs Settings → Pages → Source: "GitHub Actions".
 name: Publicera appen
@@ -8,7 +10,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "15 */3 * * *"
+    - cron: "15 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -21,11 +23,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.age.outputs.run }}
+    steps:
+      - id: age
+        name: Är den publicerade datan gammal nog?
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          at=$(curl -sSf "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/snow/japan.json" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["at"])' || echo "")
+          age=$(python3 -c 'import sys,datetime as d; a=sys.argv[1]; print(int((d.datetime.now(d.timezone.utc)-d.datetime.fromisoformat(a.replace("Z","+00:00"))).total_seconds()) if a else 999999)' "$at")
+          echo "Datan hämtades $at, $((age/60)) minuter sedan."
+          if [ "$age" -ge 9000 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+
   deploy:
+    needs: check
+    if: needs.check.outputs.run == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -49,5 +68,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
+      # GitHub Pages sometimes fails with a temporary error, so wait a minute and try once more
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Vänta innan nytt försök
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 60
+      - id: retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
