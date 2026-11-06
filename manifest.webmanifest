@@ -1,7 +1,7 @@
 {
   "name": "Yuki Report",
   "short_name": "Yuki Report",
-  "description": "Var dumpar det nästa? Snörapport och lavinprognos för dig som jagar pudersnö i Japan, Skandinavien och Alperna. Med liftar och ställplatser för skidresan.",
+  "description": "Snörapport och lavinprognos för dig som jagar pudersnö i Japan, Skandinavien och Alperna. Med liftar och ställplatser för skidresan.",
   "lang": "sv",
   "id": "./",
   "start_url": "./",
