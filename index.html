@@ -131,14 +131,79 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .dhead{display:flex;flex-direction:column;gap:6px}
 .dhead h2{font-size:30px;font-weight:900}
 .dhead .jp{font-family:var(--display);color:var(--muted);font-size:16px;font-weight:500;margin-left:8px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.stat b{display:block;font-family:var(--mono);font-size:26px;font-weight:500;margin-top:2px}
-.stat b small{font-size:13px;color:var(--muted)}
-.stat .sub{font-size:12px;color:var(--muted)}
-.stat .sub{display:block}
-.stat .sub b{display:inline;font:inherit;font-weight:600;color:var(--ink);margin:0}
-.stat .rain{display:block;margin-top:2px;font-size:12px;color:var(--warn)}
+/* Resort forecast: summary card, then the tabs Days / Table / Heights */
+.sum{background:linear-gradient(165deg,var(--future-soft),var(--surface) 70%);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sumtop{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sumbig{font:900 54px/.95 var(--display);color:var(--future)}
+.sumbig small{font-size:20px;font-weight:700}
+.sumside{font-size:13px;color:var(--muted);text-align:right}
+.sumside b{color:var(--ink);font-family:var(--display);font-size:16px}
+.sumtext{margin:0;font-size:15.5px;max-width:62ch}
+.schips{display:flex;flex-wrap:wrap;gap:6px}
+.schip{font-size:12.5px;border-radius:999px;padding:3px 10px;background:var(--bg);display:inline-flex;align-items:center;gap:6px}
+.schip.ok{background:color-mix(in srgb,var(--snow) 14%,var(--surface))}
+.schip.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
+.schip.rain{background:color-mix(in srgb,var(--toilet) 16%,var(--surface))}
+.schip .alv{margin:0}
+.rainfill{background:repeating-linear-gradient(135deg,var(--toilet) 0 3px,color-mix(in srgb,var(--toilet) 30%,var(--surface)) 3px 6px)}
+.mdays,.mlab{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px}
+.mdays{align-items:end;height:92px;border-bottom:1px solid var(--line);margin-top:4px}
+.mdays .col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px}
+.mdays .bar{width:74%;max-width:36px;border-radius:3px 3px 0 0;background:var(--future)}
+.mdays .bar.past{background:var(--snow)}
+.mdays .v{font:600 10.5px var(--mono)}
+.mlab{text-align:center;font:500 10px var(--mono);color:var(--muted)}
+.mlab b{color:var(--ink)}
+.sum .hint{font-size:12px;color:var(--muted);margin:0}
+.fc{display:flex;flex-direction:column;gap:10px;min-width:0}
+.fc[hidden],.fc [hidden]{display:none}
+.ftabs{display:grid;grid-template-columns:repeat(3,1fr);background:color-mix(in srgb,var(--line) 55%,var(--bg));border-radius:12px;padding:4px;gap:4px;max-width:520px}
+.ftabs button{font-weight:600;font-size:14px;border:0;border-radius:9px;padding:8px 0;background:transparent;color:var(--muted);cursor:pointer}
+.ftabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.daycards{display:flex;flex-direction:column;gap:8px}
+.daycard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:4px 10px;align-items:center;cursor:pointer;background:var(--surface);text-align:left;width:100%}
+.daycard.best{border-color:var(--future);box-shadow:0 0 0 1px var(--future) inset}
+.daycard .d{font:600 12px var(--mono);line-height:1.3}
+.daycard .d small{display:block;color:var(--muted);font-weight:400}
+.daycard .amt{font:900 26px/1 var(--display);color:var(--future)}
+.daycard .amt small{font-size:13px;font-weight:700}
+.daycard .amt.zero{color:var(--muted)}
+.daycard .pw{font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--future)}
+.daycard .right{display:flex;gap:8px;align-items:center}
+.daycard .chev{font-size:12px;color:var(--muted);transition:transform .15s}
+.daycard[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.daycard .sub{grid-column:2/4;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px}
+.daycard .sub .r{color:var(--toilet);font-weight:600}
+.daycard .exp{grid-column:1/4;margin-top:8px;font-size:12px;color:var(--muted)}
+.daycard[aria-expanded="false"] .exp{display:none}
+.hbars{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;align-items:end;height:60px;border-bottom:1px solid var(--line);margin-top:4px}
+.hbars i{display:block;background:var(--future);border-radius:2px 2px 0 0}
+.hbars i.r{background:var(--toilet)}
+.hlab{display:grid;grid-template-columns:repeat(4,1fr);font:500 10px var(--mono);margin-top:3px}
+.nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
+.fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
+.fctable table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
+.fctable th,.fctable td{padding:5px 4px;text-align:center;white-space:nowrap;min-width:34px}
+.fctable th[scope=row]{text-align:left;font:600 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--surface);padding-right:8px;z-index:1}
+.fctable thead th{font:600 11px var(--mono)}
+.fctable thead tr:first-child th{border-bottom:1px solid var(--line)}
+.fctable thead tr+tr th{font-weight:400;color:var(--muted)}
+.fctable .ds{border-left:1px solid var(--line)}
+.fctable tr.sep>*{border-top:1px solid var(--line)}
+.fctable .sc{display:block;border-radius:4px;padding:1px 0;font-weight:600}
+.fctable .hot{color:var(--warn);font-weight:600}
+.fctable .rn{color:var(--toilet);font-weight:600}
+.fctable small{color:var(--muted)}
+.heat,.heatx{display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px}
+.heat .ax{display:grid;font:500 10.5px var(--mono);color:var(--muted)}
+.heat .ax span{display:flex;align-items:center;justify-content:flex-end}
+.heat .cells{position:relative;display:grid;gap:2px}
+.heat .cell{border-radius:3px;display:grid;place-items:center;font:600 10px var(--mono);height:30px}
+.heat svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.heatx div{display:grid;font:500 11px var(--mono);color:var(--muted);text-align:center}
+.hlegend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);align-items:center}
+.hlegend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.verdict{border-left:3px solid var(--toilet);padding:6px 10px;font-size:13.5px;background:var(--bg);border-radius:0 8px 8px 0;margin:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .panel h3{font-size:18px;font-weight:700}
 .panel .hint{font-size:13px;color:var(--muted);margin:0}
@@ -1361,16 +1426,14 @@ async function renderDetail(id){
         </div>
         ${CAMS[r.id] ? "" : `<span class="label" style="text-transform:none;letter-spacing:0">${T("Ingen webbkamera hittad för den här orten.", "No webcam found for this resort.")}</span>`}
       </div>
-      <div class="stats" id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
-      <div class="panel">
-        <h3>${T("Snöfall per dygn", "Snowfall per day")}</h3>
-        <p class="hint">${T(`Mörk stapel = toppen (${r.top} m), ljus = dalen (${r.base} m). Linjen visar max/min-temperatur vid toppen.`, `Dark bar = top (${r.top} m), light = base (${r.base} m). The line shows max/min temperature at the top.`)}</p>
-        <div class="chart" id="daily"></div>
-      </div>
-      <div class="panel">
-        <h3>${T("Timme för timme, kommande 72 h", "Hour by hour, next 72 h")}</h3>
-        <p class="hint">${T(`Snöfall vid mellanhöjd (${r.mid} m) och nollgradersgränsen. Ligger nollgradersgränsen över dalstationen blir det blötsnö eller regn längre ner.`, `Snowfall at mid height (${r.mid} m) and the freezing level. When the freezing level is above the base station, it turns to wet snow or rain lower down.`)}</p>
-        <div class="chart" id="hourly"></div>
+      <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
+      <div class="fc" id="fc" hidden>
+        <div class="ftabs" role="tablist" aria-label="${T("Visa prognosen som", "Show the forecast as")}">
+          ${FC_TABS.map(([k, sv, en]) => `<button type="button" role="tab" id="ft-${k}" aria-controls="fp-${k}" aria-selected="false">${T(sv, en)}</button>`).join("")}
+        </div>
+        <div id="fp-days" role="tabpanel" aria-labelledby="ft-days" class="daycards"></div>
+        <div id="fp-table" role="tabpanel" aria-labelledby="ft-table" class="panel" hidden></div>
+        <div id="fp-heat" role="tabpanel" aria-labelledby="ft-heat" class="panel" hidden></div>
       </div>
       <div class="panel" id="aval">
         <h3>${T("Lavinläge", "Avalanche danger")}</h3>
@@ -1398,6 +1461,8 @@ async function renderDetail(id){
       </div>
     </div>`;
   $("#back").onclick = () => go("");
+  FC_TABS.forEach(([k]) => $("#ft-" + k).onclick = () => { store.set("yr-fctab", k); showFcTab(k); });
+  showFcTab(FC_TABS.some(([k]) => k === store.get("yr-fctab")) ? store.get("yr-fctab") : "days");
   $("#chip-lift").onclick = e => {
     liftOn = !liftOn; e.currentTarget.setAttribute("aria-pressed", liftOn);
     if (liftOn) liftLayer.addTo(poiMap); else liftLayer.remove();
@@ -1662,6 +1727,7 @@ function problemHtml(p, ringLabels){
 // validTo: when the bulletin ends (text). tomorrow: tomorrow's level when published. forHill: what the levels mean
 // for this resort's top and base (html), where the bulletin gives limits in metres.
 function dangerCard({top, levels, bands, area, near, issued, source, problems = [], advice, adviceLabel, adviceLang = "en", links, ringLabels = BANDS, validTo, tomorrow, forHill}){
+  lastDanger = near ? null : {today: top || 0, tomorrow: tomorrow || 0};
   bands = bands || levels?.map((level, i) => ({label: BANDS[i], level}));
   const linkHtml = `<div class="dlinks">${links.join("")}</div>`;
   const areaHtml = `${esc(area)}${near ? ` <span class="near">${esc(near)}</span>` : ""}`;
@@ -1713,13 +1779,18 @@ function avalOfficial(r){
     `Finland has no national avalanche bulletin. Avalanches can still occur on steep fell slopes, for example around Kilpisjärvi and on the steep parts of the fells around the resorts. Ask the ski patrol before you ski off-piste.`));
 }
 
+// Levels from the last danger card drawn, so the forecast tabs can show today's and tomorrow's level
+let lastDanger = null;
 async function fillAval(r){
   const d = await avalData(r.area);
+  lastDanger = null;
   const html = r.area === "japan" ? avalJapan(r, d?.jan)
     : r.area === "alps" ? await avalAlps(r, recentAval(d)?.eaws)
     : r.country === "Norge" ? await avalNorway(r, recentAval(d)?.no)
     : avalSweden(r, d?.se);
   if (location.hash.slice(1) === r.id && $("#avalbox")) $("#avalbox").innerHTML = html;
+  const lv = lastDanger || {today: 0, tomorrow: 0};
+  if (detailAval[r.id]?.today !== lv.today || detailAval[r.id]?.tomorrow !== lv.tomorrow){ detailAval[r.id] = lv; if (fcData?.r.id === r.id) drawForecast(); }
 }
 const avalMissing = links => `<p class="hint">${T("Kunde inte hämta lavinprognosen just nu. Försök igen med Uppdatera, eller läs den hos källan.", "Could not fetch the avalanche bulletin right now. Try again with Refresh, or read it at the source.")}</p><div class="dlinks">${links.join("")}</div>`;
 
@@ -2028,86 +2099,208 @@ async function loadForecast(r){
   const ht = mid.hourly.time; let idx = ht.indexOf(now); if (idx < 0) idx = 72;
   const todayIdx = top.daily.time.indexOf(now.slice(0,10));
   const depth = top.hourly.snow_depth?.[idx];
-  const fl = mid.hourly.freezing_level_height.slice(idx, idx+72).filter(v => v != null);
-  const s = (d, a, b) => sumRange(d.hourly.snowfall, a, b);
-  // Snow at the top (big number) with all three heights below. The list and map on the start page use the
-  // middle height, which is marked, so a difference between them is explained here.
-  const snowStat = (label, color, a, b) => {
-    const t = s(top, a, b), m = s(mid, a, b), d = s(base, a, b);
-    const rain = sumRange(base.hourly.rain, a, b);
-    const onlyHigh = t >= 2 && d < t / 4;
-    return `<div class="stat"><span class="label">${label}</span>
-      <b style="color:${color}">${fmt(t)}<small> cm</small></b>
-      <span class="sub" title="${T(`Listan och kartan på startsidan visar mellanhöjden (${r.mid} m)`, `The list and map on the start page show the middle height (${r.mid} m)`)}">${T("mitt", "mid")} <b>${fmt(m)}</b> · ${T("dal", "base")} <b>${fmt(d)}</b> cm</span>
-      ${onlyHigh ? `<span class="rain">${rain >= 1 ? T("Regn i dalen, snö bara högt upp", "Rain at the base, snow only up high") : T("Snö bara högt upp", "Snow only up high")}</span>` : ""}
-    </div>`;
-  };
-
-  $("#stats").innerHTML = `
-    ${snowStat(T("Senaste 72 h", "Last 72 h"), "var(--snow)", idx - 72, idx + 1)}
-    ${snowStat(T("Kommande 72 h", "Next 72 h"), "var(--future)", idx + 1, idx + 73)}
-    <div class="stat"><span class="label">${T("Kommande 7 dygn", "Next 7 days")}</span><b>${fmt(top.daily.snowfall_sum.slice(todayIdx, todayIdx+7).reduce((a,b)=>a+(b||0),0))}<small> cm</small></b><span class="sub">${T("vid toppen", "at the top")} (${r.top} m)</span></div>
-    <div class="stat"><span class="label">${T("Snödjup (modell)", "Snow depth (model)")}</span><b>${depth == null ? "–" : fmt(depth*100)}<small> cm</small></b><span class="sub">${T("uppskattat vid toppen, kan avvika från ortens mätning", "estimated at the top, may differ from the resort's measurement")}</span></div>
-    <div class="stat"><span class="label">${T("Nollgradersgräns 72 h", "Freezing level 72 h")}</span><b>${fl.length ? fmt(Math.min(...fl)) + "–" + fmt(Math.max(...fl)) : "–"}<small> m</small></b><span class="sub">${fl.length && Math.max(...fl) > r.base ? T("risk för regn i dalen", "risk of rain at the base") : T("kallt hela vägen ner", "cold all the way down")}</span></div>`;
-
-  drawDaily(top, base, todayIdx);
-  drawHourly(mid, idx, r);
+  fcData = {r, top, base, mid, idx, todayIdx: todayIdx < 0 ? 3 : todayIdx, depth};
+  if (!fcOpen.has("init:" + r.id)) fcOpen = new Set(["init:" + r.id]);
+  drawForecast();
   drawAvalSignals(top, mid, idx);
 }
 
-function drawDaily(top, base, todayIdx){
-  const n = top.daily.time.length, W = 760, H = 220, padL = 34, padR = 34, padT = 14, padB = 40;
-  const cw = (W - padL - padR) / n;
-  const maxS = Math.max(5, ...top.daily.snowfall_sum, ...base.daily.snowfall_sum);
-  const sMax = Math.ceil(maxS / 5) * 5;
-  const temps = [...top.daily.temperature_2m_max, ...top.daily.temperature_2m_min];
-  const tLo = Math.floor(Math.min(...temps) / 5) * 5, tHi = Math.ceil(Math.max(...temps, 0) / 5) * 5 || 5;
-  const y = v => padT + (H - padT - padB) * (1 - v / sMax);
-  const yt = v => padT + (H - padT - padB) * (1 - (v - tLo) / (tHi - tLo || 1));
-  let g = `<g class="grid">`;
-  for (let v = 0; v <= sMax; v += sMax / 4) g += `<line x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}"/><text x="${padL-6}" y="${y(v)+3}" text-anchor="end">${Math.round(v)}</text>`;
-  g += `<text x="${padL-6}" y="${padT-4}" text-anchor="end">cm</text><text x="${W-padR+6}" y="${padT-4}">°C</text>`;
-  [tLo, 0, tHi].filter((v,i,a)=>a.indexOf(v)===i).forEach(v => g += `<text x="${W-padR+6}" y="${yt(v)+3}">${v}</text>`);
-  g += `</g>`;
-  let bars = "";
-  top.daily.time.forEach((t, i) => {
-    const x = padL + i * cw, past = i < todayIdx;
-    const col = past ? "var(--snow)" : "var(--future)", soft = past ? "var(--snow-soft)" : "var(--future-soft)";
-    const vt = top.daily.snowfall_sum[i] || 0, vb = base.daily.snowfall_sum[i] || 0;
-    const bw = (cw - 8) / 2;
-    bars += `<rect x="${x+4}" y="${y(vt)}" width="${bw}" height="${y(0)-y(vt)}" fill="${col}" rx="2"><title>${dayLabel(t)} ${T("topp", "top")}: ${fmt(vt,1)} cm</title></rect>`;
-    bars += `<rect x="${x+4+bw}" y="${y(vb)}" width="${bw}" height="${y(0)-y(vb)}" fill="${soft}" rx="2"><title>${dayLabel(t)} ${T("dal", "base")}: ${fmt(vb,1)} cm</title></rect>`;
-    if (vt >= 1) bars += `<text x="${x+4+bw/2}" y="${y(vt)-4}" text-anchor="middle" style="fill:var(--ink)">${Math.round(vt)}</text>`;
-    bars += `<text x="${x+cw/2}" y="${H-padB+16}" text-anchor="middle" style="${i===todayIdx?"fill:var(--ink);font-weight:600":""}">${i===todayIdx?T("idag", "today"):dayLabel(t).split(" ")[0]}</text>`;
-    bars += `<text x="${x+cw/2}" y="${H-padB+29}" text-anchor="middle">${dayLabel(t).split(" ")[1]}</text>`;
-  });
-  const line = arr => arr.map((v,i) => `${i?"L":"M"}${padL + i*cw + cw/2},${yt(v)}`).join("");
-  const tl = `<path d="${line(top.daily.temperature_2m_max)}" fill="none" stroke="var(--onsen)" stroke-width="1.5"/>
-              <path d="${line(top.daily.temperature_2m_min)}" fill="none" stroke="var(--onsen)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
-  const sep = todayIdx > 0 ? `<line x1="${padL+todayIdx*cw}" x2="${padL+todayIdx*cw}" y1="${padT}" y2="${H-padB}" stroke="var(--muted)" stroke-dasharray="2 3"/>` : "";
-  $("#daily").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Snöfall per dygn", "Snowfall per day")}">${g}${sep}${bars}${tl}</svg>`;
+// ---------- Resort forecast: a summary on top, then the tabs Days / Table / Heights ----------
+// Everything is drawn from the same Open-Meteo answer: hourly snow, rain, freezing level, temperature and wind
+// at the resort's top, middle and base. The summary sentence comes from fixed rules, not from a forecaster.
+const FC_TABS = [["days", "Dagar", "Days"], ["table", "Tabell", "Table"], ["heat", "Höjd", "Heights"]];
+let fcData = null;                // the open resort's forecast, kept so it can be redrawn when the avalanche levels arrive
+let fcOpen = new Set();           // day cards the user has opened
+const detailAval = {};            // resort id → {today, tomorrow} from the official bulletin (set by fillAval)
+const POWDER_CM = 10;             // a day with at least this much new snow at the top is a powder day
+const WDL = EN ? ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"] : ["söndag","måndag","tisdag","onsdag","torsdag","fredag","lördag"];
+const CMP = EN ? ["N","NE","E","SE","S","SW","W","NW"] : ["N","NO","O","SO","S","SV","V","NV"];
+const wdOf = iso => new Date(iso + "T12:00:00Z").getUTCDay();
+const shadeSnow = v => v < 0.5 ? "transparent" : `color-mix(in srgb,var(--future) ${Math.min(85, 18 + v*10)}%,transparent)`;
+const snowInk = v => v >= 5 ? "var(--surface)" : "inherit";
+const dayBadge = (lv, when) => lv
+  ? `<span class="alv" style="background:${DANGER[lv].c};color:${DANGER[lv].ink}" title="${T("Lavinfara", "Avalanche danger")} ${when}: ${lv} – ${DANGER[lv].n.toLowerCase()}">${lv}</span>`
+  : `<span class="nolv" title="${T("Ingen lavinprognos för den dagen", "No avalanche bulletin for that day")}">–</span>`;
+const isRain = (snow, rain) => rain >= 1 && rain > snow * 0.7;   // 1 cm of snow is roughly 0.7–1 mm of water
+
+function showFcTab(k){
+  FC_TABS.forEach(([t]) => { const on = t === k; $("#ft-" + t)?.setAttribute("aria-selected", on); const p = $("#fp-" + t); if (p) p.hidden = !on; });
 }
 
-function drawHourly(mid, idx, r){
-  const N = 72, W = 760, H = 200, padL = 34, padR = 44, padT = 14, padB = 30;
-  const sf = mid.hourly.snowfall.slice(idx, idx+N), fl = mid.hourly.freezing_level_height.slice(idx, idx+N), tm = mid.hourly.time.slice(idx, idx+N);
-  const cw = (W - padL - padR) / N;
-  const sMax = Math.max(1, Math.ceil(Math.max(...sf)));
-  const fMax = Math.max(r.top + 300, ...fl), fMin = 0;
-  const y = v => padT + (H-padT-padB) * (1 - v / sMax);
-  const yf = v => padT + (H-padT-padB) * (1 - (v - fMin) / (fMax - fMin));
-  let g = `<g class="grid">`;
-  [0, sMax/2, sMax].forEach(v => g += `<line x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}"/><text x="${padL-6}" y="${y(v)+3}" text-anchor="end">${+v.toFixed(1)}</text>`);
-  g += `<text x="${padL-6}" y="${padT-4}" text-anchor="end">cm/h</text></g>`;
-  let bars = sf.map((v,i) => `<rect x="${padL+i*cw+.5}" y="${y(v||0)}" width="${Math.max(1,cw-1)}" height="${y(0)-y(v||0)}" fill="var(--future)"><title>${tm[i].replace("T"," ")}: ${fmt(v,1)} cm</title></rect>`).join("");
-  tm.forEach((t,i) => { if (t.endsWith("T00:00")) bars += `<line x1="${padL+i*cw}" x2="${padL+i*cw}" y1="${padT}" y2="${H-padB}" stroke="var(--line)"/><text x="${padL+i*cw+3}" y="${H-padB+14}">${dayLabel(t.slice(0,10))}</text>`; });
-  const fpath = fl.map((v,i) => `${i?"L":"M"}${padL+i*cw+cw/2},${yf(v ?? 0)}`).join("");
-  const baseY = yf(r.base), topY = yf(r.top);
-  const ref = `<line x1="${padL}" x2="${W-padR}" y1="${baseY}" y2="${baseY}" stroke="var(--toilet)" stroke-dasharray="4 4"/><text x="${W-padR+4}" y="${baseY+3}" style="fill:var(--toilet)">${T("dal", "base")}</text>
-               <line x1="${padL}" x2="${W-padR}" y1="${topY}" y2="${topY}" stroke="var(--toilet)" stroke-dasharray="4 4"/><text x="${W-padR+4}" y="${topY+3}" style="fill:var(--toilet)">${T("topp", "top")}</text>`;
-  $("#hourly").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Snöfall per timme", "Snowfall per hour")}">${g}${bars}${ref}
-    <path d="${fpath}" fill="none" stroke="var(--onsen)" stroke-width="1.6"/>
-    <text x="${padL+4}" y="${padT+10}" style="fill:var(--onsen)">— ${T("nollgradersgräns (m)", "freezing level (m)")}</text></svg>`;
+function drawForecast(){
+  const F = fcData;
+  if (!F || location.hash.slice(1) !== F.r.id || !$("#stats")) return;
+  const {r, top, base, mid, idx, todayIdx} = F;
+  const H = mid.hourly.time, today = top.daily.time[todayIdx];
+  const hoursOf = d => { const out = []; H.forEach((t, i) => { if (t.startsWith(d)) out.push(i); }); return out; };
+  const rel = d => { const k = top.daily.time.indexOf(d) - todayIdx; return k === 0 ? T("idag", "today") : k === 1 ? T("i morgon", "tomorrow") : WDL[wdOf(d)]; };
+  // "Saturday morning", "overnight into Sunday", "this evening" for the hour at index i
+  const partOf = i => {
+    const d = H[i].slice(0, 10), h = +H[i].slice(11, 13), isToday = d === today, wd = WDL[wdOf(d)];
+    if (h < 6) return isToday ? T("i natt", "overnight") : T(`natten mot ${wd}`, `overnight into ${wd}`);
+    const [sv, en, svT, enT] = h < 12 ? ["förmiddag", "morning", "i förmiddag", "this morning"]
+      : h < 18 ? ["eftermiddag", "afternoon", "i eftermiddag", "this afternoon"] : ["kväll", "evening", "i kväll", "this evening"];
+    if (isToday) return T(svT, enT);
+    const k = top.daily.time.indexOf(d) - todayIdx;
+    return k === 1 ? T(`i morgon ${sv}`, `tomorrow ${en}`) : T(`${wd} ${sv}`, `${wd} ${en}`);
+  };
+  const avl = detailAval[r.id] || {};
+  const dayRain = d => sumRange(base.hourly.rain, hoursOf(d)[0], hoursOf(d).at(-1) + 1);
+  const ahead = top.daily.time.slice(todayIdx, todayIdx + 7);
+
+  // --- Summary ---
+  const next72 = sumRange(top.hourly.snowfall, idx + 1, idx + 73), past72 = sumRange(top.hourly.snowfall, idx - 72, idx + 1);
+  const sum7 = ahead.reduce((s, d, k) => s + (top.daily.snowfall_sum[todayIdx + k] || 0), 0);
+  let bestK = 0; ahead.forEach((d, k) => { if ((top.daily.snowfall_sum[todayIdx + k] || 0) > (top.daily.snowfall_sum[todayIdx + bestK] || 0)) bestK = k; });
+  const bestD = ahead[bestK], bestV = top.daily.snowfall_sum[todayIdx + bestK] || 0;
+  let peak = 0, peakAt = -1;
+  for (let i = idx + 1; i + 6 <= idx + 73 && i + 6 <= H.length; i++){ const v = sumRange(top.hourly.snowfall, i, i + 6); if (v > peak){ peak = v; peakAt = i + 3; } }
+  const rainDays = ahead.slice(0, 3).filter(d => dayRain(d) >= 1);
+  const baseSnow72 = sumRange(base.hourly.snowfall, idx + 1, idx + 73);
+  let gust = 0, gustAt = idx;
+  for (let i = idx + 1; i < Math.min(idx + 73, H.length); i++) if ((top.hourly.wind_gusts_10m?.[i] || 0) > gust){ gust = top.hourly.wind_gusts_10m[i]; gustAt = i; }
+  const lead = bestV >= POWDER_CM ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
+    : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
+    : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${fmt(sum7)} cm ${T("totalt vid toppen", "in all at the top")}.`
+    : `<b>${T("Ingen snö i sikte", "No snow in sight")}</b> ${T("den närmaste veckan.", "for the coming week.")}`;
+  const sentence = [lead,
+    peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : "",
+    rainDays.length ? `${T("Regn i dalen", "Rain at the base")} ${rainDays.map(rel).join(T(" och ", " and "))}.`
+      : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : ""].filter(Boolean).join(" ");
+  const chips = [
+    rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
+      : baseSnow72 >= 2 ? `<span class="schip ok">❄ ${T("Snö i hela backen", "Snow on the whole mountain")}</span>` : "",
+    gust >= 20 ? `<span class="schip warn">${T("Hård vind", "Strong wind")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${fmt(gust)} m/s</span>`
+      : gust >= 14 ? `<span class="schip">${T("Blåsigt", "Windy")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${fmt(gust)} m/s</span>` : "",
+    avl.today ? `<span class="schip">${dayBadge(avl.today, T("idag", "today"))} ${T("Lavinfara idag", "Avalanche danger today")}: ${DANGER[avl.today].n.toLowerCase()}</span>` : "",
+  ].join("");
+  const days10 = top.daily.time.slice(Math.max(0, todayIdx - 3), todayIdx + 7);
+  const dmax = Math.max(5, ...days10.map(d => top.daily.snowfall_sum[top.daily.time.indexOf(d)] || 0));
+  $("#stats").innerHTML = `<section class="sum" aria-label="${T("Sammanfattning", "Summary")}">
+    <div class="sumtop">
+      <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${fmt(next72)}<small> cm</small></div></div>
+      <div class="sumside">${T("Senaste 3 dygn", "Last 3 days")} <b>${fmt(past72)} cm</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${fmt(F.depth * 100)} cm</b>` : ""}</div>
+    </div>
+    <p class="sumtext">${sentence}</p>
+    ${chips ? `<div class="schips">${chips}</div>` : ""}
+    <div>
+      <div class="mdays" style="--n:${days10.length}">${days10.map(d => { const i = top.daily.time.indexOf(d), v = top.daily.snowfall_sum[i] || 0, past = d < today, rn = !past && dayRain(d) >= 1;
+        return `<div class="col" title="${dayLabel(d)}: ${fmt(v, 1)} cm${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v">${v >= 0.5 ? fmt(v) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div></div>`; }).join("")}</div>
+      <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
+    </div>
+    <p class="hint">${T(`Snö vid toppen (${r.top} m) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning.`,
+      `Snow at the top (${r.top} m) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement.`)}</p>
+  </section>`;
+
+  // --- Days ---
+  if (!fcOpen.has("seen") && bestV >= POWDER_CM){ fcOpen.add(bestD); }
+  fcOpen.add("seen");
+  $("#fp-days").innerHTML = ahead.map((d, k) => {
+    const hs = hoursOf(d), i = todayIdx + k, v = top.daily.snowfall_sum[i] || 0;
+    const fls = hs.map(h => mid.hourly.freezing_level_height[h]).filter(x => x != null);
+    let sp = 0, dir = null, g = 0;
+    hs.forEach(h => { const w = top.hourly.wind_speed_10m[h] || 0; if (w > sp){ sp = w; dir = top.hourly.wind_direction_10m?.[h]; } g = Math.max(g, top.hourly.wind_gusts_10m?.[h] || 0); });
+    const rn = dayRain(d) >= 1, best = k === bestK && v >= POWDER_CM, open = fcOpen.has(d);
+    const lv = k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0;
+    const snowH = hs.map(h => mid.hourly.snowfall[h] || 0), rainH = hs.map(h => mid.hourly.rain?.[h] || 0);
+    const hm = Math.max(1, ...snowH, ...rainH.map(x => x * 0.7));
+    return `<button type="button" class="daycard ${best ? "best" : ""}" data-d="${d}" aria-expanded="${open}">
+      <span class="d">${k === 0 ? T("Idag", "Today") : cap(WD[wdOf(d)])}<small>${+d.slice(8)}/${+d.slice(5, 7)}</small></span>
+      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${fmt(v)}<small> cm</small></span></span>
+      <span class="right">${dayBadge(lv, rel(d))}<span class="chev" aria-hidden="true">▾</span></span>
+      <span class="sub">
+        <span>${T("Nollgräns", "Freezing level")} ${fls.length ? `${fmt(Math.round(Math.min(...fls) / 10) * 10)}–${fmt(Math.round(Math.max(...fls) / 10) * 10)} m` : "–"}${rn ? ` · <span class="r">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
+        <span>${T("Vind", "Wind")} ${dir != null ? CMP[Math.round(((dir % 360) + 360) % 360 / 45) % 8] + " " : ""}${fmt(sp)}, ${T("byar", "gusts")} ${fmt(g)} m/s</span>
+        <span>${fmt(top.daily.temperature_2m_min[i])} ${T("till", "to")} ${fmt(top.daily.temperature_2m_max[i])} °C</span>
+      </span>
+      <span class="exp">${T(`Snö per timme på mitten (${r.mid} m)${rainH.some(x => x >= 0.2) ? ", grönt är regn" : ""}`, `Snow per hour at mid height (${r.mid} m)${rainH.some(x => x >= 0.2) ? ", green is rain" : ""}`)}
+        <span class="hbars">${hs.map((h, j) => { const rr = rainH[j] >= 0.2 && isRain(snowH[j], rainH[j]); const val = rr ? rainH[j] * 0.7 : snowH[j];
+          return `<i class="${rr ? "r" : ""}" style="height:${val > 0.05 ? Math.max(2, val / hm * 56) : 0}px" title="${H[h].slice(11, 16)}: ${rr ? fmt(rainH[j], 1) + " mm " + T("regn", "rain") : fmt(snowH[j], 1) + " cm"}"></i>`; }).join("")}</span>
+        <span class="hlab"><span>00</span><span>06</span><span>12</span><span>18</span></span></span>
+    </button>`;
+  }).join("");
+  $("#fp-days").querySelectorAll(".daycard").forEach(b => b.onclick = () => {
+    const o = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", o);
+    if (o) fcOpen.add(b.dataset.d); else fcOpen.delete(b.dataset.d);
+  });
+
+  // --- Table and heights: morning 06–12, afternoon 12–18, night 18–06, per day ---
+  const periods = n => {
+    const out = [];
+    for (const d of ahead.slice(0, n)){
+      const a = H.indexOf(d + "T06:00");
+      if (a < 0) continue;
+      [[a, a + 6, T("Fm", "AM")], [a + 6, a + 12, T("Em", "PM")], [a + 12, a + 24, T("Natt", "Night")]].forEach(([s, e, lab]) => { if (e <= H.length) out.push({d, s, e, lab}); });
+    }
+    return out;
+  };
+  const sumAt = (loc, key, p) => sumRange(loc.hourly[key] || [], p.s, p.e);
+  const range = (arr, p) => arr.slice(p.s, p.e).filter(x => x != null);
+  const P = periods(5);
+  const dayCols = [...new Set(P.map(p => p.d))];
+  const cell = (loc, p) => { const sn = sumAt(loc, "snowfall", p), rn = sumAt(loc, "rain", p);
+    return isRain(sn, rn) ? ["", `<span class="rn">${T("regn", "rain")}</span>`] : ["", `<span class="sc" style="background:${shadeSnow(sn)};color:${snowInk(sn)}">${sn >= 0.5 ? fmt(sn) : "–"}</span>`]; };
+  // f(p) gives [class, html] for one cell; the first period of each day gets the day divider
+  const row = (label, f, cls = "") => `<tr class="${cls}"><th scope="row">${label}</th>${P.map((p, j) => { const [c, h] = f(p); return `<td class="${j % 3 === 0 ? "ds " : ""}${c}">${h}</td>`; }).join("")}</tr>`;
+  const windCell = p => {
+    let x = 0, y = 0, s = 0, n = 0;
+    for (let i = p.s; i < p.e; i++){ const w = top.hourly.wind_speed_10m[i] || 0, dd = top.hourly.wind_direction_10m?.[i]; s += w; n++; if (dd != null){ x += w * Math.sin(dd * Math.PI / 180); y += w * Math.cos(dd * Math.PI / 180); } }
+    const g = Math.max(0, ...range(top.hourly.wind_gusts_10m || [], p));
+    const dir = x || y ? CMP[Math.round(((Math.atan2(x, y) * 180 / Math.PI + 360) % 360) / 45) % 8] + " " : "";
+    return [g >= 20 ? "hot" : "", `${dir}${fmt(n ? s / n : 0)}<small> (${fmt(g)})</small>`];
+  };
+  $("#fp-table").innerHTML = `<div class="fctable"><table>
+    <thead><tr><th scope="row"></th>${dayCols.map(d => `<th colspan="${P.filter(p => p.d === d).length}" class="ds">${d === today ? T("Idag", "Today") : cap(WD[wdOf(d)])} ${+d.slice(8)}/${+d.slice(5, 7)}</th>`).join("")}</tr>
+      <tr><th scope="row"></th>${P.map((p, j) => `<th${j % 3 === 0 ? ' class="ds"' : ""}>${p.lab}</th>`).join("")}</tr></thead>
+    <tbody>
+      ${row(`${T("Topp", "Top")} <small>${r.top}</small>`, p => cell(top, p))}
+      ${row(`${T("Mitt", "Mid")} <small>${r.mid}</small>`, p => cell(mid, p))}
+      ${row(`${T("Dal", "Base")} <small>${r.base}</small>`, p => cell(base, p))}
+      ${row(T("Nollgräns", "Freezing"), p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? Math.max(...f) : null;
+        return [m != null && m > r.base ? "hot" : "", m == null ? "–" : fmt(Math.round(m / 10) * 10)]; }, "sep")}
+      ${row(T("°C topp", "°C top"), p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? fmt(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; })}
+      ${row(T("Vind", "Wind"), windCell)}
+      <tr class="sep"><th scope="row">${T("Lavin", "Aval.")}</th>${dayCols.map((d, k) => `<td colspan="${P.filter(p => p.d === d).length}" class="ds">${dayBadge(k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0, rel(d))}</td>`).join("")}</tr>
+    </tbody></table></div>
+    <p class="hint">${T("Snö i cm per dygnsdel: förmiddag 06–12, eftermiddag 12–18 och natt 18–06. Mörkare ruta betyder mer snö. Nollgränsen är den högsta under perioden och visas i orange när den ligger över dalen. Vind i m/s med byar inom parentes.",
+      "Snow in cm per part of the day: morning 06–12, afternoon 12–18 and night 18–06. A darker box means more snow. The freezing level is the highest in the period and shows in orange when it is above the base. Wind in m/s with gusts in brackets.")}</p>`;
+
+  // --- Heights: snow or rain at five heights from the top down to the base ---
+  const HP = periods(4);
+  const step = (r.top - r.base) / 4, els = [0, 1, 2, 3, 4].map(k => Math.round((r.top - k * step) / 10) * 10);
+  const interp = (e, vt, vm, vb) => e >= r.mid ? vm + (vt - vm) * (r.top > r.mid ? (e - r.mid) / (r.top - r.mid) : 0)
+                                               : vb + (vm - vb) * (r.mid > r.base ? (e - r.base) / (r.mid - r.base) : 0);
+  const rainTop = {};   // day → highest height with rain
+  let anySnow = false, snowAtBase = false;
+  const cells = els.map(e => HP.map(p => {
+    const sn = interp(e, sumAt(top, "snowfall", p), sumAt(mid, "snowfall", p), sumAt(base, "snowfall", p));
+    const rn = interp(e, sumAt(top, "rain", p), sumAt(mid, "rain", p), sumAt(base, "rain", p));
+    if (isRain(sn, rn)){ rainTop[p.d] = Math.max(rainTop[p.d] || 0, e); return `<div class="cell rainfill" title="${e} m: ${fmt(rn, 1)} mm ${T("regn", "rain")}"></div>`; }
+    if (sn >= 0.5){ anySnow = true; if (e === els[4]) snowAtBase = true; }
+    return `<div class="cell" style="background:${sn >= 0.5 ? shadeSnow(sn) : "var(--bg)"};color:${sn >= 5 ? "var(--surface)" : "var(--ink)"}" title="${e} m: ${fmt(sn, 1)} cm">${sn >= 1 ? fmt(sn) : ""}</div>`;
+  }).join("")).join("");
+  const span = 5 * step || 1, ytop = r.top + step / 2;
+  const flY = p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? f.reduce((a, b) => a + b, 0) / f.length : r.top; return Math.max(-4, Math.min(104, (ytop - m) / span * 100)); };
+  const rainList = Object.entries(rainTop);
+  const verdict = rainList.length
+    ? rainList.slice(0, 2).map(([d, e]) => `${cap(rel(d))} ${T(`regnar det upp till ca ${e} m.`, `it rains up to about ${e} m.`)}`).join(" ")
+    : snowAtBase ? T("Snö i hela backen de närmaste dagarna.", "Snow on the whole mountain in the coming days.")
+    : anySnow ? T(`Snö bara högt upp, inte ända ner till dalen (${r.base} m).`, `Snow only up high, not down to the base (${r.base} m).`)
+    : T("Ingen nederbörd att tala om de närmaste dagarna.", "No precipitation to speak of in the coming days.");
+  const hDays = [...new Set(HP.map(p => p.d))];
+  $("#fp-heat").innerHTML = `
+    <div class="heat">
+      <div class="ax" style="grid-template-rows:repeat(5,30px);row-gap:2px">${els.map(e => `<span>${e}</span>`).join("")}</div>
+      <div class="cells" style="grid-template-columns:repeat(${HP.length},minmax(0,1fr))">${cells}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${HP.map((p, j) => `${(j + .5) / HP.length * 100},${flY(p)}`).join(" ")}" fill="none" stroke="var(--onsen)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>
+    </div>
+    <div class="heatx"><span></span><div style="grid-template-columns:repeat(${hDays.length},1fr)">${hDays.map(d => `<span>${d === today ? T("idag", "today") : WD[wdOf(d)]}</span>`).join("")}</div></div>
+    <div class="hlegend"><span><i style="background:var(--future)"></i>${T("Snö (cm)", "Snow (cm)")}</span><span><i class="rainfill"></i>${T("Regn", "Rain")}</span><span><i style="background:var(--onsen);height:3px"></i>${T("Nollgräns", "Freezing level")}</span></div>
+    <p class="verdict">${verdict}</p>
+    <p class="hint">${T("Höjd i meter uppåt och tid åt höger, med förmiddag, eftermiddag och natt för varje dag. Värdena mellan topp, mitt och dal är uppskattade utifrån de tre höjderna.",
+      "Height in metres upwards and time to the right, with morning, afternoon and night for each day. The values between top, mid and base are estimated from the three heights.")}</p>`;
+  $("#fc").hidden = false;
 }
 
 // ---------- Facilities from OpenStreetMap ----------
