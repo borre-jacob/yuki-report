@@ -1047,7 +1047,7 @@ const WIND_F = {ms: [1, "m/s"], kmh: [3.6, "km/h"], mph: [2.23694, "mph"], kn: [
 const WIND_U = WIND_F[1];
 const uSnowN = (cm, d) => IN ? fmt(cm / 2.54, d ?? (Math.abs(cm / 2.54) < 10 ? 1 : 0)) : fmt(cm, d);   // inches: one decimal below 10
 const uSnow = (cm, d) => `${uSnowN(cm, d)} ${SNOW_U}`;
-const uRain = mm => IN ? `${fmt(mm / 25.4, 2)} in` : `${uRain(mm)}`;
+const uRain = mm => IN ? `${fmt(mm / 25.4, 2)} in` : fmt(mm, 1) + " mm";
 const uTempN = c => c == null ? "–" : fmt(FAHR ? c * 9 / 5 + 32 : c);
 const uTemp = c => `${uTempN(c)} ${TEMP_U}`;
 const uWindN = ms => fmt(ms * WIND_F[0]);
