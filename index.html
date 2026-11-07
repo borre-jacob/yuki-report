@@ -77,6 +77,29 @@ header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:1
 .status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .status button,.banner button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer}
 .status button:disabled{opacity:.5;cursor:default}
+header.top{position:relative;padding-right:54px}
+.menubtn{position:absolute;top:0;right:0;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;cursor:pointer}
+.menubtn span{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink)}
+/* Settings: a panel from the right edge */
+.menu{position:fixed;inset:0 0 0 auto;margin:0;width:min(400px,100vw);height:100%;max-height:none;max-width:100vw;border:0;border-left:1px solid var(--line);
+  padding:0;background:var(--surface);color:var(--ink);overflow-y:auto}
+.menu::backdrop{background:rgba(5,10,20,.45)}
+.menu-in{display:flex;flex-direction:column;gap:20px;min-height:100%;
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) 18px}
+.menu-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.menu h2{font-size:22px;font-weight:900}
+.mclose{border:1px solid var(--line);background:var(--surface);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:15px}
+.opts{display:flex;flex-direction:column;gap:16px;margin:0}
+.opt{border:0;margin:0;padding:0;min-width:0}
+.opt legend{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0;margin-bottom:6px}
+.mseg{display:flex;flex-wrap:wrap;background:color-mix(in srgb,var(--line) 55%,var(--bg));border-radius:10px;padding:3px;gap:3px}
+.mseg label{flex:1 1 0;min-width:max-content;text-align:center;font-size:13.5px;font-weight:600;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--muted);position:relative}
+.mseg input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.mseg label:has(input:checked){background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.mseg label:has(input:focus-visible){outline:2px solid var(--snow);outline-offset:1px}
+.mnote{margin:0;font-size:12px;color:var(--muted)}
+.menu .gset{border-top:1px solid var(--line);padding-top:16px;font-size:13px;color:var(--muted)}
 .offbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
 .offbtn.done{color:var(--muted);font-weight:500}
 .offbtn:disabled{cursor:default}
@@ -339,11 +362,40 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
     </div>
     <div class="status">
       <div class="updated" id="updated"></div>
-      <button type="button" id="lang" lang="sv"></button>
-      <button type="button" id="theme"></button>
       <button type="button" id="refresh"><span class="t-sv">Uppdatera</span><span class="t-en">Refresh</span></button>
     </div>
+    <button type="button" id="menubtn" class="menubtn" aria-haspopup="dialog" aria-controls="menu"><span></span><span></span><span></span></button>
   </header>
+  <dialog id="menu" class="menu" aria-labelledby="menu-t">
+    <div class="menu-in">
+      <div class="menu-head">
+        <h2 id="menu-t"><span class="t-sv">Inställningar</span><span class="t-en">Settings</span></h2>
+        <button type="button" id="menuclose" class="mclose"><span aria-hidden="true">✕</span></button>
+      </div>
+      <form id="menuopts" class="opts"></form>
+      <p class="mnote"><span class="t-sv">Valen sparas bara på den här enheten.</span><span class="t-en">Your choices are saved on this device only.</span></p>
+      <details class="gset" id="gset">
+        <summary><span class="t-sv">Kartinställning:</span><span class="t-en">Map setting:</span> <span id="gstatus">OpenFreeMap</span></summary>
+        <p class="t-sv">För att visa Google Maps i appen behövs en egen API-nyckel från Google (gratis upp till en generös månadsgräns, men kräver ett betalkort i Google Cloud).
+          <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">Så skaffar du en nyckel ↗</a>.
+          Aktivera "Maps JavaScript API". Nyckeln sparas bara i den här webbläsaren.</p>
+        <p class="t-en">To show Google Maps in the app you need your own API key from Google (free up to a generous monthly limit, but it needs a payment card in Google Cloud).
+          <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">How to get a key ↗</a>.
+          Enable "Maps JavaScript API". The key is stored only in this browser.</p>
+        <p class="t-sv"><b>Begränsa nyckeln</b> så att ingen annan kan använda den: i Google Cloud, under API:er och tjänster → Inloggningsuppgifter,
+          välj nyckeln och sätt <i>Programbegränsningar</i> till <i>Webbplatser</i> (HTTP-referrer) med bara din egen domän,
+          t.ex. <code>https://yukireport.com/*</code>. Begränsa den gärna också till Maps JavaScript API.</p>
+        <p class="t-en"><b>Restrict the key</b> so nobody else can use it: in Google Cloud, under APIs &amp; Services → Credentials,
+          pick the key and set <i>Application restrictions</i> to <i>Websites</i> (HTTP referrers) with only your own domain,
+          e.g. <code>https://yukireport.com/*</code>. Preferably restrict it to the Maps JavaScript API as well.</p>
+        <form id="gform" class="gform">
+          <input id="gkey" type="password" autocomplete="off">
+          <button type="submit"><span class="t-sv">Spara och ladda om</span><span class="t-en">Save and reload</span></button>
+          <button type="button" id="gclear"><span class="t-sv">Ta bort nyckel</span><span class="t-en">Remove key</span></button>
+        </form>
+      </details>
+    </div>
+  </dialog>
   <div class="banner off" id="netbanner" role="status" hidden><span class="t-sv">Offline – visar senast hämtade data</span><span class="t-en">Offline – showing the last downloaded data</span></div>
   <div class="banner upd" id="swbanner" role="status" hidden><span class="t-sv">Ny version finns –</span><span class="t-en">New version available –</span> <button type="button" id="swreload"><span class="t-sv">ladda om</span><span class="t-en">reload</span></button></div>
   <main id="app"></main>
@@ -378,26 +430,6 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
       avalanche bulletin and ask locally before you ski off-piste.
       <a href="integritet.html#en">Privacy: the app collects no personal data</a>.</p>
     </div>
-    <details class="gset" id="gset">
-      <summary><span class="t-sv">Kartinställning:</span><span class="t-en">Map setting:</span> <span id="gstatus">OpenFreeMap</span></summary>
-      <p class="t-sv">För att visa Google Maps i appen behövs en egen API-nyckel från Google (gratis upp till en generös månadsgräns, men kräver ett betalkort i Google Cloud).
-        <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">Så skaffar du en nyckel ↗</a>.
-        Aktivera "Maps JavaScript API". Nyckeln sparas bara i den här webbläsaren.</p>
-      <p class="t-en">To show Google Maps in the app you need your own API key from Google (free up to a generous monthly limit, but it needs a payment card in Google Cloud).
-        <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">How to get a key ↗</a>.
-        Enable "Maps JavaScript API". The key is stored only in this browser.</p>
-      <p class="t-sv"><b>Begränsa nyckeln</b> så att ingen annan kan använda den: i Google Cloud, under API:er och tjänster → Inloggningsuppgifter,
-        välj nyckeln och sätt <i>Programbegränsningar</i> till <i>Webbplatser</i> (HTTP-referrer) med bara din egen domän,
-        t.ex. <code>https://yukireport.com/*</code>. Begränsa den gärna också till Maps JavaScript API.</p>
-      <p class="t-en"><b>Restrict the key</b> so nobody else can use it: in Google Cloud, under APIs &amp; Services → Credentials,
-        pick the key and set <i>Application restrictions</i> to <i>Websites</i> (HTTP referrers) with only your own domain,
-        e.g. <code>https://yukireport.com/*</code>. Preferably restrict it to the Maps JavaScript API as well.</p>
-      <form id="gform" class="gform">
-        <input id="gkey" type="password" autocomplete="off">
-        <button type="submit"><span class="t-sv">Spara och ladda om</span><span class="t-en">Save and reload</span></button>
-        <button type="button" id="gclear"><span class="t-sv">Ta bort nyckel</span><span class="t-en">Remove key</span></button>
-      </form>
-    </details>
   </footer>
 </div>
 
@@ -1005,6 +1037,23 @@ const store = {
   set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 };
 const fmt = (v, d=0) => { if (v == null || isNaN(v)) return "–"; const x = Number(v).toFixed(d); return /^-0(\.0+)?$/.test(x) ? x.slice(1) : x; };
+// ---------- Units ----------
+// All data stays metric (cm, mm, °C, m/s, m). These format a value in the units chosen in the settings menu.
+// Thresholds in the code (powder day, strong wind, …) stay in metric too.
+const UNITS = {temp: "c", snow: "cm", wind: "ms", height: "m", ...(store.get("yr-units") || {})};
+const IN = UNITS.snow === "in", FT = UNITS.height === "ft", FAHR = UNITS.temp === "f";
+const SNOW_U = IN ? "in" : "cm", TEMP_U = FAHR ? "°F" : "°C", HEIGHT_U = FT ? "ft" : "m";
+const WIND_F = {ms: [1, "m/s"], kmh: [3.6, "km/h"], mph: [2.23694, "mph"], kn: [1.94384, T("knop", "kn")]}[UNITS.wind] || [1, "m/s"];
+const WIND_U = WIND_F[1];
+const uSnowN = (cm, d) => IN ? fmt(cm / 2.54, d ?? (Math.abs(cm / 2.54) < 10 ? 1 : 0)) : fmt(cm, d);   // inches: one decimal below 10
+const uSnow = (cm, d) => `${uSnowN(cm, d)} ${SNOW_U}`;
+const uRain = mm => IN ? `${fmt(mm / 25.4, 2)} in` : `${uRain(mm)}`;
+const uTempN = c => c == null ? "–" : fmt(FAHR ? c * 9 / 5 + 32 : c);
+const uTemp = c => `${uTempN(c)} ${TEMP_U}`;
+const uWindN = ms => fmt(ms * WIND_F[0]);
+const uWind = ms => `${uWindN(ms)} ${WIND_U}`;
+const uHN = m => m == null ? "–" : FT ? fmt(Math.round(m * 3.28084 / 10) * 10) : fmt(m);   // feet rounded to 10
+const uH = m => `${uHN(m)} ${HEIGHT_U}`;
 // Current hour in Japan, matching Open-Meteo's local ISO strings ("2026-01-20T14:00")
 // Current hour at a location, matching Open-Meteo's local ISO strings ("2026-01-20T14:00")
 const localHourKey = offsetSec => new Date(Date.now() + offsetSec*1000).toISOString().slice(0,13) + ":00";
@@ -1158,7 +1207,7 @@ function renderOverview(){
         <div class="legend">
           <span style="--c:var(--snow)">${T("Fallit", "Fallen")}</span>
           <span style="--c:var(--future)">${T("Prognos", "Forecast")}</span>
-          <span>${T("cm vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt", "cm at the middle of the slopes · bars: 3 days back + 7 ahead")}</span>
+          <span>${T(`${SNOW_U} vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt`, `${SNOW_U} at the middle of the slopes · bars: 3 days back + 7 ahead`)}</span>
           <span class="alv-key">${T("Lavinfara idag:", "Avalanche danger today:")} ${[1,2,3,4,5].map(l => `<span class="alv" style="background:${DANGER[l].c};color:${DANGER[l].ink}" title="${l} – ${DANGER[l].n}">${l}</span>`).join("")}</span>
         </div>
       </div>
@@ -1222,7 +1271,7 @@ function listWithoutSnow(msg, listOnly = false){
   list.innerHTML = `<div class="msg err">${msg}</div>` + listRows(rows, r => `<button class="row" data-id="${r.id}">
       <span class="info">
         <span class="name">${esc(r.name)}</span>
-        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${r.base}–${r.top} m</span>
+        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${uHN(r.base)}–${uH(r.top)}</span>
       </span>
     </button>`);
   wireList(list, () => listWithoutSnow(msg, true));
@@ -1249,19 +1298,19 @@ function fillOverview(listOnly = false, keepView = false){
     const {r, o} = x;
     const spark = o.daily.map((v, j) => {
       const h = Math.max(1, Math.round((v||0) / maxDay * 22));
-      return `<i class="${j >= o.todayIdx ? "f" : ""} ${j===o.todayIdx?"today":""}" style="height:${h}px" title="${dayLabel(o.dailyTimes[j])}: ${fmt(v,1)} cm"></i>`;
+      return `<i class="${j >= o.todayIdx ? "f" : ""} ${j===o.todayIdx?"today":""}" style="height:${h}px" title="${dayLabel(o.dailyTimes[j])}: ${uSnow(v,1)}"></i>`;
     }).join("");
     const main = o[key], other = state.mode === "past" ? o.next72 : o.past72;
     return `<button class="row" data-id="${r.id}">
       <span class="rank">${i+1}</span>
       <span class="info">
         <span class="name">${esc(r.name)}${alvBadge(state.avalLv[r.id])}</span>
-        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${r.base}–${r.top} m</span>
+        <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${uHN(r.base)}–${uH(r.top)}</span>
         <span class="spark" aria-hidden="true">${spark}</span>
       </span>
       <span class="big">
-        <b>${fmt(main)}<small> cm</small></b>
-        <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${fmt(other)} cm</span>
+        <b>${uSnowN(main)}<small> ${SNOW_U}</small></b>
+        <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${uSnow(other)}</span>
       </span>
     </button>`;
   }) || `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`;
@@ -1275,7 +1324,7 @@ function fillOverview(listOnly = false, keepView = false){
     const v = o[key];
     const lv = state.avalLv[r.id];
     return L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", "", lv), title: r.name, snow: v, aval: lv})
-      .bindTooltip(`<b>${esc(r.name)}</b><br>${fmt(v)} cm${lv ? `<br>${T("Lavinfara", "Avalanche danger")} ${lv} – ${DANGER[lv].n.toLowerCase()}` : ""}`, {direction:"top"})
+      .bindTooltip(`<b>${esc(r.name)}</b><br>${uSnow(v)}${lv ? `<br>${T("Lavinfara", "Avalanche danger")} ${lv} – ${DANGER[lv].n.toLowerCase()}` : ""}`, {direction:"top"})
       .on("click", () => go(r.id));
   }));
   drawRampLegend(SNOW_RAMP[state.mode]);
@@ -1327,7 +1376,7 @@ function snowIcon(v, maxVal, extra = "", cls = "", lv = 0){
   const size = v == null ? 24 : 24 + Math.round(Math.sqrt(v / maxVal) * 22);
   const {bg, ink} = v == null ? {bg: "var(--line)", ink: "var(--muted)"} : rampColor(SNOW_RAMP[state.mode], v);
   return L.divIcon({className:"", iconSize:[size,size],
-    html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${v == null ? "–" : Math.round(v)}${extra}${lv ? alvBadge(lv) : ""}</div>`});
+    html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${v == null ? "–" : Math.round(IN ? v / 2.54 : v)}${extra}${lv ? alvBadge(lv) : ""}</div>`});
 }
 
 // Colour scale for the overview pins: pale for a dusting, deep for a dump.
@@ -1355,7 +1404,7 @@ function drawRampLegend(ramp){
     const d = L.DomUtil.create("div", "ramp");
     d.innerHTML = `<span class="ramp-t">${state.mode === "past" ? T("Fallit, 3 dygn", "Fallen, 3 days") : T("Prognos, 3 dygn", "Forecast, 3 days")}</span>
       <span class="ramp-bar" style="background:linear-gradient(90deg,${ramp.join(",")})"></span>
-      <span class="ramp-l">${RAMP_CM.map((c, i) => `<span>${c}${i === RAMP_CM.length-1 ? "+ cm" : ""}</span>`).join("")}</span>`;
+      <span class="ramp-l">${RAMP_CM.map((c, i) => `<span>${IN ? Math.round(c / 2.54) : c}${i === RAMP_CM.length-1 ? "+ " + SNOW_U : ""}</span>`).join("")}</span>`;
     return d;
   };
   rampLegend.addTo(overviewMap);
@@ -1419,7 +1468,7 @@ async function renderDetail(id){
     <div style="display:flex;flex-direction:column;gap:16px">
       <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
       <div class="dhead">
-        <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${T("dal", "base")} ${r.base} m · ${T("topp", "top")} ${r.top} m</span>
+        <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${T("dal", "base")} ${uH(r.base)} · ${T("topp", "top")} ${uH(r.top)}</span>
         <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span></h2>
         <div class="dlinks">
           <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
@@ -1605,7 +1654,7 @@ function aspectRose(grid){
 function heightInfo({fill, h1, h2}){
   const num = typeof h1 === "number" && typeof (h2 || h1) === "number";
   const hi = num ? Math.max(h1, h2 || h1) : h1, lo = num ? Math.min(h1, h2 || h1) : h2;
-  const m = v => v === "treeline" ? T("trädgränsen", "the treeline") : `${v} m`;
+  const m = v => v === "treeline" ? T("trädgränsen", "the treeline") : uH(+v);
   const text = (EN
     ? {1: `above ${m(h1)}`, 2: `below ${m(h1)}`, 3: `above ${m(hi)} and below ${m(lo)}`, 4: `between ${m(lo)} and ${m(hi)}`}
     : {1: `över ${m(h1)}`, 2: `under ${m(h1)}`, 3: `över ${m(hi)} och under ${m(lo)}`, 4: `mellan ${m(lo)} och ${m(hi)}`})[fill];
@@ -1625,10 +1674,10 @@ const EXPO_NAMES = grid => ({
 // them all onto these.
 const PROBLEM_INFO = {
   new_snow: {
-    sv: ["Ett flak av nysnö som ännu inte har bundit till snön under. Uppstår under och strax efter ett kraftigt snöfall, särskilt med 30 cm eller mer.",
+    sv: [`Ett flak av nysnö som ännu inte har bundit till snön under. Uppstår under och strax efter ett kraftigt snöfall, särskilt med ${uSnow(30)} eller mer.`,
          "Överallt där det har snöat mycket, oftast i alla väderstreck. Störst risk under snöfallet och de första 1–2 dygnen efter.",
          "Vänta ett eller ett par dygn efter stora snöfall innan du åker brant terräng. Välj flackare backar under 30 grader."],
-    en: ["A slab of new snow that has not yet bonded to the snow below. Forms during and just after heavy snowfall, especially 30 cm or more.",
+    en: [`A slab of new snow that has not yet bonded to the snow below. Forms during and just after heavy snowfall, especially ${uSnow(30)} or more.`,
          "Anywhere it has snowed a lot, usually on all aspects. Worst during the snowfall and for the first 1–2 days after.",
          "Wait a day or two after big snowfalls before skiing steep terrain. Choose slopes under 30 degrees."]},
   wind_slab: {
@@ -1713,7 +1762,7 @@ function problemHtml(p, ringLabels){
   }
   const h = p.height ? heightInfo(p.height) : null;
   if (h) where = h.text;
-  if (p.meters) where = [p.meters[0] && `${T("över", "above")} ${p.meters[0]} m`, p.meters[1] && `${T("under", "below")} ${p.meters[1]} m`].filter(Boolean).join(and) || where;
+  if (p.meters) where = [p.meters[0] && `${T("över", "above")} ${uH(p.meters[0])}`, p.meters[1] && `${T("under", "below")} ${uH(p.meters[1])}`].filter(Boolean).join(and) || where;
   const mostRings = p.grid.length === 3 ? ringLabels.filter((_, k) => p.grid[k].includes(2)) : [];
   return `<div class="prob rosed">
       <div class="rosebox">${aspectRose(p.grid)}${h ? h.pic : ""}</div>
@@ -1880,7 +1929,7 @@ async function avalAlps(r, central){
     `${esc(r.name)} is outside the European avalanche bulletin regions. Ask the ski patrol about conditions before you ski off-piste.`));
   return eawsCard(r, central);
 }
-const elev = v => v === "treeline" ? T("trädgränsen", "the treeline") : v + " m";
+const elev = v => v === "treeline" ? T("trädgränsen", "the treeline") : uH(+v);
 const eawsBand = el => el?.lowerBound && el?.upperBound ? `${elev(el.lowerBound)}–${elev(el.upperBound)}`
   : el?.lowerBound ? `${T("Över", "Above")} ${elev(el.lowerBound)}`
   : el?.upperBound ? `${T("Under", "Below")} ${elev(el.upperBound)}` : T("Alla höjder", "All elevations");
@@ -1946,9 +1995,9 @@ async function eawsCard(r, central){
   const lt = levelAt(r.top), lb = levelAt(r.base);
   const lvText = l => `${alvBadge(l)}${DANGER[l].n.toLowerCase()}`;
   const forHill = lt && lb && ratings.length > 1 ? (lt === lb
-    ? T(`<b>${esc(r.name)}:</b> hela backen (${r.base}–${r.top} m) ligger i nivå ${lvText(lt)}.`, `<b>${esc(r.name)}:</b> the whole ski area (${r.base}–${r.top} m) is at level ${lvText(lt)}.`)
-    : T(`<b>${esc(r.name)}:</b> toppen (${r.top} m) ligger i nivå ${lvText(lt)}, dalen (${r.base} m) i nivå ${lvText(lb)}.`,
-        `<b>${esc(r.name)}:</b> the top (${r.top} m) is at level ${lvText(lt)}, the base (${r.base} m) at level ${lvText(lb)}.`)) : "";
+    ? T(`<b>${esc(r.name)}:</b> hela backen (${uHN(r.base)}–${uH(r.top)}) ligger i nivå ${lvText(lt)}.`, `<b>${esc(r.name)}:</b> the whole ski area (${uHN(r.base)}–${uH(r.top)}) is at level ${lvText(lt)}.`)
+    : T(`<b>${esc(r.name)}:</b> toppen (${uH(r.top)}) ligger i nivå ${lvText(lt)}, dalen (${uH(r.base)}) i nivå ${lvText(lb)}.`,
+        `<b>${esc(r.name)}:</b> the top (${uH(r.top)}) is at level ${lvText(lt)}, the base (${uH(r.base)}) at level ${lvText(lb)}.`)) : "";
   return dangerCard({top, bands, area, issued: bul.publicationTime ? fmtWhen(new Date(bul.publicationTime), "Europe/Vienna") : "",
     validTo: bul.validTime?.endTime ? fmtWhen(new Date(bul.validTime.endTime), "Europe/Vienna") : "", tomorrow, forHill,
     source: srcName, problems, advice: advice.replace(/<[^>]+>/g, " "), adviceLang: lang,
@@ -2018,18 +2067,18 @@ function drawAvalSignals(top, mid, idx){
   let best = 0, bestEnd = idx;
   for (let i = a + 24; i <= b; i++){ const v = sumRange(H.snowfall, i - 24, i); if (v > best){ best = v; bestEnd = i - 1; } }
   const past72 = sumRange(H.snowfall, idx - 72, idx + 1), next48 = sumRange(H.snowfall, idx + 1, idx + 49);
-  sig.push({lvl: best >= 30 ? 2 : best >= 15 ? 1 : 0, t: T("Nysnö", "New snow"), v: `max ${fmt(best)} cm/24 h`,
+  sig.push({lvl: best >= 30 ? 2 : best >= 15 ? 1 : 0, t: T("Nysnö", "New snow"), v: `max ${uSnow(best)}/24 h`,
     why: best >= 15
-      ? T(`Upp till ${fmt(best)} cm på 24 timmar runt ${when(bestEnd)}. Mycket nysnö på kort tid hinner inte binda till underlaget och ger flakrisk, särskilt de första 1–2 dygnen.`,
-          `Up to ${fmt(best)} cm in 24 hours around ${when(bestEnd)}. A lot of new snow in a short time does not have time to bond to the layer below and gives a slab risk, especially in the first 1–2 days.`)
-      : T(`${fmt(past72)} cm senaste 3 dygnen och ${fmt(next48)} cm väntas de närmaste 2 dygnen vid toppen. Inga stora nysnömängder.`,
-          `${fmt(past72)} cm in the last 3 days and ${fmt(next48)} cm expected in the next 2 days at the top. No large amounts of new snow.`)});
+      ? T(`Upp till ${uSnow(best)} på 24 timmar runt ${when(bestEnd)}. Mycket nysnö på kort tid hinner inte binda till underlaget och ger flakrisk, särskilt de första 1–2 dygnen.`,
+          `Up to ${uSnow(best)} in 24 hours around ${when(bestEnd)}. A lot of new snow in a short time does not have time to bond to the layer below and gives a slab risk, especially in the first 1–2 days.`)
+      : T(`${uSnow(past72)} senaste 3 dygnen och ${uSnow(next48)} väntas de närmaste 2 dygnen vid toppen. Inga stora nysnömängder.`,
+          `${uSnow(past72)} in the last 3 days and ${uSnow(next48)} expected in the next 2 days at the top. No large amounts of new snow.`)});
 
   // 2. Snowfall intensity
   const maxRate = Math.max(0, ...rng.map(i => H.snowfall[i] || 0));
-  if (maxRate >= 3) sig.push({lvl: maxRate >= 5 ? 2 : 1, t: T("Intensivt snöfall", "Heavy snowfall"), v: `${fmt(maxRate,1)} cm/h`,
-    why: T(`Upp till ${fmt(maxRate,1)} cm i timmen. Snabb pålagring belastar snötäcket fortare än det hinner stabiliseras.`,
-           `Up to ${fmt(maxRate,1)} cm an hour. Fast loading stresses the snowpack faster than it can stabilise.`)});
+  if (maxRate >= 3) sig.push({lvl: maxRate >= 5 ? 2 : 1, t: T("Intensivt snöfall", "Heavy snowfall"), v: `${uSnow(maxRate,1)}/h`,
+    why: T(`Upp till ${uSnow(maxRate,1)} i timmen. Snabb pålagring belastar snötäcket fortare än det hinner stabiliseras.`,
+           `Up to ${uSnow(maxRate,1)} an hour. Fast loading stresses the snowpack faster than it can stabilise.`)});
 
   // 3. Wind transport
   const gust = Math.max(0, ...rng.map(i => H.wind_gusts_10m?.[i] || 0));
@@ -2038,44 +2087,44 @@ function drawAvalSignals(top, mid, idx){
   const hasWindDir = x || y, from = hasWindDir ? (Math.atan2(x, y) * 180 / Math.PI + 360) % 360 : null;
   const snowToMove = past72 + next48 >= 5;
   const windLvl = !snowToMove ? 0 : gust >= 20 ? 2 : gust >= 12 ? 1 : 0;
-  sig.push({lvl: windLvl, t: T("Vind och snödrev", "Wind and drifting snow"), v: `${T("byar", "gusts")} ${fmt(gust)} m/s${hasWindDir ? T(" från ", " from ") + compass(from) : ""}`,
+  sig.push({lvl: windLvl, t: T("Vind och snödrev", "Wind and drifting snow"), v: `${T("byar", "gusts")} ${uWind(gust)}${hasWindDir ? T(" från ", " from ") + compass(from) : ""}`,
     why: EN
       ? (windLvl
-        ? `Gusts up to ${fmt(gust)} m/s at the top${hasWindDir ? `, mostly from the ${compass(from)}. Snow then blows over to lee slopes facing <b>${compass(from + 180)}</b>, where wind slabs form` : ". The wind moves loose snow and builds wind slabs on lee slopes"}. Wind slabs are one of the most common causes of skier-triggered avalanches.`
-        : snowToMove ? `Gusts up to ${fmt(gust)} m/s. Moderate wind, little risk of new wind slabs.` : `Gusts up to ${fmt(gust)} m/s, but little loose new snow to move.`)
+        ? `Gusts up to ${uWind(gust)} at the top${hasWindDir ? `, mostly from the ${compass(from)}. Snow then blows over to lee slopes facing <b>${compass(from + 180)}</b>, where wind slabs form` : ". The wind moves loose snow and builds wind slabs on lee slopes"}. Wind slabs are one of the most common causes of skier-triggered avalanches.`
+        : snowToMove ? `Gusts up to ${uWind(gust)}. Moderate wind, little risk of new wind slabs.` : `Gusts up to ${uWind(gust)}, but little loose new snow to move.`)
       : (windLvl
-        ? `Vindbyar upp till ${fmt(gust)} m/s vid toppen${hasWindDir ? `, mest från ${compass(from)}. Snön blåser då över till läsidor mot <b>${compass(from + 180)}</b>, där det bildas vindflak` : ". Vinden flyttar lös snö och bygger vindflak på läsidor"}. Vindflak är en av de vanligaste orsakerna till skidåkarutlösta laviner.`
-        : snowToMove ? `Vindbyar upp till ${fmt(gust)} m/s. Måttlig vind, liten risk för nya vindflak.` : `Vindbyar upp till ${fmt(gust)} m/s, men lite lös nysnö att flytta.`)});
+        ? `Vindbyar upp till ${uWind(gust)} vid toppen${hasWindDir ? `, mest från ${compass(from)}. Snön blåser då över till läsidor mot <b>${compass(from + 180)}</b>, där det bildas vindflak` : ". Vinden flyttar lös snö och bygger vindflak på läsidor"}. Vindflak är en av de vanligaste orsakerna till skidåkarutlösta laviner.`
+        : snowToMove ? `Vindbyar upp till ${uWind(gust)}. Måttlig vind, liten risk för nya vindflak.` : `Vindbyar upp till ${uWind(gust)}, men lite lös nysnö att flytta.`)});
 
   // 4. Rain on snow
   const rainTop = rng.reduce((s, i) => s + (H.rain?.[i] || 0), 0), rainMid = rng.reduce((s, i) => s + (M.rain?.[i] || 0), 0);
-  if (rainTop >= 1 || rainMid >= 1) sig.push({lvl: rainTop >= 1 ? 2 : 1, t: T("Regn på snö", "Rain on snow"), v: `${fmt(rainTop >= 1 ? rainTop : rainMid, 1)} mm${rainTop >= 1 ? T(" vid toppen", " at the top") : T(" på mellanhöjd", " at mid height")}`,
-    why: rainTop >= 1 ? T(`Regn ända upp till toppen (${fmt(rainTop,1)} mm). Regn tynger och försvagar snötäcket snabbt och kan ge våta laviner och glidsnölaviner.`,
-                          `Rain all the way to the top (${fmt(rainTop,1)} mm). Rain loads and weakens the snowpack quickly and can cause wet and glide avalanches.`)
-                      : T(`Regn upp till mellanhöjd (${fmt(rainMid,1)} mm). Lägre ner blir snön tung och blöt, och risken för våta laviner ökar där.`,
-                          `Rain up to mid height (${fmt(rainMid,1)} mm). Lower down the snow turns heavy and wet, and the risk of wet avalanches rises there.`)});
+  if (rainTop >= 1 || rainMid >= 1) sig.push({lvl: rainTop >= 1 ? 2 : 1, t: T("Regn på snö", "Rain on snow"), v: `${uRain(rainTop >= 1 ? rainTop : rainMid)}${rainTop >= 1 ? T(" vid toppen", " at the top") : T(" på mellanhöjd", " at mid height")}`,
+    why: rainTop >= 1 ? T(`Regn ända upp till toppen (${uRain(rainTop)}). Regn tynger och försvagar snötäcket snabbt och kan ge våta laviner och glidsnölaviner.`,
+                          `Rain all the way to the top (${uRain(rainTop)}). Rain loads and weakens the snowpack quickly and can cause wet and glide avalanches.`)
+                      : T(`Regn upp till mellanhöjd (${uRain(rainMid)}). Lägre ner blir snön tung och blöt, och risken för våta laviner ökar där.`,
+                          `Rain up to mid height (${uRain(rainMid)}). Lower down the snow turns heavy and wet, and the risk of wet avalanches rises there.`)});
 
   // 5. Warming
   const temps = rng.map(i => H.temperature_2m[i]).filter(v => v != null);
   const tMax = Math.max(...temps);
   let jump = 0; for (let k = 24; k < temps.length; k++) jump = Math.max(jump, temps[k] - Math.min(...temps.slice(k - 24, k)));
   const warmLvl = tMax > 2 ? 1 : jump >= 10 ? 1 : 0;
-  sig.push({lvl: warmLvl, t: T("Temperatur", "Temperature"), v: `${fmt(Math.min(...temps))} ${T("till", "to")} ${fmt(tMax)} °C`,
+  sig.push({lvl: warmLvl, t: T("Temperatur", "Temperature"), v: `${uTempN(Math.min(...temps))} ${T("till", "to")} ${uTemp(tMax)}`,
     why: EN
       ? (warmLvl
-        ? `${tMax > 2 ? `Up to ${fmt(tMax)} °C at the top` : `The temperature rises ${fmt(jump)} degrees in a day`}. Fast warming and sun make the snow wet and heavy and can release avalanches, especially on south-facing slopes in the middle of the day.`
-        : `Between ${fmt(Math.min(...temps))} and ${fmt(tMax)} °C at the top. No strong warming.`)
+        ? `${tMax > 2 ? `Up to ${uTemp(tMax)} at the top` : `The temperature rises ${fmt(FAHR ? jump * 1.8 : jump)} degrees in a day`}. Fast warming and sun make the snow wet and heavy and can release avalanches, especially on south-facing slopes in the middle of the day.`
+        : `Between ${uTempN(Math.min(...temps))} and ${uTemp(tMax)} at the top. No strong warming.`)
       : (warmLvl
-        ? `${tMax > 2 ? `Upp till ${fmt(tMax)} °C vid toppen` : `Temperaturen stiger ${fmt(jump)} grader på ett dygn`}. Snabb uppvärmning och sol gör snön blöt och tung och kan lösa ut laviner, särskilt i sydsluttningar mitt på dagen.`
-        : `Mellan ${fmt(Math.min(...temps))} och ${fmt(tMax)} °C vid toppen. Ingen kraftig uppvärmning.`)});
+        ? `${tMax > 2 ? `Upp till ${uTemp(tMax)} vid toppen` : `Temperaturen stiger ${fmt(FAHR ? jump * 1.8 : jump)} grader på ett dygn`}. Snabb uppvärmning och sol gör snön blöt och tung och kan lösa ut laviner, särskilt i sydsluttningar mitt på dagen.`
+        : `Mellan ${uTempN(Math.min(...temps))} och ${uTemp(tMax)} vid toppen. Ingen kraftig uppvärmning.`)});
 
   const depth = H.snow_depth?.[idx];
   const thin = depth != null && depth < 0.3;
   const LV = EN ? [["Calm","ok"],["Raised","warn"],["Strong","bad"]] : [["Lugnt","ok"],["Förhöjt","warn"],["Kraftigt","bad"]];
   const worst = Math.max(...sig.map(x => x.lvl));
   $("#avalsignals").innerHTML = `
-    ${thin ? `<p class="hint caution">${T(`Vädermodellen räknar med bara ca ${fmt(depth*100)} cm snö vid toppen just nu. Med så tunt snötäcke är lavinrisken liten, och signalerna nedan visar mest hur vädret ser ut. De blir viktiga när snötäcket byggts upp.`,
-      `The weather model has only about ${fmt(depth*100)} cm of snow at the top right now. With such a thin snowpack the avalanche risk is small, and the signals below mostly describe the weather. They matter once the snowpack has built up.`)}</p>` : ""}
+    ${thin ? `<p class="hint caution">${T(`Vädermodellen räknar med bara ca ${uSnow(depth*100)} snö vid toppen just nu. Med så tunt snötäcke är lavinrisken liten, och signalerna nedan visar mest hur vädret ser ut. De blir viktiga när snötäcket byggts upp.`,
+      `The weather model has only about ${uSnow(depth*100)} of snow at the top right now. With such a thin snowpack the avalanche risk is small, and the signals below mostly describe the weather. They matter once the snowpack has built up.`)}</p>` : ""}
     <p class="hint">${T("<b>Vädersignaler som påverkar lavinfaran</b>, senaste 3 dygnen och 2 dygn framåt vid toppen. Tryck på en rad för att läsa mer.", "<b>Weather signals that affect avalanche danger</b>, last 3 days and 2 days ahead at the top. Tap a row to read more.")}</p>
     <div class="sigs">${sig.sort((p,q) => q.lvl - p.lvl).map(x => `
       <details class="sig"><summary><span class="pill ${LV[x.lvl][1]}">${LV[x.lvl][0]}</span><b>${x.t}</b><span class="sv">${x.v}</span></summary>
@@ -2167,40 +2216,40 @@ function drawForecast(){
   const baseSnow72 = sumRange(base.hourly.snowfall, idx + 1, idx + 73);
   let gust = 0, gustAt = idx;
   for (let i = idx + 1; i < Math.min(idx + 73, H.length); i++) if ((top.hourly.wind_gusts_10m?.[i] || 0) > gust){ gust = top.hourly.wind_gusts_10m[i]; gustAt = i; }
-  const lead = powderOn(bestD, bestV) ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
-    : bestV >= POWDER_CM ? `<b>${fmt(bestV)} cm ${T("nysnö", "new snow")} ${rel(bestD)}</b>, ${T("men snötäcket är tunt.", "but the snowpack is thin.")}`
-    : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
-    : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${fmt(sum7)} cm ${T("totalt vid toppen", "in all at the top")}.`
+  const lead = powderOn(bestD, bestV) ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${T("vid toppen", "at the top")}.`
+    : bestV >= POWDER_CM ? `<b>${uSnow(bestV)} ${T("nysnö", "new snow")} ${rel(bestD)}</b>, ${T("men snötäcket är tunt.", "but the snowpack is thin.")}`
+    : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${T("vid toppen", "at the top")}.`
+    : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${uSnow(sum7)} ${T("totalt vid toppen", "in all at the top")}.`
     : `<b>${T("Ingen snö i sikte", "No snow in sight")}</b> ${T("den närmaste veckan.", "for the coming week.")}`;
   const sentence = [lead,
     peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : "",
     rainDays.length ? `${T("Regn i dalen", "Rain at the base")} ${rainDays.map(rel).join(T(" och ", " and "))}.`
       : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : "",
-    thinNow ? T(`Med bara ca ${fmt(F.depth * 100)} cm snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${fmt(F.depth * 100)} cm of snow you can rarely ski off-piste. Check that the resort has opened.`) : ""].filter(Boolean).join(" ");
+    thinNow ? T(`Med bara ca ${uSnow(F.depth * 100)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${uSnow(F.depth * 100)} of snow you can rarely ski off-piste. Check that the resort has opened.`) : ""].filter(Boolean).join(" ");
   const chips = [
     thinNow ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
     rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
       : baseSnow72 >= 2 ? `<span class="schip ok">❄ ${T("Snö i hela backen", "Snow on the whole mountain")}</span>` : "",
-    gust >= 20 ? `<span class="schip warn">${T("Hård vind", "Strong wind")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${fmt(gust)} m/s</span>`
-      : gust >= 14 ? `<span class="schip">${T("Blåsigt", "Windy")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${fmt(gust)} m/s</span>` : "",
+    gust >= 20 ? `<span class="schip warn">${T("Hård vind", "Strong wind")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${uWind(gust)}</span>`
+      : gust >= 14 ? `<span class="schip">${T("Blåsigt", "Windy")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${uWind(gust)}</span>` : "",
     avl.today ? `<span class="schip">${dayBadge(avl.today, T("idag", "today"))} ${T("Lavinfara idag", "Avalanche danger today")}: ${DANGER[avl.today].n.toLowerCase()}</span>` : "",
   ].join("");
   const days10 = top.daily.time.slice(Math.max(0, todayIdx - 3), todayIdx + 7);
   const dmax = Math.max(5, ...days10.map(d => top.daily.snowfall_sum[top.daily.time.indexOf(d)] || 0));
   $("#stats").innerHTML = `<section class="sum" aria-label="${T("Sammanfattning", "Summary")}">
     <div class="sumtop">
-      <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${fmt(next72)}<small> cm</small></div></div>
-      <div class="sumside">${T("Senaste 3 dygn", "Last 3 days")} <b>${fmt(past72)} cm</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${fmt(F.depth * 100)} cm</b>` : ""}</div>
+      <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${uSnowN(next72)}<small> ${SNOW_U}</small></div></div>
+      <div class="sumside">${T("Senaste 3 dygn", "Last 3 days")} <b>${uSnow(past72)}</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${uSnow(F.depth * 100)}</b>` : ""}</div>
     </div>
     <p class="sumtext">${sentence}</p>
     ${chips ? `<div class="schips">${chips}</div>` : ""}
     <div>
       <div class="mdays" style="--n:${days10.length}">${days10.map(d => { const i = top.daily.time.indexOf(d), v = top.daily.snowfall_sum[i] || 0, past = d < today, rn = !past && dayRain(d) >= 1;
-        return `<div class="col" title="${dayLabel(d)}: ${fmt(v, 1)} cm${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v">${v >= 0.5 ? fmt(v) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div></div>`; }).join("")}</div>
+        return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v">${v >= 0.5 ? uSnowN(v, 0) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div></div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${r.top} m) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${POWDER_CM} cm nysnö och snötäcket är minst ${BASE_OK_CM} cm.`,
-      `Snow at the top (${r.top} m) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${POWDER_CM} cm of new snow on a snowpack of at least ${BASE_OK_CM} cm.`)}</p>
+    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö och snötäcket är minst ${uSnow(BASE_OK_CM)}.`,
+      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new snow on a snowpack of at least ${uSnow(BASE_OK_CM)}.`)}</p>
   </section>`;
 
   // --- Days ---
@@ -2217,16 +2266,16 @@ function drawForecast(){
     const hm = Math.max(1, ...snowH, ...rainH.map(x => x * 0.7));
     return `<button type="button" class="daycard ${best ? "best" : ""}" data-d="${d}" aria-expanded="${open}">
       <span class="d">${k === 0 ? T("Idag", "Today") : cap(WD[wdOf(d)])}<small>${+d.slice(8)}/${+d.slice(5, 7)}</small></span>
-      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${fmt(v)}<small> cm</small></span></span>
+      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${uSnowN(v)}<small> ${SNOW_U}</small></span></span>
       <span class="right">${dayBadge(lv, rel(d))}<span class="chev" aria-hidden="true">▾</span></span>
       <span class="sub">
-        <span>${T("Nollgräns", "Freezing level")} ${fls.length ? `${fmt(Math.round(Math.min(...fls) / 10) * 10)}–${fmt(Math.round(Math.max(...fls) / 10) * 10)} m` : "–"}${rn ? ` · <span class="r">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
-        <span>${T("Vind", "Wind")} ${dir != null ? CMP[Math.round(((dir % 360) + 360) % 360 / 45) % 8] + " " : ""}${fmt(sp)}, ${T("byar", "gusts")} ${fmt(g)} m/s</span>
-        <span>${fmt(top.daily.temperature_2m_min[i])} ${T("till", "to")} ${fmt(top.daily.temperature_2m_max[i])} °C</span>
+        <span>${T("Nollgräns", "Freezing level")} ${fls.length ? `${uHN(Math.round(Math.min(...fls) / 10) * 10)}–${uH(Math.round(Math.max(...fls) / 10) * 10)}` : "–"}${rn ? ` · <span class="r">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
+        <span>${T("Vind", "Wind")} ${dir != null ? CMP[Math.round(((dir % 360) + 360) % 360 / 45) % 8] + " " : ""}${uWindN(sp)}, ${T("byar", "gusts")} ${uWind(g)}</span>
+        <span>${uTempN(top.daily.temperature_2m_min[i])} ${T("till", "to")} ${uTemp(top.daily.temperature_2m_max[i])}</span>
       </span>
-      <span class="exp">${T(`Snö per timme på mitten (${r.mid} m)${rainH.some(x => x >= 0.2) ? ", grönt är regn" : ""}`, `Snow per hour at mid height (${r.mid} m)${rainH.some(x => x >= 0.2) ? ", green is rain" : ""}`)}
+      <span class="exp">${T(`Snö per timme på mitten (${uH(r.mid)})${rainH.some(x => x >= 0.2) ? ", grönt är regn" : ""}`, `Snow per hour at mid height (${uH(r.mid)})${rainH.some(x => x >= 0.2) ? ", green is rain" : ""}`)}
         <span class="hbars">${hs.map((h, j) => { const rr = rainH[j] >= 0.2 && isRain(snowH[j], rainH[j]); const val = rr ? rainH[j] * 0.7 : snowH[j];
-          return `<i class="${rr ? "r" : ""}" style="height:${val > 0.05 ? Math.max(2, val / hm * 56) : 0}px" title="${H[h].slice(11, 16)}: ${rr ? fmt(rainH[j], 1) + " mm " + T("regn", "rain") : fmt(snowH[j], 1) + " cm"}"></i>`; }).join("")}</span>
+          return `<i class="${rr ? "r" : ""}" style="height:${val > 0.05 ? Math.max(2, val / hm * 56) : 0}px" title="${H[h].slice(11, 16)}: ${rr ? uRain(rainH[j]) + " " + T("regn", "rain") : uSnow(snowH[j], 1)}"></i>`; }).join("")}</span>
         <span class="hlab"><span>00</span><span>06</span><span>12</span><span>18</span></span></span>
     </button>`;
   }).join("");
@@ -2251,7 +2300,7 @@ function drawForecast(){
   const P = periods(5);
   const dayCols = [...new Set(P.map(p => p.d))];
   const cell = (loc, p) => { const sn = sumAt(loc, "snowfall", p), rn = sumAt(loc, "rain", p);
-    return isRain(sn, rn) ? ["", `<span class="rn">${T("regn", "rain")}</span>`] : ["", `<span class="sc" style="background:${shadeSnow(sn)};color:${snowInk(sn)}">${sn >= 0.5 ? fmt(sn) : "–"}</span>`]; };
+    return isRain(sn, rn) ? ["", `<span class="rn">${T("regn", "rain")}</span>`] : ["", `<span class="sc" style="background:${shadeSnow(sn)};color:${snowInk(sn)}">${sn >= 0.5 ? uSnowN(sn) : "–"}</span>`]; };
   // f(p) gives [class, html] for one cell; the first period of each day gets the day divider
   const row = (label, f, cls = "") => `<tr class="${cls}"><th scope="row">${label}</th>${P.map((p, j) => { const [c, h] = f(p); return `<td class="${j % 3 === 0 ? "ds " : ""}${c}">${h}</td>`; }).join("")}</tr>`;
   const windCell = p => {
@@ -2259,23 +2308,23 @@ function drawForecast(){
     for (let i = p.s; i < p.e; i++){ const w = top.hourly.wind_speed_10m[i] || 0, dd = top.hourly.wind_direction_10m?.[i]; s += w; n++; if (dd != null){ x += w * Math.sin(dd * Math.PI / 180); y += w * Math.cos(dd * Math.PI / 180); } }
     const g = Math.max(0, ...range(top.hourly.wind_gusts_10m || [], p));
     const dir = x || y ? CMP[Math.round(((Math.atan2(x, y) * 180 / Math.PI + 360) % 360) / 45) % 8] + " " : "";
-    return [g >= 20 ? "hot" : "", `${dir}${fmt(n ? s / n : 0)}<small> (${fmt(g)})</small>`];
+    return [g >= 20 ? "hot" : "", `${dir}${uWindN(n ? s / n : 0)}<small> (${uWindN(g)})</small>`];
   };
   $("#fp-table").innerHTML = `<div class="fctable"><table>
     <thead><tr><th scope="row"></th>${dayCols.map(d => `<th colspan="${P.filter(p => p.d === d).length}" class="ds">${d === today ? T("Idag", "Today") : cap(WD[wdOf(d)])} ${+d.slice(8)}/${+d.slice(5, 7)}</th>`).join("")}</tr>
       <tr><th scope="row"></th>${P.map((p, j) => `<th${j % 3 === 0 ? ' class="ds"' : ""}>${p.lab}</th>`).join("")}</tr></thead>
     <tbody>
-      ${row(`${T("Topp", "Top")} <small>${r.top}</small>`, p => cell(top, p))}
-      ${row(`${T("Mitt", "Mid")} <small>${r.mid}</small>`, p => cell(mid, p))}
-      ${row(`${T("Dal", "Base")} <small>${r.base}</small>`, p => cell(base, p))}
+      ${row(`${T("Topp", "Top")} <small>${uHN(r.top)}</small>`, p => cell(top, p))}
+      ${row(`${T("Mitt", "Mid")} <small>${uHN(r.mid)}</small>`, p => cell(mid, p))}
+      ${row(`${T("Dal", "Base")} <small>${uHN(r.base)}</small>`, p => cell(base, p))}
       ${row(T("Nollgräns", "Freezing"), p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? Math.max(...f) : null;
-        return [m != null && m > r.base ? "hot" : "", m == null ? "–" : fmt(Math.round(m / 10) * 10)]; }, "sep")}
-      ${row(T("°C topp", "°C top"), p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? fmt(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; })}
-      ${row(`${T("Vind", "Wind")} <small>(m/s)</small>`, windCell)}
+        return [m != null && m > r.base ? "hot" : "", m == null ? "–" : uHN(Math.round(m / 10) * 10)]; }, "sep")}
+      ${row(`${TEMP_U} ${T("topp", "top")}`, p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? uTempN(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; })}
+      ${row(`${T("Vind", "Wind")} <small>(${WIND_U})</small>`, windCell)}
       <tr class="sep"><th scope="row">${T("Lavin", "Aval.")}</th>${dayCols.map((d, k) => `<td colspan="${P.filter(p => p.d === d).length}" class="ds">${dayBadge(k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0, rel(d))}</td>`).join("")}</tr>
     </tbody></table></div>
-    <p class="hint">${T("Snö i cm per dygnsdel: förmiddag 06–12, eftermiddag 12–18 och natt 18–06. Mörkare ruta betyder mer snö. Nollgränsen är den högsta under perioden och visas i orange när den ligger över dalen. Vind i m/s med byar inom parentes.",
-      "Snow in cm per part of the day: morning 06–12, afternoon 12–18 and night 18–06. A darker box means more snow. The freezing level is the highest in the period and shows in orange when it is above the base. Wind in m/s with gusts in brackets.")}</p>`;
+    <p class="hint">${T(`Snö i ${SNOW_U} per dygnsdel: förmiddag 06–12, eftermiddag 12–18 och natt 18–06. Mörkare ruta betyder mer snö. Nollgränsen är den högsta under perioden och visas i orange när den ligger över dalen. Vind i ${WIND_U} med byar inom parentes.`,
+      `Snow in ${SNOW_U} per part of the day: morning 06–12, afternoon 12–18 and night 18–06. A darker box means more snow. The freezing level is the highest in the period and shows in orange when it is above the base. Wind in ${WIND_U} with gusts in brackets.`)}</p>`;
 
   // --- Heights: snow or rain at five heights from the top down to the base ---
   const HP = periods(4);
@@ -2287,30 +2336,30 @@ function drawForecast(){
   const cells = els.map(e => HP.map(p => {
     const sn = interp(e, sumAt(top, "snowfall", p), sumAt(mid, "snowfall", p), sumAt(base, "snowfall", p));
     const rn = interp(e, sumAt(top, "rain", p), sumAt(mid, "rain", p), sumAt(base, "rain", p));
-    if (isRain(sn, rn)){ rainTop[p.d] = Math.max(rainTop[p.d] || 0, e); return `<div class="cell rainfill" title="${e} m: ${fmt(rn, 1)} mm ${T("regn", "rain")}"></div>`; }
+    if (isRain(sn, rn)){ rainTop[p.d] = Math.max(rainTop[p.d] || 0, e); return `<div class="cell rainfill" title="${uH(e)}: ${uRain(rn)} ${T("regn", "rain")}"></div>`; }
     if (sn >= 0.5){ anySnow = true; if (e === els[4]) snowAtBase = true; }
-    return `<div class="cell" style="background:${sn >= 0.5 ? shadeSnow(sn) : "var(--bg)"};color:${sn >= 5 ? "var(--surface)" : "var(--ink)"}" title="${e} m: ${fmt(sn, 1)} cm">${sn >= 1 ? fmt(sn) : ""}</div>`;
+    return `<div class="cell" style="background:${sn >= 0.5 ? shadeSnow(sn) : "var(--bg)"};color:${sn >= 5 ? "var(--surface)" : "var(--ink)"}" title="${uH(e)}: ${uSnow(sn, 1)}">${sn >= (IN ? 2.54 : 1) ? uSnowN(sn, 0) : ""}</div>`;
   }).join("")).join("");
   const span = 5 * step || 1, ytop = r.top + step / 2;
   const flY = p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? f.reduce((a, b) => a + b, 0) / f.length : r.top; return Math.max(-4, Math.min(104, (ytop - m) / span * 100)); };
   const rainList = Object.entries(rainTop);
   const verdict = rainList.length
-    ? rainList.slice(0, 2).map(([d, e]) => `${cap(rel(d))} ${T(`regnar det upp till ca ${e} m.`, `it rains up to about ${e} m.`)}`).join(" ")
+    ? rainList.slice(0, 2).map(([d, e]) => `${cap(rel(d))} ${T(`regnar det upp till ca ${uH(e)}.`, `it rains up to about ${uH(e)}.`)}`).join(" ")
     : snowAtBase ? T("Snö i hela backen de närmaste dagarna.", "Snow on the whole mountain in the coming days.")
-    : anySnow ? T(`Snö bara högt upp, inte ända ner till dalen (${r.base} m).`, `Snow only up high, not down to the base (${r.base} m).`)
+    : anySnow ? T(`Snö bara högt upp, inte ända ner till dalen (${uH(r.base)}).`, `Snow only up high, not down to the base (${uH(r.base)}).`)
     : T("Ingen nederbörd att tala om de närmaste dagarna.", "No precipitation to speak of in the coming days.");
   const hDays = [...new Set(HP.map(p => p.d))];
   $("#fp-heat").innerHTML = `
     <div class="heat">
-      <div class="ax" style="grid-template-rows:repeat(5,30px);row-gap:2px">${els.map(e => `<span>${e}</span>`).join("")}</div>
+      <div class="ax" style="grid-template-rows:repeat(5,30px);row-gap:2px">${els.map(e => `<span>${uHN(e)}</span>`).join("")}</div>
       <div class="cells" style="grid-template-columns:repeat(${HP.length},minmax(0,1fr))">${cells}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${HP.map((p, j) => `${(j + .5) / HP.length * 100},${flY(p)}`).join(" ")}" fill="none" stroke="var(--onsen)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>
     </div>
     <div class="heatx"><span></span><div style="grid-template-columns:repeat(${hDays.length},1fr)">${hDays.map(d => `<span>${d === today ? T("idag", "today") : WD[wdOf(d)]}</span>`).join("")}</div></div>
-    <div class="hlegend"><span><i style="background:var(--future)"></i>${T("Snö (cm)", "Snow (cm)")}</span><span><i class="rainfill"></i>${T("Regn", "Rain")}</span><span><i style="background:var(--onsen);height:3px"></i>${T("Nollgräns", "Freezing level")}</span></div>
+    <div class="hlegend"><span><i style="background:var(--future)"></i>${T(`Snö (${SNOW_U})`, `Snow (${SNOW_U})`)}</span><span><i class="rainfill"></i>${T("Regn", "Rain")}</span><span><i style="background:var(--onsen);height:3px"></i>${T("Nollgräns", "Freezing level")}</span></div>
     <p class="verdict">${verdict}</p>
-    <p class="hint">${T("Höjd i meter uppåt och tid åt höger, med förmiddag, eftermiddag och natt för varje dag. Värdena mellan topp, mitt och dal är uppskattade utifrån de tre höjderna.",
-      "Height in metres upwards and time to the right, with morning, afternoon and night for each day. The values between top, mid and base are estimated from the three heights.")}</p>`;
+    <p class="hint">${T(`Höjd i ${FT ? "fot" : "meter"} uppåt och tid åt höger, med förmiddag, eftermiddag och natt för varje dag. Värdena mellan topp, mitt och dal är uppskattade utifrån de tre höjderna.`,
+      `Height in ${FT ? "feet" : "metres"} upwards and time to the right, with morning, afternoon and night for each day. The values between top, mid and base are estimated from the three heights.`)}</p>`;
   $("#fc").hidden = false;
 }
 
@@ -2516,25 +2565,45 @@ function setForecastAt(at){
 const darkMq = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => (document.documentElement.dataset.theme || (darkMq.matches ? "dark" : "light")) === "dark";
 function showTheme(){
-  const dark = isDark();
-  $("#theme").textContent = dark ? T("☀ Ljust läge", "☀ Light mode") : T("☾ Mörkt läge", "☾ Dark mode");
-  $("#theme").setAttribute("aria-label", dark ? T("Byt till ljust läge", "Switch to light mode") : T("Byt till mörkt läge", "Switch to dark mode"));
-  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = dark ? "#0b1220" : "#f3f6f9");
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = isDark() ? "#0b1220" : "#f3f6f9");
 }
-$("#theme").onclick = () => {
-  const t = isDark() ? "light" : "dark";
-  document.documentElement.dataset.theme = t;
-  try { localStorage.setItem("yr-theme", t); } catch {}
-  showTheme();
-  route();  // charts and map markers read their colours when drawn
-};
 darkMq.addEventListener("change", () => { showTheme(); if (!document.documentElement.dataset.theme) route(); });
 showTheme();
 
-// Language button: shows the other language in its own words; the page reloads in that language
-$("#lang").textContent = EN ? "Svenska" : "English";
-$("#lang").lang = EN ? "sv" : "en";
-$("#lang").onclick = () => { store.set("yr-lang", EN ? "sv" : "en"); location.reload(); };
+// ---------- Settings menu ----------
+// Language and units reload the page (every number is formatted when drawn); the theme changes at once.
+const SETTINGS = [
+  {k: "lang", t: T("Språk", "Language"), o: [["sv", "Svenska"], ["en", "English"]]},
+  {k: "theme", t: T("Utseende", "Appearance"), o: [["auto", T("Som telefonen", "Like the phone")], ["light", T("Ljust", "Light")], ["dark", T("Mörkt", "Dark")]]},
+  {k: "temp", t: T("Temperatur", "Temperature"), o: [["c", "°C"], ["f", "°F"]]},
+  {k: "snow", t: T("Snömängd", "Snow"), o: [["cm", "cm"], ["in", T("tum (in)", "inches (in)")]]},
+  {k: "wind", t: T("Vind", "Wind"), o: [["ms", "m/s"], ["kmh", "km/h"], ["mph", "mph"], ["kn", T("knop", "knots")]]},
+  {k: "height", t: T("Höjd", "Height"), o: [["m", T("meter", "metres")], ["ft", T("fot (ft)", "feet (ft)")]]},
+];
+const settingNow = k => k === "lang" ? LANG : k === "theme" ? (document.documentElement.dataset.theme || "auto") : UNITS[k];
+function buildMenu(){
+  $("#menuopts").innerHTML = SETTINGS.map(g => `<fieldset class="opt"><legend>${g.t}</legend><div class="mseg">${g.o.map(([v, label]) =>
+    `<label${g.k === "lang" ? ` lang="${v}"` : ""}><input type="radio" name="${g.k}" value="${v}"${settingNow(g.k) === v ? " checked" : ""}>${label}</label>`).join("")}</div></fieldset>`).join("");
+}
+$("#menuopts").onchange = e => {
+  const {name: k, value: v} = e.target;
+  if (k === "lang"){ store.set("yr-lang", v); location.reload(); return; }
+  if (k === "theme"){
+    if (v === "auto"){ delete document.documentElement.dataset.theme; try { localStorage.removeItem("yr-theme"); } catch {} }
+    else { document.documentElement.dataset.theme = v; try { localStorage.setItem("yr-theme", v); } catch {} }
+    showTheme();
+    route();  // charts and map markers read their colours when drawn
+    return;
+  }
+  store.set("yr-units", {...UNITS, [k]: v});
+  location.reload();
+};
+const menu = $("#menu");
+$("#menubtn").setAttribute("aria-label", T("Inställningar", "Settings"));
+$("#menuclose").setAttribute("aria-label", T("Stäng", "Close"));
+$("#menubtn").onclick = () => { buildMenu(); menu.showModal(); };
+$("#menuclose").onclick = () => menu.close();
+menu.addEventListener("click", e => { if (e.target === menu) menu.close(); });   // a tap on the dimmed backdrop
 
 $("#refresh").onclick = async e => {
   const btn = e.currentTarget;
