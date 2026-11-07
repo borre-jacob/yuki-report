@@ -194,6 +194,7 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .fctable .hot{color:var(--warn);font-weight:600}
 .fctable .rn{color:var(--toilet);font-weight:600}
 .fctable small{color:var(--muted)}
+.fctable th[scope=row] small{text-transform:none;letter-spacing:0;font-weight:400}
 .heat,.heatx{display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px}
 .heat .ax{display:grid;font:500 10.5px var(--mono);color:var(--muted)}
 .heat .ax span{display:flex;align-items:center;justify-content:flex-end}
@@ -2270,7 +2271,7 @@ function drawForecast(){
       ${row(T("Nollgräns", "Freezing"), p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? Math.max(...f) : null;
         return [m != null && m > r.base ? "hot" : "", m == null ? "–" : fmt(Math.round(m / 10) * 10)]; }, "sep")}
       ${row(T("°C topp", "°C top"), p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? fmt(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; })}
-      ${row(T("Vind", "Wind"), windCell)}
+      ${row(`${T("Vind", "Wind")} <small>(m/s)</small>`, windCell)}
       <tr class="sep"><th scope="row">${T("Lavin", "Aval.")}</th>${dayCols.map((d, k) => `<td colspan="${P.filter(p => p.d === d).length}" class="ds">${dayBadge(k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0, rel(d))}</td>`).join("")}</tr>
     </tbody></table></div>
     <p class="hint">${T("Snö i cm per dygnsdel: förmiddag 06–12, eftermiddag 12–18 och natt 18–06. Mörkare ruta betyder mer snö. Nollgränsen är den högsta under perioden och visas i orange när den ligger över dalen. Vind i m/s med byar inom parentes.",
