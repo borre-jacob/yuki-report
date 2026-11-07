@@ -2112,7 +2112,9 @@ const FC_TABS = [["days", "Dagar", "Days"], ["table", "Tabell", "Table"], ["heat
 let fcData = null;                // the open resort's forecast, kept so it can be redrawn when the avalanche levels arrive
 let fcOpen = new Set();           // day cards the user has opened
 const detailAval = {};            // resort id → {today, tomorrow} from the official bulletin (set by fillAval)
-const POWDER_CM = 10;             // a day with at least this much new snow at the top is a powder day
+const POWDER_CM = 10;             // a day with at least this much new snow at the top is a powder day…
+const BASE_OK_CM = 70;            // …but only when the snowpack is this deep; thinner than that, rocks, bushes and
+                                  // bamboo stick up off-piste and many resorts have not opened yet
 const WDL = EN ? ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"] : ["söndag","måndag","tisdag","onsdag","torsdag","fredag","lördag"];
 const CMP = EN ? ["N","NE","E","SE","S","SW","W","NW"] : ["N","NO","O","SO","S","SV","V","NV"];
 const wdOf = iso => new Date(iso + "T12:00:00Z").getUTCDay();
@@ -2147,6 +2149,11 @@ function drawForecast(){
   const avl = detailAval[r.id] || {};
   const dayRain = d => sumRange(base.hourly.rain, hoursOf(d)[0], hoursOf(d).at(-1) + 1);
   const ahead = top.daily.time.slice(todayIdx, todayIdx + 7);
+  // Modelled snow depth at the top around midday, in cm (null when the model gives none)
+  const depthAt = d => { const h = hoursOf(d), v = top.hourly.snow_depth?.[h[12] ?? h[0]]; return v == null ? null : v * 100; };
+  const deepEnough = d => { const v = depthAt(d); return v == null || v >= BASE_OK_CM; };
+  const powderOn = (d, v) => v >= POWDER_CM && deepEnough(d);
+  const thinNow = F.depth != null && F.depth * 100 < BASE_OK_CM;
 
   // --- Summary ---
   const next72 = sumRange(top.hourly.snowfall, idx + 1, idx + 73), past72 = sumRange(top.hourly.snowfall, idx - 72, idx + 1);
@@ -2159,15 +2166,18 @@ function drawForecast(){
   const baseSnow72 = sumRange(base.hourly.snowfall, idx + 1, idx + 73);
   let gust = 0, gustAt = idx;
   for (let i = idx + 1; i < Math.min(idx + 73, H.length); i++) if ((top.hourly.wind_gusts_10m?.[i] || 0) > gust){ gust = top.hourly.wind_gusts_10m[i]; gustAt = i; }
-  const lead = bestV >= POWDER_CM ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
+  const lead = powderOn(bestD, bestV) ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
+    : bestV >= POWDER_CM ? `<b>${fmt(bestV)} cm ${T("nysnö", "new snow")} ${rel(bestD)}</b>, ${T("men snötäcket är tunt.", "but the snowpack is thin.")}`
     : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${fmt(bestV)} cm ${T("vid toppen", "at the top")}.`
     : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${fmt(sum7)} cm ${T("totalt vid toppen", "in all at the top")}.`
     : `<b>${T("Ingen snö i sikte", "No snow in sight")}</b> ${T("den närmaste veckan.", "for the coming week.")}`;
   const sentence = [lead,
     peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : "",
     rainDays.length ? `${T("Regn i dalen", "Rain at the base")} ${rainDays.map(rel).join(T(" och ", " and "))}.`
-      : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : ""].filter(Boolean).join(" ");
+      : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : "",
+    thinNow ? T(`Med bara ca ${fmt(F.depth * 100)} cm snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${fmt(F.depth * 100)} cm of snow you can rarely ski off-piste. Check that the resort has opened.`) : ""].filter(Boolean).join(" ");
   const chips = [
+    thinNow ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
     rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
       : baseSnow72 >= 2 ? `<span class="schip ok">❄ ${T("Snö i hela backen", "Snow on the whole mountain")}</span>` : "",
     gust >= 20 ? `<span class="schip warn">${T("Hård vind", "Strong wind")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${fmt(gust)} m/s</span>`
@@ -2188,19 +2198,19 @@ function drawForecast(){
         return `<div class="col" title="${dayLabel(d)}: ${fmt(v, 1)} cm${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v">${v >= 0.5 ? fmt(v) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div></div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${r.top} m) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning.`,
-      `Snow at the top (${r.top} m) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement.`)}</p>
+    <p class="hint">${T(`Snö vid toppen (${r.top} m) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${POWDER_CM} cm nysnö och snötäcket är minst ${BASE_OK_CM} cm.`,
+      `Snow at the top (${r.top} m) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${POWDER_CM} cm of new snow on a snowpack of at least ${BASE_OK_CM} cm.`)}</p>
   </section>`;
 
   // --- Days ---
-  if (!fcOpen.has("seen") && bestV >= POWDER_CM){ fcOpen.add(bestD); }
+  if (!fcOpen.has("seen") && powderOn(bestD, bestV)){ fcOpen.add(bestD); }
   fcOpen.add("seen");
   $("#fp-days").innerHTML = ahead.map((d, k) => {
     const hs = hoursOf(d), i = todayIdx + k, v = top.daily.snowfall_sum[i] || 0;
     const fls = hs.map(h => mid.hourly.freezing_level_height[h]).filter(x => x != null);
     let sp = 0, dir = null, g = 0;
     hs.forEach(h => { const w = top.hourly.wind_speed_10m[h] || 0; if (w > sp){ sp = w; dir = top.hourly.wind_direction_10m?.[h]; } g = Math.max(g, top.hourly.wind_gusts_10m?.[h] || 0); });
-    const rn = dayRain(d) >= 1, best = k === bestK && v >= POWDER_CM, open = fcOpen.has(d);
+    const rn = dayRain(d) >= 1, best = k === bestK && powderOn(d, v), open = fcOpen.has(d);
     const lv = k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0;
     const snowH = hs.map(h => mid.hourly.snowfall[h] || 0), rainH = hs.map(h => mid.hourly.rain?.[h] || 0);
     const hm = Math.max(1, ...snowH, ...rainH.map(x => x * 0.7));
