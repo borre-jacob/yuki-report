@@ -36,7 +36,7 @@ document.documentElement.lang=l==="sv"||l==="en"?l:/^sv\b/i.test(navigator.langu
 :root{
   --bg:#f3f6f9; --surface:#ffffff; --ink:#14213a; --muted:#5b6b82; --line:#d9e1ea;
   --snow:#2f6fd6; --snow-soft:#cfe0fa; --future:#7c5cd6; --future-soft:#e3dafa;
-  --onsen:#c2410c; --toilet:#0f766e; --park:#7c3aed; --lift:#be123c; --warn:#b45309;
+  --onsen:#c2410c; --toilet:#0f766e; --fav:#d99a00; --park:#7c3aed; --lift:#be123c; --warn:#b45309;
   --rose0:#e6ebf1; --rose1:#f4a6c0; --rose2:#d61f69;
   --display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -46,12 +46,12 @@ document.documentElement.lang=l==="sv"||l==="en"?l:/^sv\b/i.test(navigator.langu
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
   --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
-  --onsen:#fb923c; --toilet:#2dd4bf; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
+  --onsen:#fb923c; --toilet:#2dd4bf; --fav:#fbbf24; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
   --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
   --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
-  --onsen:#fb923c; --toilet:#2dd4bf; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
+  --onsen:#fb923c; --toilet:#2dd4bf; --fav:#fbbf24; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
   --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f; color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -128,6 +128,15 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);
   border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;text-align:left;width:100%}
 .row:hover{border-color:var(--snow)}
+.rw{position:relative;min-width:0}
+.rw .rank{align-self:start;padding-top:2px}
+.star{position:absolute;left:7px;bottom:7px;width:32px;height:32px;display:grid;place-items:center;border:0;background:none;border-radius:8px;
+  font-size:19px;line-height:1;color:var(--muted);cursor:pointer}
+.star:hover{color:var(--fav)}
+.star[aria-pressed="true"]{color:var(--fav)}
+.favbtn{font:inherit;font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;vertical-align:middle;margin-left:10px}
+.favbtn[aria-pressed="true"]{border-color:var(--fav);color:var(--ink);background:color-mix(in srgb,var(--fav) 16%,var(--surface))}
+.favbtn .s{color:var(--fav)}
 .more{border:1px dashed var(--line);background:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600;color:var(--snow)}
 .more:hover{border-color:var(--snow)}
 .rank{font-family:var(--mono);color:var(--muted);font-size:13px}
@@ -963,12 +972,13 @@ const areaResorts = a => RESORTS.filter(r => r.area === a);
 const regionsOf = a => [...new Set(areaResorts(a).map(r => r.region))];
 const countriesOf = a => [...new Set(areaResorts(a).map(r => r.country))];
 // Region filter value: "all", "c:<country>" or a region name
-const inRegion = (r, f) => f === "all" || f === "c:" + r.country || f === r.region;
+const inRegion = (r, f) => f === "all" || (f === "fav" ? favs.has(r.id) : f === "c:" + r.country || f === r.region);
 function regionOptions(a, sel){
   const cs = countriesOf(a);
   const opt = (v, t) => `<option value="${esc(v)}" ${sel === v ? "selected" : ""}>${esc(t)}</option>`;
-  if (cs.length < 2) return opt("all", T("Alla regioner", "All regions")) + regionsOf(a).map(g => opt(g, g)).join("");
-  return opt("all", T("Alla länder", "All countries")) + cs.map(c => `<optgroup label="${esc(cname(c))}">${opt("c:" + c, T("Hela ", "All of ") + cname(c))}${
+  const fav = favCount(a) ? opt("fav", `★ ${T("Mina favoriter", "My favourites")} (${favCount(a)})`) : "";
+  if (cs.length < 2) return fav + opt("all", T("Alla regioner", "All regions")) + regionsOf(a).map(g => opt(g, g)).join("");
+  return fav + opt("all", T("Alla länder", "All countries")) + cs.map(c => `<optgroup label="${esc(cname(c))}">${opt("c:" + c, T("Hela ", "All of ") + cname(c))}${
     [...new Set(areaResorts(a).filter(r => r.country === c).map(r => r.region))].sort().map(g => opt(g, g)).join("")}</optgroup>`).join("");
 }
 
@@ -1110,6 +1120,16 @@ function addOpenFreeMap(map){
   return layer;
 }
 
+// Favourite resorts, starred in the list or on the resort page. Kept only on this device (no account).
+const favs = new Set(store.get("yr-favs") || []);
+const favCount = a => areaResorts(a).filter(r => favs.has(r.id)).length;
+function toggleFav(id){
+  if (favs.has(id)) favs.delete(id); else favs.add(id);
+  store.set("yr-favs", [...favs]);
+  return favs.has(id);
+}
+const starBtn = r => `<button type="button" class="star" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="${T(`Favorit: ${esc(r.name)}`, `Favourite: ${esc(r.name)}`)}" title="${favs.has(r.id) ? T("Ta bort från favoriter", "Remove from favourites") : T("Lägg till som favorit", "Add to favourites")}">${favs.has(r.id) ? "★" : "☆"}</button>`;
+
 // ---------- State ----------
 const state = {
   mode: store.get("yr-mode") || "past",       // "past" | "fut"
@@ -1121,6 +1141,7 @@ const state = {
 };
 
 state.region = store.get("yr-region-" + state.area) || "all";
+if (state.region === "fav" && !favCount(state.area)) state.region = "all";
 
 // ---------- Overview data (one request for all resorts in the chosen area) ----------
 // Snow for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_snow.py, workflow "Publicera appen").
@@ -1191,6 +1212,7 @@ async function loadOverview(){
 let overviewMap = null, markerLayer = null;
 
 function renderOverview(){
+  if (state.region === "fav" && !favCount(state.area)) state.region = "all";   // the last favourite was removed on its page
   const app = $("#app");
   app.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
@@ -1249,6 +1271,15 @@ function listRows(rows, rowHtml){
 }
 function wireList(list, refill){
   list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
+  list.querySelectorAll(".star").forEach(b => b.onclick = () => {
+    const on = toggleFav(b.dataset.fav);
+    const wasFav = state.region === "fav";
+    if (wasFav && !favCount(state.area)){ state.region = "all"; store.set("yr-region-" + state.area, "all"); }
+    $("#region").innerHTML = regionOptions(state.area, state.region);
+    if (wasFav) return fillOverview(false, state.region === "fav");   // a removed favourite leaves the list and the map
+    b.setAttribute("aria-pressed", on); b.textContent = on ? "★" : "☆";
+    b.title = on ? T("Ta bort från favoriter", "Remove from favourites") : T("Lägg till som favorit", "Add to favourites");
+  });
   const more = $("#more");
   if (more) more.onclick = () => {
     state.showAll = !state.showAll; refill();
@@ -1268,12 +1299,13 @@ function setArea(a){
 function listWithoutSnow(msg, listOnly = false){
   const list = $("#list"); if (!list) return;
   const rows = areaResorts(state.area).filter(r => inRegion(r, state.region)).sort((a,b) => a.name.localeCompare(b.name, LANG));
-  list.innerHTML = `<div class="msg err">${msg}</div>` + listRows(rows, r => `<button class="row" data-id="${r.id}">
+  list.innerHTML = `<div class="msg err">${msg}</div>` + listRows(rows, r => `<div class="rw"><button class="row" data-id="${r.id}">
+      <span class="rank"></span>
       <span class="info">
         <span class="name">${esc(r.name)}</span>
         <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${uHN(r.base)}–${uH(r.top)}</span>
       </span>
-    </button>`);
+    </button>${starBtn(r)}</div>`);
   wireList(list, () => listWithoutSnow(msg, true));
   if (listOnly) return;
   markerLayer.clearLayers();
@@ -1301,7 +1333,7 @@ function fillOverview(listOnly = false, keepView = false){
       return `<i class="${j >= o.todayIdx ? "f" : ""} ${j===o.todayIdx?"today":""}" style="height:${h}px" title="${dayLabel(o.dailyTimes[j])}: ${uSnow(v,1)}"></i>`;
     }).join("");
     const main = o[key], other = state.mode === "past" ? o.next72 : o.past72;
-    return `<button class="row" data-id="${r.id}">
+    return `<div class="rw"><button class="row" data-id="${r.id}">
       <span class="rank">${i+1}</span>
       <span class="info">
         <span class="name">${esc(r.name)}${alvBadge(state.avalLv[r.id])}</span>
@@ -1312,8 +1344,8 @@ function fillOverview(listOnly = false, keepView = false){
         <b>${uSnowN(main)}<small> ${SNOW_U}</small></b>
         <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${uSnow(other)}</span>
       </span>
-    </button>`;
-  }) || `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`;
+    </button>${starBtn(r)}</div>`;
+  }) || `<div class="msg">${state.region === "fav" ? T("Inga favoriter här ännu. Tryck på stjärnan vid en ort för att lägga till den.", "No favourites here yet. Tap the star next to a resort to add it.") : T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`;
   wireList(list, () => fillOverview(true));
   if (listOnly) return;
 
@@ -1469,7 +1501,7 @@ async function renderDetail(id){
       <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
       <div class="dhead">
         <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${T("dal", "base")} ${uH(r.base)} · ${T("topp", "top")} ${uH(r.top)}</span>
-        <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span></h2>
+        <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span><button type="button" class="favbtn" id="favbtn" aria-pressed="${favs.has(r.id)}"></button></h2>
         <div class="dlinks">
           <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
           ${(CAMS[r.id] || []).map(c => `<a class="dirbtn cam" href="${esc(c.url)}" target="_blank" rel="noopener">📷 ${esc(c.label)} ↗</a>`).join("")}
@@ -1511,6 +1543,10 @@ async function renderDetail(id){
       </div>
     </div>`;
   $("#back").onclick = () => go("");
+  const showFav = () => { const on = favs.has(r.id); $("#favbtn").setAttribute("aria-pressed", on);
+    $("#favbtn").innerHTML = on ? `<span class="s">★</span> ${T("Favorit", "Favourite")}` : `<span class="s">☆</span> ${T("Spara som favorit", "Save as favourite")}`; };
+  $("#favbtn").onclick = () => { toggleFav(r.id); showFav(); };
+  showFav();
   FC_TABS.forEach(([k]) => $("#ft-" + k).onclick = () => { store.set("yr-fctab", k); showFcTab(k); });
   showFcTab(FC_TABS.some(([k]) => k === store.get("yr-fctab")) ? store.get("yr-fctab") : "days");
   $("#chip-lift").onclick = e => {
