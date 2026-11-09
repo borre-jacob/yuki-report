@@ -7,6 +7,9 @@ Writes <dir>/<area>.json, read by the app instead of asking each service itself:
                     "no": {"warnings": {"<RegionId>-<date>": Varsom warning}, "resorts": {resortId: {date: key}}}}
   alps.json        {"at", "eaws": {"bulletins": {bulletinID: EAWS CAAML bulletin}, "resorts": {resortId: {date: bulletinID}}}}
 Varsom and EAWS hold today and tomorrow (local date), trimmed to the fields the app uses.
+Problems also carry how likely and how large avalanches are, when the service gives it (JAN: like + size [min, max];
+Sweden: spread, sensitivity, sizeMeter 0-100; Varsom and EAWS: their own fields).
+AVAL_DATE=YYYY-MM-DD fetches the bulletins of that day instead of today, for testing outside the season.
 Levels: 0 = no rating, 1 = low ... 5 = very high. A JAN or Swedish problem can have grid: three rings
 (alpine/kalfjäll, treeline, below treeline) of eight aspects (N, NE, E, SE, S, SW, W, NW),
 0 = not exposed, 1 = exposed, 2 = most exposed.
@@ -49,28 +52,51 @@ ASPECTS = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 BANDS = ["alp", "tl", "btl"]
 
 
-def jan_grids(page):
-    """Aspect/elevation rose per problem. JAN draws it as one image layer per highlighted sector:
-    info2_<band>_<aspect>_<a|b>.png, where a = darker (most exposed) and b = lighter (exposed)."""
+JAN_LIKE = {"certain", "very_likely", "likely", "possible", "unlikely"}
+
+
+def jan_details(page):
+    """Per problem: the aspect/elevation rose, likelihood and size range, all drawn as images.
+    Rose: one layer per highlighted sector, info2_<band>_<aspect>_<a|b>.png (a = most exposed, b = exposed).
+    Likelihood: info3_graph_<likelihood>_on. Size: info4_size_<10..50>_on per half size step (10 = size 1)."""
     start, end = re.search(r">\s*Avalanche Problem\s*<", page), re.search(r">\s*概要\s*<", page)
     sec = page[start.end() if start else 0:end.start() if end else len(page)]
-    grids, cur = {}, None
-    for m in re.finditer(r"<h[1-6][^>]*>(.*?)</h[1-6]>|/assets/info2_(alp|tl|btl)_(n|ne|e|se|s|sw|w|nw)_([ab])-", sec, re.S):
+    out, cur = {}, None
+    for m in re.finditer(r"<h[1-6][^>]*>(.*?)</h[1-6]>|/assets/info2_(alp|tl|btl)_(n|ne|e|se|s|sw|w|nw)_([ab])-"
+                         r"|/assets/info3_graph_([a-z_]+?)_on|/assets/info4_size_(\d+)_on", sec, re.S):
         if m.group(1) is not None:
-            cur = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()
-            grids[cur] = [[0] * 8 for _ in BANDS]
-        elif cur:
+            cur = {"grid": [[0] * 8 for _ in BANDS], "sizes": []}
+            out[html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()] = cur
+        elif cur is None:
+            continue
+        elif m.group(2):
             band, asp, ab = m.group(2, 3, 4)
-            grids[cur][BANDS.index(band)][ASPECTS.index(asp)] = 2 if ab == "a" else 1
-    return {k: g for k, g in grids.items() if any(map(any, g))}
+            cur["grid"][BANDS.index(band)][ASPECTS.index(asp)] = 2 if ab == "a" else 1
+        elif m.group(5) in JAN_LIKE:
+            cur["like"] = m.group(5)
+        elif m.group(6):
+            cur["sizes"].append(int(m.group(6)) / 10)
+    res = {}
+    for name, d in out.items():
+        row = {}
+        if any(map(any, d["grid"])):
+            row["grid"] = d["grid"]
+        if d.get("like"):
+            row["like"] = d["like"]
+        if d["sizes"]:
+            row["size"] = [min(d["sizes"]), max(d["sizes"])]
+        res[name] = row
+    return res
 
 
 def latest(area):
     page = get(f"{BASE}/avalanche_informations?area_id={area}&locale=en")
-    row = re.search(r'href="/avalanche_informations/(\d+)">\s*([\d/]+ [\d:]+)\s*</a>.*?<td>([^<]+)</td>(.*?)</tr>', page, re.S)
-    if not row:
+    rows = re.findall(r'href="/avalanche_informations/(\d+)">\s*([\d/]+ [\d:]+)\s*</a>.*?<td>([^<]+)</td>(.*?)</tr>', page, re.S)
+    if TEST_DATE:  # the list holds the season's bulletins, newest first
+        rows = [r for r in rows if r[1].replace("/", "-").startswith(TEST_DATE)]
+    if not rows:
         return None
-    bid, date, name, cells = row.groups()
+    bid, date, name, cells = rows[0]
     levels = [LEVEL.get(a, 0) for a in re.findall(r'alt="([^"]+)"', cells)][:3]
 
     page = get(f"{BASE}/avalanche_informations/{bid}?locale=en")
@@ -88,10 +114,9 @@ def latest(area):
                 continue
         if cur is not None and cur["text"] is None:
             cur["text"] = l
-    grids = jan_grids(page)
+    details = jan_details(page)
     for p in problems:
-        if p["name"] in grids:
-            p["grid"] = grids[p["name"]]
+        p.update(details.get(p["name"], {}))
     summary = {k: " ".join(section(L, k, {"Avalanche", "Snowpack", "Weather", "Print/PDF"})) for k in ("Avalanche", "Snowpack", "Weather")}
     return {"name": name.strip(), "date": date.replace("/", "-"), "url": f"{BASE}/avalanche_informations/{bid}?locale=en",
             "levels": levels, "advice": advice, "problems": problems, "summary": summary}
@@ -131,6 +156,14 @@ def se_problems(page):
         grid = [aspects if (alt.get(k) or {}).get("state") else [0] * 8 for k in SE_RINGS]
         name = ((p.get("symbol") or {}).get("image") or {}).get("alt") or (p.get("description") or {}).get("title") or ""
         row = {"name": name}
+        spread = p.get("spread") or {}
+        for key, src in (("spread", "spread"), ("sensitivity", "sensitivity"), ("sizeMeter", "sizeMeterValue")):
+            if spread.get(src) is not None:
+                row[key] = spread[src]
+        # Where the problem is found, in Swedish. Some texts carry leftovers from Word ("Normal 0 false ...")
+        where = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", (p.get("position") or {}).get("content") or ""))).strip()
+        if where and not re.search(r"\bfalse\b|\bNormal 0\b", where):
+            row["where"] = where[:400]
         if any(map(any, grid)):
             row["grid"] = grid
         if alt.get("metersAbove") or alt.get("metersBelow"):
@@ -142,14 +175,25 @@ def se_problems(page):
 def sweden(slug, date=None):
     """Latest Naturvårdsverket forecast: level 0-5, published/valid times, main message and problems.
     date (YYYY-MM-DD) fetches an old forecast instead, for testing outside the season."""
+    date = date or TEST_DATE
     page = get(SE_BASE + slug + "/" + (f"?forecast_date={date}" if date else ""))
     L = lines(page)
     after = lambda key: L[L.index(key) + 1] if key in L and L.index(key) + 1 < len(L) else ""
     level = next((int(l[9:-1]) for l in L if re.fullmatch(r"\[IMG:Risk \d\]", l)), 0)
-    msg = section(L, "Hoppa över karta", {"Se tidigare prognoser", "calendar", "Så här läser du lavinprognosen"})
-    return {"level": level, "label": after("Lavinfara"), "published": se_time(after("Publicerad:")),
-            "validTo": se_time(after("Gäller till:")), "message": " ".join(msg)[:800], "url": SE_BASE + slug + "/",
-            "problems": se_problems(page)}
+    msg = " ".join(section(L, "Hoppa över karta", {"Se tidigare prognoser", "calendar", "Så här läser du lavinprognosen"}))
+    msg = msg.split("[IMG:")[0]  # the rest of the page follows the message: problems, links, tomorrow
+    msg = re.sub(r"\s*Normal \d+ (?:(?:false|true|\d+|[A-Z]{2}|X-NONE)\s+)+", " ", msg).strip()  # Word leftovers
+    row = {"level": level, "label": after("Lavinfara"), "published": se_time(after("Publicerad:")),
+           "validTo": se_time(after("Gäller till:")), "message": msg[:800], "url": SE_BASE + slug + "/",
+           "problems": se_problems(page)}
+    # "Förväntad utveckling": the expected level for the next day, drawn as an image just before the heading
+    if "Förväntad utveckling" in L:
+        k = L.index("Förväntad utveckling")
+        m = re.fullmatch(r"\[IMG:Risk (\d)\]", L[k - 1])
+        day = next((l for l in L[k + 1:k + 5] if re.fullmatch(r"\d{4}-\d{2}-\d{2}", l)), None)
+        if m and day:
+            row["next"] = {"level": int(m.group(1)), "date": day}
+    return row
 
 
 def resorts(index_html):
@@ -162,14 +206,18 @@ def resorts(index_html):
     return out
 
 
+TEST_DATE = os.environ.get("AVAL_DATE")
+
+
 def local_days(tz):
-    today = datetime.now(ZoneInfo(tz)).date()
+    today = datetime.strptime(TEST_DATE, "%Y-%m-%d").date() if TEST_DATE else datetime.now(ZoneInfo(tz)).date()
     return [str(today), str(today + timedelta(days=1))]
 
 
 VARSOM = "https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByCoordinates/Detail/{lat}/{lon}/2/{d0}/{d1}"
 VARSOM_KEYS = ["RegId", "RegionId", "RegionName", "RegionTypeName", "DangerLevel", "PublishTime", "ValidFrom", "ValidTo", "MainText"]
-VARSOM_PROBLEM_KEYS = ["AvalancheProblemTypeName", "ValidExpositions", "AvalCauseName", "ExposedHeight1", "ExposedHeight2", "ExposedHeightFill"]
+VARSOM_PROBLEM_KEYS = ["AvalancheProblemTypeName", "ValidExpositions", "AvalCauseName", "ExposedHeight1", "ExposedHeight2", "ExposedHeightFill",
+                       "AvalProbabilityName", "DestructiveSizeExtId", "AvalTriggerSensitivityName"]
 
 
 def norway(rows):
@@ -182,6 +230,7 @@ def norway(rows):
                 # RegId is 0 for every region when no warning is issued (off season): key on region and day instead
                 rid = f'{w["RegionId"]}-{w["ValidFrom"][:10]}'
                 warnings[rid] = {**{k: w.get(k) for k in VARSOM_KEYS},
+                                 "Advices": [a["Text"].strip() for a in w.get("AvalancheAdvices") or [] if (a.get("Text") or "").strip()],
                                  "AvalancheProblems": [{k: p.get(k) for k in VARSOM_PROBLEM_KEYS} for p in w.get("AvalancheProblems") or []]}
                 by_resort.setdefault(r["id"], {})[w["ValidFrom"][:10]] = rid
         except Exception as e:
@@ -230,8 +279,9 @@ def alps(rows):
                         "lang": b.get("lang"), "publicationTime": b.get("publicationTime"), "validTime": b.get("validTime"),
                         "regions": [{"regionID": x["regionID"], "name": x.get("name")} for x in ours],
                         "dangerRatings": b.get("dangerRatings") or [],
-                        "avalancheProblems": [{k: p.get(k) for k in ("problemType", "aspects", "elevation", "avalancheSize", "frequency")}
+                        "avalancheProblems": [{k: p.get(k) for k in ("problemType", "aspects", "elevation", "avalancheSize", "frequency", "snowpackStability", "validTimePeriod")}
                                               for p in b.get("avalancheProblems") or []],
+                        "tendency": [t["tendencyType"] for t in b.get("tendency") or [] if t.get("tendencyType")],
                         "avalancheActivity": {k: (b.get("avalancheActivity") or {}).get(k) for k in ("highlights", "comment")},
                         "snowpackStructure": {"comment": (b.get("snowpackStructure") or {}).get("comment")},
                     }
