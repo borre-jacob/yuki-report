@@ -2423,6 +2423,8 @@ function avalWeather(F, B){
     s.warm && T(`blivit varmt, upp till ${uTemp(past.tMax)}`, `it has turned warm, up to ${uTemp(past.tMax)}`)].filter(Boolean);
   const coming = [s.nSnow && T(`${uSnow(next.snow)} snö`, `${uSnow(next.snow)} of snow`), s.nWind && T(`hård vind från ${compass(next.from)}`, `strong wind from the ${compass(next.from)}`)].filter(Boolean);
   const leeTxt = lee == null ? "" : T(`, särskilt i sluttningar mot ${EXPO[lee]}`, `, especially on ${EXPO[lee]}-facing slopes`);
+  // After "steep slopes", without saying slopes twice
+  const leeShort = lee == null ? "" : T(`, särskilt mot ${EXPO[lee]}`, `, especially ${EXPO[lee]}-facing ones`);
   const good = s.snow || s.nSnow ? T("Det blir puder, men ", "Good for powder, but ") : "";
   const since = B.issuedText ? T(`Sedan prognosen kom (${B.issuedText})`, `Since the bulletin came out (${B.issuedText})`) : T("Sedan prognosen kom", "Since the bulletin came out");
   let warn = false, box = "";
@@ -2449,8 +2451,8 @@ function avalWeather(F, B){
     const what = [s.snow && T(`${uSnow(past.snow)} nysnö de senaste tre dygnen`, `${uSnow(past.snow)} of new snow in the last three days`),
       s.wind && T("hård vind", "strong wind"), s.rain && T("regn ända upp till toppen", "rain all the way to the top"), s.warm && T("värme", "warm weather"),
       !happened.length && T(`${listAnd(coming)} närmaste dygnet`, `${listAnd(coming)} in the next 24 hours`)].filter(Boolean);
-    box = T(`<b>Vädret: ${listAnd(what)}.</b> ${good ? "Det ger fint puder, men sådant" : "Sådant"} väder brukar höja lavinfaran i branta sluttningar${leeTxt}.`,
-      `<b>The weather: ${listAnd(what)}.</b> ${good ? "Good for powder, but weather" : "Weather"} like this usually raises the avalanche danger on steep slopes${leeTxt}.`);
+    box = T(`<b>Vädret: ${listAnd(what)}.</b> ${good ? "Det ger fint puder, men sådant" : "Sådant"} väder brukar höja lavinfaran i branta sluttningar${leeShort}.`,
+      `<b>The weather: ${listAnd(what)}.</b> ${good ? "Good for powder, but weather" : "Weather"} like this usually raises the avalanche danger on steep slopes${leeShort}.`);
   } else {
     box = T(`Vädret: ${uSnow(past.snow)} nysnö de senaste tre dygnen och vindbyar upp till ${uWind(past.gust)}. Inget som brukar höja lavinfaran.`,
       `The weather: ${uSnow(past.snow)} of new snow in the last three days and gusts up to ${uWind(past.gust)}. Nothing that usually raises the avalanche danger.`);
