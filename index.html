@@ -2474,7 +2474,9 @@ function avalWeather(F, B){
     ${row(T("Temperatur", "Temperature"), isFinite(w.tMin) ? `${uTempN(w.tMin)} ${T("till", "to")} ${uTemp(w.tMax)}` : "–", w.tMax > 2)}
     ${row(T("Regn", "Rain"), w.rainTop >= 0.5 ? `${uRain(w.rainTop)} ${T("vid toppen", "at the top")}` : w.rainMid >= 0.5 ? `${uRain(w.rainMid)} ${T("på mellanhöjd", "mid-mountain")}` : T("nej", "none"), w.rainTop >= 1)}</div>`;
   const note = [lee != null && T(`Snödrevet hamnar på läsidor mot ${EXPO[lee]}.`, `Drifting snow ends up on lee slopes facing ${EXPO[lee]}.`),
-    (s.warm || next.tMax > 2) && T("Det blir varmt mitt på dagen, och solsidorna blir blöta och tunga.", "It gets warm in the middle of the day, and sunny slopes turn wet and heavy."),
+    // Warmth ahead, or only behind us: say which
+    next.tMax > 2 ? T("Det blir varmt mitt på dagen, och solsidorna blir blöta och tunga.", "It gets warm in the middle of the day, and sunny slopes turn wet and heavy.")
+      : s.warm && T("Det har varit varmt, så snön kan ha blivit blöt och tung, men nu blir det kallare.", "It has been warm, so the snow may have turned wet and heavy, but it is getting colder now."),
     !Object.values(s).some(Boolean) && T("Inget i vädret som brukar höja lavinfaran.", "Nothing in the weather that usually raises the avalanche danger.")].filter(Boolean).join(" ");
   const cols = `<div class="awx">${col(sinceBul ? T("Sedan prognosen kom", "Since the bulletin") : T("Senaste 3 dygnen", "Last 3 days"), past, s.snow, s.wind)}${col(T("Närmaste dygnet", "Next 24 hours"), next, s.nSnow, s.nWind)}</div>
     <p class="wnote">${note} ${T("Vid toppen", "At the top")}, ${uH(F.r.top)}.</p>`;
