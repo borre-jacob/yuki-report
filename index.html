@@ -1329,7 +1329,7 @@ function setupSearch(){
       html += x.kind === "resort"
         ? `<li role="option" id="qo${i}" data-i="${i}" aria-selected="${i === active}"><span class="qn">${hl(x.r.name, typed)}${x.r.jp ? `<span class="jp">${esc(x.r.jp)}</span>` : ""}</span>
             <span class="qm">${esc(x.r.region)}${x.r.area !== "japan" ? ", " + esc(cname(x.r.country)) : ""}${x.r.area !== state.area ? " · " + AREAS[x.r.area].name : ""}</span></li>`
-        : `<li role="option" id="qo${i}" data-i="${i}" aria-selected="${i === active}" class="${x.sub ? "sub" : ""} ${x.head ? "head" : ""} ${!typed.trim() && x.v === state.region ? "cur" : ""}">${typed.trim() ? hl(x.label, typed) : esc(x.label)}</li>`;
+        : `<li role="option" id="qo${i}" data-i="${i}" aria-selected="${i === active}" class="${x.sub ? "sub" : ""} ${x.head ? "head" : ""} ${!typed.trim() && x.v === state.region ? "cur" : ""}"><span>${typed.trim() ? hl(x.label, typed) : esc(x.label)}</span></li>`;
       k++;
     });
     list.innerHTML = html || `<li class="qempty" role="presentation">${T(`Ingen ort eller region matchar "${esc(typed)}".`, `No resort or region matches "${esc(typed)}".`)}</li>`;
