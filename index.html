@@ -116,6 +116,27 @@ header.top{position:relative;padding-right:54px}
 .seg.area button{font-size:15px;font-weight:600;padding:8px 18px}
 .seg button.fut[aria-pressed="true"]{background:var(--future);color:#fff}
 .seg button.past[aria-pressed="true"]{background:var(--snow);color:#fff}
+/* Search field that is also the region filter */
+.qbox{position:relative;flex:1 1 240px;max-width:380px;min-width:0}
+.qbox input{width:100%;font:inherit;font-size:14px;padding:8px 30px 8px 32px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.qbox input:focus{outline:2px solid var(--snow);outline-offset:0;border-color:var(--snow)}
+.qbox input::placeholder{color:var(--muted)}
+.qicon{position:absolute;left:10px;top:50%;transform:translateY(-52%);font-size:17px;color:var(--muted);pointer-events:none}
+.qcaret{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.qlist{position:absolute;z-index:1200;top:calc(100% + 4px);left:0;right:0;margin:0;padding:4px;list-style:none;max-height:min(60vh,420px);overflow-y:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(10,20,40,.18)}
+.qlist .qh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px 4px}
+.qlist [role=option]{padding:8px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
+.qlist [role=option].sub{padding-left:22px}
+.qlist [role=option].head{font-weight:600}
+.qlist [role=option][aria-selected=true]{background:color-mix(in srgb,var(--snow) 14%,transparent)}
+.qlist [role=option].cur::after{content:"✓";position:absolute;right:16px;color:var(--snow)}
+.qlist [role=option]{position:relative}
+.qlist .qn{font-weight:600}
+.qlist .qn .jp{font-weight:400;color:var(--muted);margin-left:6px}
+.qlist .qm{font-size:12px;color:var(--muted)}
+.qlist mark{background:none;color:var(--snow);font-weight:700}
+.qlist .qempty{padding:10px;color:var(--muted);font-size:13px}
 select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 
 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}
@@ -973,14 +994,23 @@ const regionsOf = a => [...new Set(areaResorts(a).map(r => r.region))];
 const countriesOf = a => [...new Set(areaResorts(a).map(r => r.country))];
 // Region filter value: "all", "c:<country>" or a region name
 const inRegion = (r, f) => f === "all" || (f === "fav" ? favs.has(r.id) : f === "c:" + r.country || f === r.region);
-function regionOptions(a, sel){
-  const cs = countriesOf(a);
-  const opt = (v, t) => `<option value="${esc(v)}" ${sel === v ? "selected" : ""}>${esc(t)}</option>`;
-  const fav = favCount(a) ? opt("fav", `★ ${T("Mina favoriter", "My favourites")} (${favCount(a)})`) : "";
-  if (cs.length < 2) return fav + opt("all", T("Alla regioner", "All regions")) + regionsOf(a).map(g => opt(g, g)).join("");
-  return fav + opt("all", T("Alla länder", "All countries")) + cs.map(c => `<optgroup label="${esc(cname(c))}">${opt("c:" + c, T("Hela ", "All of ") + cname(c))}${
-    [...new Set(areaResorts(a).filter(r => r.country === c).map(r => r.region))].sort().map(g => opt(g, g)).join("")}</optgroup>`).join("");
+// The choices for the region filter in an area, in display order. head: a country, sub: a region in it.
+function regionItems(a){
+  const cs = countriesOf(a), out = [];
+  if (favCount(a)) out.push({v: "fav", label: `★ ${T("Mina favoriter", "My favourites")} (${favCount(a)})`});
+  if (cs.length < 2){
+    out.push({v: "all", label: T("Alla regioner", "All regions")});
+    regionsOf(a).forEach(g => out.push({v: g, label: g}));
+  } else {
+    out.push({v: "all", label: T("Alla länder", "All countries")});
+    cs.forEach(c => {
+      out.push({v: "c:" + c, label: T("Hela ", "All of ") + cname(c), head: true});
+      [...new Set(areaResorts(a).filter(r => r.country === c).map(r => r.region))].sort().forEach(g => out.push({v: g, label: g, sub: true}));
+    });
+  }
+  return out;
 }
+const regionLabel = (a, v) => regionItems(a).find(x => x.v === v)?.label || T("Alla regioner", "All regions");
 
 // Webcam pages per resort. The resort's own page first where one was found, then OpenSnow,
 // which collects the resorts' cameras (often several heights, including the top).
@@ -1224,7 +1254,14 @@ function renderOverview(){
           <button id="m-past" class="past" aria-pressed="${state.mode==="past"}">${T("Fallit senaste 3 dygnen", "Fallen last 3 days")}</button>
           <button id="m-fut" class="fut" aria-pressed="${state.mode==="fut"}">${T("Väntas kommande 3 dygn", "Expected next 3 days")}</button>
         </div>
-        <select id="region" aria-label="Region">${regionOptions(state.area, state.region)}</select>
+        <div class="qbox" id="qbox">
+          <span class="qicon" aria-hidden="true">⌕</span>
+          <input id="q" type="text" role="combobox" aria-expanded="false" aria-controls="qlist" aria-autocomplete="list"
+            autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+            aria-label="${T("Sök ort eller välj region", "Search for a resort or choose a region")}" placeholder="${T("Sök ort eller region", "Search resort or region")}">
+          <span class="qcaret" aria-hidden="true">▾</span>
+          <ul id="qlist" class="qlist" role="listbox" aria-label="${T("Orter och regioner", "Resorts and regions")}" hidden></ul>
+        </div>
         <button type="button" class="offbtn" id="offline" hidden></button>
         <div class="legend">
           <span style="--c:var(--snow)">${T("Fallit", "Fallen")}</span>
@@ -1240,7 +1277,7 @@ function renderOverview(){
     </div>`;
   $("#m-past").onclick = () => setMode("past");
   $("#m-fut").onclick = () => setMode("fut");
-  $("#region").onchange = e => { state.region = e.target.value; state.showAll = false; store.set("yr-region-" + state.area, state.region); renderOverview(); };
+  setupSearch();
   document.querySelectorAll("[data-area]").forEach(b => b.onclick = () => setArea(b.dataset.area));
   showOfflineButton(state.area, true);
 
@@ -1257,6 +1294,76 @@ function renderOverview(){
     },
   }).addTo(overviewMap);
   fillOverview();
+}
+// ---------- Search / region field ----------
+// Empty: the region choices for the area, as the old dropdown. Typing: matching resorts in every area (opens the
+// resort) and matching regions in this area (filters the list). Matching ignores case, accents, spaces and dashes.
+const norm = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[\s\-'’.()/]+/g, "");
+function searchItems(q){
+  const n = norm(q);
+  if (!n) return regionItems(state.area).map(x => ({...x, kind: "region"}));
+  const score = r => { const nn = norm(r.name);
+    return nn.startsWith(n) ? 0 : nn.includes(n) ? 1 : (r.jp && r.jp.includes(q.trim())) ? 1 : norm(r.region).includes(n) ? 2 : -1; };
+  const resorts = RESORTS.map(r => ({r, s: score(r)})).filter(x => x.s >= 0)
+    .sort((a, b) => a.s - b.s || (a.r.area === state.area ? 0 : 1) - (b.r.area === state.area ? 0 : 1) || a.r.name.localeCompare(b.r.name, LANG))
+    .slice(0, 12).map(x => ({kind: "resort", r: x.r}));
+  const regions = regionItems(state.area).filter(x => x.v !== "all" && norm(x.label).includes(n)).map(x => ({...x, kind: "region", sub: false, head: false}));
+  return [...regions, ...resorts];   // the few matching regions first, so they are not hidden below the resorts
+}
+const hl = (text, q) => {   // mark the typed letters in a name, when they appear as typed
+  const i = q ? text.toLowerCase().indexOf(q.trim().toLowerCase()) : -1;
+  return i < 0 || !q.trim() ? esc(text) : esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + q.trim().length)) + "</mark>" + esc(text.slice(i + q.trim().length));
+};
+function setupSearch(){
+  const input = $("#q"), list = $("#qlist");
+  let items = [], active = -1, typed = "";
+  const label = () => regionLabel(state.area, state.region);
+  input.value = label();
+  const draw = () => {
+    items = searchItems(typed);
+    const rg = typed.trim() ? items.filter(x => x.kind === "region").length : 0;
+    let html = "", k = 0;
+    items.forEach((x, i) => {
+      if (typed.trim() && i === 0 && rg) html += `<li class="qh" role="presentation">${T("Regioner", "Regions")}</li>`;
+      if (typed.trim() && i === rg && i < items.length) html += `<li class="qh" role="presentation">${T("Orter", "Resorts")}</li>`;
+      html += x.kind === "resort"
+        ? `<li role="option" id="qo${i}" data-i="${i}" aria-selected="${i === active}"><span class="qn">${hl(x.r.name, typed)}${x.r.jp ? `<span class="jp">${esc(x.r.jp)}</span>` : ""}</span>
+            <span class="qm">${esc(x.r.region)}${x.r.area !== "japan" ? ", " + esc(cname(x.r.country)) : ""}${x.r.area !== state.area ? " · " + AREAS[x.r.area].name : ""}</span></li>`
+        : `<li role="option" id="qo${i}" data-i="${i}" aria-selected="${i === active}" class="${x.sub ? "sub" : ""} ${x.head ? "head" : ""} ${!typed.trim() && x.v === state.region ? "cur" : ""}"><span>${typed.trim() ? hl(x.label, typed) : esc(x.label)}</span></li>`;
+      k++;
+    });
+    list.innerHTML = html || `<li class="qempty" role="presentation">${T(`Ingen ort eller region matchar "${esc(typed)}".`, `No resort or region matches "${esc(typed)}".`)}</li>`;
+    list.hidden = false; input.setAttribute("aria-expanded", "true");
+    if (active >= 0){ input.setAttribute("aria-activedescendant", "qo" + active); $("#qo" + active)?.scrollIntoView({block: "nearest"}); }
+    else input.removeAttribute("aria-activedescendant");
+  };
+  const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); active = -1; typed = ""; input.value = label(); };
+  const choose = x => {
+    if (!x) return;
+    if (x.kind === "resort"){
+      // Open the resort; going back lands in its area
+      const other = x.r.area !== state.area;
+      if (other){ state.area = x.r.area; store.set("yr-area", x.r.area); state.region = "all"; store.set("yr-region-" + x.r.area, "all"); state.showAll = false; }
+      close(); input.blur(); go(x.r.id);
+      if (other) refreshOverview();   // the list for that area is ready when going back
+      return;
+    }
+    state.region = x.v; state.showAll = false; store.set("yr-region-" + state.area, state.region);
+    close(); input.blur(); renderOverview();
+  };
+  input.onfocus = () => { typed = ""; input.value = ""; active = -1; draw(); };
+  input.oninput = () => { typed = input.value; active = typed.trim() ? 0 : -1; draw(); };
+  input.onkeydown = e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp"){
+      e.preventDefault(); if (list.hidden) draw();
+      const n = items.length; if (!n) return;
+      active = e.key === "ArrowDown" ? (active + 1) % n : (active - 1 + n) % n; draw();
+    } else if (e.key === "Enter"){ e.preventDefault(); choose(items[active >= 0 ? active : 0]); }
+    else if (e.key === "Escape"){ close(); input.blur(); }
+  };
+  input.onblur = () => setTimeout(() => { if (document.activeElement !== input) close(); }, 150);
+  // pointerdown so the choice happens before the field loses focus
+  list.onpointerdown = e => { const li = e.target.closest("[role=option]"); if (!li) return; e.preventDefault(); choose(items[+li.dataset.i]); };
 }
 function setMode(m){ state.mode = m; state.showAll = false; store.set("yr-mode", m); renderOverview(); }
 
@@ -1275,7 +1382,7 @@ function wireList(list, refill){
     const on = toggleFav(b.dataset.fav);
     const wasFav = state.region === "fav";
     if (wasFav && !favCount(state.area)){ state.region = "all"; store.set("yr-region-" + state.area, "all"); }
-    $("#region").innerHTML = regionOptions(state.area, state.region);
+    $("#q").value = regionLabel(state.area, state.region);
     if (wasFav) return fillOverview(false, state.region === "fav");   // a removed favourite leaves the list and the map
     b.setAttribute("aria-pressed", on); b.textContent = on ? "★" : "☆";
     b.title = on ? T("Ta bort från favoriter", "Remove from favourites") : T("Lägg till som favorit", "Add to favourites");
