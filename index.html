@@ -230,7 +230,8 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .daycard .mlist b{color:var(--ink)}
 .mdays .v,.mdays .rv{position:absolute;left:-4px;right:-4px;text-align:center;z-index:2;line-height:1.1}
 .mdays .v{font:600 10.5px var(--mono)}
-.mdays .rv{font:500 9px var(--mono);color:color-mix(in srgb,var(--future) 70%,var(--muted))}
+.mdays .rv{font:600 9px var(--mono);color:color-mix(in srgb,var(--future) 70%,var(--muted))}
+.mdays .rv.in{color:#fff;opacity:.9}
 .mlab{text-align:center;font:500 10px var(--mono);color:var(--muted)}
 .mlab b{color:var(--ink)}
 .sum .hint{font-size:12px;color:var(--muted);margin:0}
@@ -2740,18 +2741,20 @@ function drawForecast(){
     <div>
       <div class="mdays" style="--n:${days10.length}">${days10.map(d => { const i = top.daily.time.indexOf(d), v = top.daily.snowfall_sum[i] || 0, past = d < today, rn = !past && dayRain(d) >= 1;
         const g = !past ? dayRange(d) : null, whisk = g && g.max >= 1;
-        // The forecast's number sits on its bar; the models' range in smaller text above the dashed box,
-        // or above the number when the box reaches no higher than the bar
-        const barH = Math.max(2, v / dmax * 70), topH = whisk ? Math.max(barH + (v >= 0.5 ? 13 : 0), g.max / dmax * 70) : barH;
-        const showRange = whisk;
+        // The forecast's number sits on its bar. Small purple numbers mark where the dashed box ends: its top
+        // above the box when the models reach higher than the bar, its bottom inside the bar when they go lower
+        const barH = Math.max(2, v / dmax * 70), boxTop = whisk ? g.max / dmax * 70 : 0, boxLow = whisk ? g.min / dmax * 70 : 0;
+        const hiMark = whisk && g.max >= v + 0.5, loMark = whisk && g.min <= v - 0.5 && barH - boxLow >= 12;
+        const hiAt = Math.max(boxTop, barH + (v >= 0.5 ? 13 : 0));
         return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${whisk ? ` (${T("modellerna", "models")} ${rangeTxt(g)})` : ""}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${barH}px"></div>${whisk
           ? `<i class="rng" style="bottom:${g.min / dmax * 70}px;height:${Math.max(3, (g.max - g.min) / dmax * 70)}px"></i>` : ""}${
           v >= 0.5 ? `<span class="v" style="bottom:${barH + 2}px">${uSnowN(v, 0)}</span>` : ""}${
-          showRange ? `<span class="rv" style="bottom:${topH + 2}px">${uSnowN(g.min, 0)}–${uSnowN(g.max, 0)}</span>` : ""}</div>`; }).join("")}</div>
+          hiMark ? `<span class="rv" style="bottom:${hiAt + 2}px">${uSnowN(g.max, 0)}</span>` : ""}${
+          loMark ? `<span class="rv in" style="bottom:${Math.max(1, boxLow + 1)}px">${uSnowN(g.min, 0)}</span>` : ""}</div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Siffran på stapeln är prognosen, och det streckade lila fältet med den mindre siffran ovanför visar spannet mellan vädermodellerna ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
-      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The number on the bar is the forecast, and the dashed purple box with the smaller number above it shows the spread between the weather models ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
+    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Siffran ovanpå stapeln är prognosen. Det streckade lila fältet visar spannet mellan vädermodellerna, och de små siffrorna visar var det slutar, ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
+      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The number on top of the bar is the forecast. The dashed purple box shows the spread between the weather models, and the small numbers show where it ends, ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
   </section>`;
 
   // --- Days ---
