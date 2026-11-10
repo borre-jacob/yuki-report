@@ -282,7 +282,10 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .chip i{width:10px;height:10px;border-radius:50%;background:var(--c)}
 .chip[aria-pressed="false"]{opacity:.45}
 .chip[hidden]{display:none}
-.slopebar{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.avalmap{height:360px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.zoomhint{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font:600 12px var(--body)}
+#avalmap{width:100%;height:100%;background:var(--surface)}
+@media (max-width:860px){.avalmap{height:300px}}
 .slopekey{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);align-items:center}
 .slopekey span{display:inline-flex;align-items:center;gap:5px}
 .slopekey i{width:12px;height:12px;border-radius:3px;opacity:.85}
@@ -1252,16 +1255,56 @@ const snowqKey = q => !q?.kind ? "" : (q.kind === "dry" || q.kind === "powder") 
 const snowqText = q => { const k = snowqKey(q); return !k ? "" : (k === "light" ? T("Torr nysnö", "Dry new snow") : SNOWQ[k].n) + (q.windy ? T(" i hård vind", " in strong wind") : ""); };
 
 // ---------- Slope map: terrain steeper than 30°, worked out in the browser ----------
-// From the open AWS Terrain Tiles (Mapzen "terrarium" PNGs: height = R*256 + G + B/256 - 32768 m, zoom up to 15):
-// 10 m grid in Norway and Austria, 5 m north of 60°, about 30 m elsewhere in Europe and in Japan. A coarse grid
-// smooths the terrain, so short steep pitches, gullies and cliff bands can be missing or look gentler. Not cached
-// offline. With "only exposed", steep ground is coloured only where its aspect (and height, when the bulletin gives
-// metres) matches an avalanche problem in today's bulletin; other steep ground is grey.
-const DEM_URL = (z, x, y) => `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;
-const DEM_ATTR = `${T("Branthet", "Slopes")}: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a>`;   // the sources are listed under the chips
+// From Mapterhorn's open terrain tiles (terrarium WebP, 512 px: height = R*256 + G + B/256 - 32768 m), built from
+// national ground models (bare earth, 1–10 m: Sweden, Norway, Austria, Switzerland, France, Italy, Japan) and
+// Copernicus 30 m elsewhere. Heights are smoothed over about 40 m first, so small banks, road cuts and single
+// rocks do not show, and short steep pitches can look gentler. Not cached offline. With "only exposed", steep
+// ground is coloured only where its aspect (and height, when the bulletin gives metres) matches an avalanche
+// problem in today's bulletin; other steep ground is grey.
+const DEM_URL = (z, x, y) => `https://tiles.mapterhorn.com/${z}/${x}/${y}.webp`;
+const DEM_ATTR = `${T("Branthet", "Slopes")}: <a href="https://mapterhorn.com/attribution">© Mapterhorn</a>`;
 const SLOPE_COL = [[45, [124, 30, 120]], [40, [214, 40, 57]], [35, [245, 128, 20]], [30, [246, 214, 60]]];   // first match wins
-let slopeMode = store.get("yr-slope") || 0;   // 0 off, 1 all steep slopes, 2 only those the bulletin points out
-let slopeLayer = null, slopeFilter = null;
+const DEM_SIZE = 512, DEM_MAXZ = 14, DEM_BASEZ = 12, SLOPE_MINZ = 12, SMOOTH_M = 20;
+let slopeMode = store.get("yr-slope") ?? 1;   // 0 off, 1 all steep slopes (default), 2 only those the bulletin points out
+let slopeLayer = null, slopeFilter = null, avalMap = null, avalMapTouched = false, avalLiftPts = [];
+// The map in the avalanche panel: base map, the slope layer, the resort and its lifts for orientation
+function initAvalMap(r){
+  if (avalMap){ avalMap.remove(); avalMap = null; }
+  const el = $("#avalmap"); if (!el) return;
+  avalMap = L.map(el, {scrollWheelZoom: false});
+  avalMapTouched = false;
+  ["pointerdown", "wheel", "touchstart", "keydown"].forEach(ev => el.addEventListener(ev, () => avalMapTouched = true, {once: true, passive: true}));
+  avalMap.setView([r.lat, r.lon], 13, {animate: false});
+  addBasemap(avalMap);
+  avalMap.createPane("slope").style.zIndex = 350;   // above the base map, below the lifts
+  L.circleMarker([r.lat, r.lon], {radius: 7, color: css("--snow"), weight: 3, fillOpacity: 0}).addTo(avalMap).bindTooltip(r.name);
+  slopeLayer = null;
+  setSlopeMode(slopeMode, true);
+  $("#chip-slope").onclick = () => setSlopeMode(slopeMode ? 0 : 1);
+  $("#chip-expo").onclick = () => setSlopeMode(slopeMode === 2 ? 1 : 2);
+  const hint = L.control({position: "bottomright"});
+  hint.onAdd = () => { const d = L.DomUtil.create("div", "zoomhint"); d.textContent = T("Zooma in för att se branterna", "Zoom in to see the slopes"); return d; };
+  hint.addTo(avalMap);
+  const showHint = () => hint.getContainer().hidden = !slopeMode || avalMap.getZoom() >= SLOPE_MINZ;
+  avalMap.on("zoomend", showHint); avalMapHint = showHint; showHint();
+  avalLiftPts = [];
+  if (avalLiftsPending) avalMapLifts(avalLiftsPending);
+  [300, 1000].forEach(t => setTimeout(() => { if (avalMap && !avalMapTouched){ avalMap.invalidateSize(); fitAvalMap(r); } }, t));
+}
+let avalLiftsPending = null, avalMapHint = null;
+function avalMapLifts(lifts){
+  avalLiftsPending = lifts;
+  if (!avalMap) return;
+  lifts.forEach(l => L.polyline(l[2], {color: css("--lift"), weight: 2.5, opacity: .9, interactive: false}).addTo(avalMap));
+  avalLiftPts = lifts.flatMap(l => l[2]);
+  if (!avalMapTouched) fitAvalMap();
+}
+// Over the lifts, but never zoomed out past where the slopes show
+const fitAvalMap = r => {
+  if (!avalLiftPts.length){ if (r) avalMap.setView([r.lat, r.lon], 13, {animate: false}); return; }
+  const bb = L.latLngBounds(avalLiftPts).pad(0.15);
+  avalMap.setView(bb.getCenter(), Math.min(14, Math.max(SLOPE_MINZ, avalMap.getBoundsZoom(bb))), {animate: false});
+};
 const demCache = new Map();
 // Slope (degrees), aspect sector (0 = N … 7 = NW) and height for every pixel of one elevation tile
 function demTile(z, x, y){
@@ -1271,18 +1314,32 @@ function demTile(z, x, y){
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      const c = document.createElement("canvas"); c.width = c.height = 256;
-      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(img, 0, 0);
-      const px = g.getImageData(0, 0, 256, 256).data, n = 256 * 256;
-      const h = new Float32Array(n);
-      for (let i = 0; i < n; i++) h[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
+      const S = DEM_SIZE, n = S * S;
+      const c = document.createElement("canvas"); c.width = c.height = S;
+      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(img, 0, 0, S, S);
+      const px = g.getImageData(0, 0, S, S).data;
+      const raw = new Float32Array(n);
+      for (let i = 0; i < n; i++) raw[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
       const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / 2 ** z)));
-      const res = Math.cos(lat) * 2 * Math.PI * 6378137 / (256 * 2 ** z);   // metres per pixel
+      const res = Math.cos(lat) * 2 * Math.PI * 6378137 / (S * 2 ** z);   // metres per pixel
+      // Box blur over about 2 × SMOOTH_M, done as two passes
+      const R = Math.max(1, Math.min(6, Math.round(SMOOTH_M / res))), tmp = new Float32Array(n), h = new Float32Array(n);
+      const blur = (src, dst, dx, dy) => {
+        for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
+          let sum = 0, cnt = 0;
+          for (let t = -R; t <= R; t++){
+            const a = i + t * dx, b = j + t * dy;
+            if (a >= 0 && a < S && b >= 0 && b < S){ sum += src[b * S + a]; cnt++; }
+          }
+          dst[j * S + i] = sum / cnt;
+        }
+      };
+      blur(raw, tmp, 1, 0); blur(tmp, h, 0, 1);
       const slope = new Uint8Array(n), sector = new Uint8Array(n);
-      for (let j = 0; j < 256; j++) for (let i = 0; i < 256; i++){
-        const at = (a, b) => h[Math.min(255, Math.max(0, b)) * 256 + Math.min(255, Math.max(0, a))];
+      for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
+        const at = (a, b) => h[Math.min(S - 1, Math.max(0, b)) * S + Math.min(S - 1, Math.max(0, a))];
         const dx = (at(i + 1, j) - at(i - 1, j)) / (2 * res), dy = (at(i, j + 1) - at(i, j - 1)) / (2 * res);   // east, south
-        const k = j * 256 + i;
+        const k = j * S + i;
         slope[k] = Math.min(90, Math.round(Math.atan(Math.hypot(dx, dy)) * 180 / Math.PI));
         // Aspect: the way the slope faces (downhill), clockwise from north
         sector[k] = Math.round(((Math.atan2(-dx, dy) * 180 / Math.PI + 360) % 360) / 45) % 8;
@@ -1294,28 +1351,46 @@ function demTile(z, x, y){
   });
   demCache.set(key, p);
   p.catch(() => demCache.delete(key));
-  if (demCache.size > 150) demCache.delete(demCache.keys().next().value);
+  if (demCache.size > 60) demCache.delete(demCache.keys().next().value);
   return p;
 }
+// A map tile (256 px) at zoom z uses the 512-px elevation tile of the same zoom, so each map pixel covers 2×2
+// elevation pixels and shows the steepest of them; zooming out never makes the terrain look gentler. Past
+// DEM_MAXZ one elevation tile is stretched. Where there is no detailed data, the zoom-12 tiles are used.
+// Below SLOPE_MINZ it would need too many tiles, so the map asks you to zoom in instead.
 const SlopeLayer = L.GridLayer.extend({
   createTile(co, done){
     const c = document.createElement("canvas"); c.width = c.height = 256;
-    const z = Math.min(co.z, 15), f = 2 ** (co.z - z);       // past zoom 15, stretch the zoom-15 tile
-    const ox = (co.x % f) * 256 / f, oy = (co.y % f) * 256 / f;
-    demTile(z, Math.floor(co.x / f), Math.floor(co.y / f)).then(d => {
-      const g = c.getContext("2d"), img = g.createImageData(256, 256), o = img.data;
-      const only = slopeMode === 2 && slopeFilter;
-      for (let j = 0; j < 256; j++) for (let i = 0; i < 256; i++){
-        const k = Math.floor(oy + j / f) * 256 + Math.floor(ox + i / f), sl = d.slope[k];
-        if (sl < 30) continue;
-        const q = (j * 256 + i) * 4;
-        const hit = !only || slopeFilter.some(p => p.dirs.has(d.sector[k]) && (p.lo == null || d.h[k] >= p.lo) && (p.hi == null || d.h[k] <= p.hi));
-        const col = hit ? SLOPE_COL.find(([min]) => sl >= min)[1] : [120, 128, 140];
-        o[q] = col[0]; o[q + 1] = col[1]; o[q + 2] = col[2]; o[q + 3] = hit ? 170 : 90;
-      }
-      g.putImageData(img, 0, 0);
-      done(null, c);
-    }).catch(() => done(null, c));
+    const draw = zd => {
+      const sc = 2 ** (zd - co.z + 1), s = Math.max(1, sc);       // elevation pixels per map pixel
+      const gx0 = co.x * 256 * sc, gy0 = co.y * 256 * sc, span = 256 * sc;
+      const tx0 = Math.floor(gx0 / DEM_SIZE), ty0 = Math.floor(gy0 / DEM_SIZE);
+      const tx1 = Math.floor((gx0 + span - 1e-6) / DEM_SIZE), ty1 = Math.floor((gy0 + span - 1e-6) / DEM_SIZE);
+      const keys = [];
+      for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) keys.push([tx, ty]);
+      return Promise.all(keys.map(([tx, ty]) => demTile(zd, tx, ty))).then(list => {
+        const tiles = new Map(keys.map((k, i) => [k.join(","), list[i]]));
+        const g = c.getContext("2d"), img = g.createImageData(256, 256), o = img.data;
+        const only = slopeMode === 2 && slopeFilter;
+        for (let j = 0; j < 256; j++) for (let i = 0; i < 256; i++){
+          let best = -1, bt = null, bk = 0;
+          const bx = Math.floor(gx0 + i * sc), by = Math.floor(gy0 + j * sc);
+          for (let v = 0; v < s; v++) for (let u = 0; u < s; u++){
+            const gx = bx + u, gy = by + v, t = tiles.get(Math.floor(gx / DEM_SIZE) + "," + Math.floor(gy / DEM_SIZE));
+            const k = (gy % DEM_SIZE) * DEM_SIZE + (gx % DEM_SIZE);
+            if (t && t.slope[k] > best){ best = t.slope[k]; bt = t; bk = k; }
+          }
+          if (best < 30) continue;
+          const q = (j * 256 + i) * 4;
+          const hit = !only || slopeFilter.some(p => p.dirs.has(bt.sector[bk]) && (p.lo == null || bt.h[bk] >= p.lo) && (p.hi == null || bt.h[bk] <= p.hi));
+          const col = hit ? SLOPE_COL.find(([min]) => best >= min)[1] : [120, 128, 140];
+          o[q] = col[0]; o[q + 1] = col[1]; o[q + 2] = col[2]; o[q + 3] = hit ? 170 : 90;
+        }
+        g.putImageData(img, 0, 0);
+      });
+    };
+    const zd = Math.min(DEM_MAXZ, co.z);
+    draw(zd).catch(() => zd > DEM_BASEZ ? draw(DEM_BASEZ) : null).catch(() => {}).then(() => done(null, c));
     return c;
   },
 });
@@ -1328,19 +1403,20 @@ function setSlopeFilter(B){
   if (slopeMode === 2) slopeLayer?.redraw();   // without a filter "only exposed" draws every steep slope
   drawSlopeKey();
 }
-function setSlopeMode(m){
-  slopeMode = m; store.set("yr-slope", m);
+function setSlopeMode(m, keep){
+  slopeMode = m; if (!keep) store.set("yr-slope", m);
   $("#chip-slope")?.setAttribute("aria-pressed", m > 0);
   const chip = $("#chip-expo");
   if (chip){ chip.setAttribute("aria-pressed", m === 2); chip.hidden = !m || !slopeFilter; }
-  if (poiMap){
-    if (!m){ if (slopeLayer){ slopeLayer.remove(); } }
+  if (avalMap){
+    if (!m){ if (slopeLayer) slopeLayer.remove(); }
     else {
-      if (!slopeLayer) slopeLayer = new SlopeLayer({pane: "slope", maxZoom: 19, attribution: DEM_ATTR});
-      if (!poiMap.hasLayer(slopeLayer)) slopeLayer.addTo(poiMap); else slopeLayer.redraw();
+      if (!slopeLayer) slopeLayer = new SlopeLayer({pane: "slope", minZoom: SLOPE_MINZ, maxZoom: 19, attribution: DEM_ATTR});
+      if (!avalMap.hasLayer(slopeLayer)) slopeLayer.addTo(avalMap); else slopeLayer.redraw();
     }
   }
   drawSlopeKey();
+  avalMapHint?.();
 }
 function drawSlopeKey(){
   const el = $("#slopekey"); if (!el) return;
@@ -1349,9 +1425,9 @@ function drawSlopeKey(){
   const sw = (c, t) => `<span><i style="background:rgb(${c.join(",")})"></i>${t}</span>`;
   el.innerHTML = `${sw(SLOPE_COL[3][1], "30–35°")}${sw(SLOPE_COL[2][1], "35–40°")}${sw(SLOPE_COL[1][1], "40–45°")}${sw(SLOPE_COL[0][1], T("över 45°", "over 45°"))}${
     slopeMode === 2 && slopeFilter ? sw([120, 128, 140], T("brant, men inte utpekat i dagens prognos", "steep, but not pointed out today")) : ""}
-    <p>${T("Räknat ur öppna höjddata (10 m i Norge och Österrike, annars cirka 30 m). Korta branter, rännor och stup kan saknas eller se flackare ut. Lavinfara finns oftast från cirka 30°, men även flackare terräng under en brant sluttning kan nås av en lavin.",
-      "Worked out from open elevation data (10 m in Norway and Austria, about 30 m elsewhere). Short steep pitches, gullies and cliffs can be missing or look gentler. Avalanche danger usually starts around 30°, but gentler ground below a steep slope can be reached by an avalanche.")}</p>
-    <p class="src">${T("Höjddata", "Elevation data")}: <a href="https://registry.opendata.aws/terrain-tiles/">AWS Terrain Tiles</a> (Mapzen). ${T("Europa: EU-DEM, framställd med Copernicus-data finansierade av EU", "Europe: EU-DEM, produced using Copernicus data funded by the EU")}; ${T("Norge", "Norway")} © Kartverket; ${T("Österrike", "Austria")} © offene Daten Österreichs, DGM Österreich; ${T("norr om 60°", "north of 60°")}: ArcticDEM (DigitalGlobe, NSF); SRTM ${T("och", "and")} GMTED: U.S. Geological Survey.</p>`;
+    <p>${T("Räknat ur nationella höjdmodeller (1–10 m) och utjämnat över cirka 40 m, så korta branter, rännor och stup kan se flackare ut. Lavinfara finns oftast från cirka 30°, men även flackare terräng under en brant sluttning kan nås av en lavin.",
+      "Worked out from national elevation models (1–10 m) and smoothed over about 40 m, so short steep pitches, gullies and cliffs can look gentler. Avalanche danger usually starts around 30°, but gentler ground below a steep slope can be reached by an avalanche.")}</p>
+    <p class="src">${T("Höjddata", "Elevation data")}: <a href="https://mapterhorn.com/attribution">© Mapterhorn</a>, ${T("byggt på öppna nationella höjdmodeller och Copernicus. Alla källor står på Mapterhorns sida.", "built from open national elevation models and Copernicus. All sources are listed on Mapterhorn's page.")}</p>`;
 }
 
 // ---------- Overview data (one request for all resorts in the chosen area) ----------
@@ -1819,13 +1895,6 @@ async function renderDetail(id){
             ${Object.entries(POI_TYPES).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${k === "onsen" ? AREAS[r.area].sauna : t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
           </div>
         </div>
-        <div class="slopebar">
-          <div class="chips">
-            <button class="chip" id="chip-slope" aria-pressed="${slopeMode > 0}" style="--c:#e8590c"><i></i>${T("Branthet över 30°", "Slopes over 30°")}</button>
-            <button class="chip" id="chip-expo" aria-pressed="${slopeMode === 2}" style="--c:#b02a37" hidden><i></i>${T("Bara utsatt enligt lavinprognosen", "Only exposed per the bulletin")}</button>
-          </div>
-          <div class="slopekey" id="slopekey" ${slopeMode ? "" : "hidden"}></div>
-        </div>
         <div class="dgrid">
           <div class="poimapbox"><div id="poimap" role="region" aria-label="${T("Karta med faciliteter", "Map of facilities")}"></div></div>
           <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
@@ -1842,8 +1911,6 @@ async function renderDetail(id){
   showFav();
   FC_TABS.forEach(([k]) => $("#ft-" + k).onclick = () => { store.set("yr-fctab", k); showFcTab(k); });
   showFcTab(FC_TABS.some(([k]) => k === store.get("yr-fctab")) ? store.get("yr-fctab") : "days");
-  $("#chip-slope").onclick = () => setSlopeMode(slopeMode ? 0 : 1);
-  $("#chip-expo").onclick = () => setSlopeMode(slopeMode === 2 ? 1 : 2);
   $("#chip-lift").onclick = e => {
     liftOn = !liftOn; e.currentTarget.setAttribute("aria-pressed", liftOn);
     if (liftOn) liftLayer.addTo(poiMap); else liftLayer.remove();
@@ -1867,9 +1934,6 @@ async function renderDetail(id){
   const settle = () => { if (!touched && poiMap){ poiMap.invalidateSize(); startView(); } };
   [300, 1000, 2500].forEach(t => setTimeout(settle, t));
   addBasemap(poiMap);
-  slopeLayer = null; slopeFilter = null;
-  poiMap.createPane("slope").style.zIndex = 350;   // above the base map, below the dots and lifts
-  if (slopeMode) setSlopeMode(slopeMode);
   L.circleMarker([r.lat, r.lon], {radius:9, color:css("--snow"), weight:3, fillColor:css("--snow"), fillOpacity:.25})
     .addTo(poiMap).bindTooltip(r.name);
   poiLayer = L.layerGroup().addTo(poiMap);
@@ -1889,6 +1953,7 @@ async function renderDetail(id){
     $("#cnt-lift").textContent = pl.lifts.length;
     liftPts = pl.lifts.flatMap(l => l[2]);
     if (!touched) startView();
+    avalMapLifts(pl.lifts);
     drawPois(r);
   }).catch(e => { $("#pois").innerHTML = `<div class="msg err">${T(`Inga platser sparade för den här orten (${esc(e.message)}).`, `No places saved for this resort (${esc(e.message)}).`)}</div>`; });
 }
@@ -2246,6 +2311,7 @@ async function fillAval(r){
   avalCur = {id: r.id, B};
   setSlopeFilter(B);
   $("#avalbox").innerHTML = avalHtml(r, B);
+  initAvalMap(r);
   drawAvalWeather();
   const lv = B.ok ? {today: B.level, tomorrow: B.tomorrow || 0} : {today: 0, tomorrow: 0};
   if (detailAval[r.id]?.today !== lv.today || detailAval[r.id]?.tomorrow !== lv.tomorrow){ detailAval[r.id] = lv; if (fcData?.r.id === r.id) drawForecast(); }
@@ -2524,6 +2590,15 @@ function avalHtml(r, B){
     </div>` : ""}
     ${text ? `<details class="asect atext"><summary>${text.label}${text.lang !== LANG ? ` <span class="en">${T("på", "in")} ${LANG_NAME[text.lang] || text.lang}</span>` : ""}</summary>
       <p lang="${text.lang}">${esc(text.body)}</p>${text.list?.length ? `<ul lang="${text.lang}">${text.list.map(a => `<li>${esc(a)}</li>`).join("")}</ul>` : ""}${translateLink(text.body + (text.list?.length ? "\n\n" + text.list.join("\n") : ""), text.lang)}</details>` : ""}
+    <div class="asect">
+      <h4>${T("Branter runt backen", "Steep terrain around the resort")}</h4>
+      <div class="chips">
+        <button class="chip" id="chip-slope" aria-pressed="${slopeMode > 0}" style="--c:#e8590c"><i></i>${T("Branthet över 30°", "Slopes over 30°")}</button>
+        <button class="chip" id="chip-expo" aria-pressed="${slopeMode === 2}" style="--c:#b02a37" ${slopeFilter && slopeMode ? "" : "hidden"}><i></i>${T("Bara utsatt enligt lavinprognosen", "Only exposed per the bulletin")}</button>
+      </div>
+      <div class="slopekey" id="slopekey"></div>
+      <div class="avalmap"><div id="avalmap" role="region" aria-label="${T("Karta över branter", "Map of steep terrain")}"></div></div>
+    </div>
     <div class="asect" id="avalwx"><div class="msg">${T("Räknar på vädret…", "Working out the weather…")}</div></div>
     <div class="asect afoot">
       <p>${B.ok ? T("<b>Läs alltid hela prognosen hos källan.</b> Sammanfattningen här kan vara inaktuell och gäller ett helt område, inte den enskilda sluttningen. Vädret kommer från en modell som kan ha fel i bergen. Bär sändare, sond och spade utanför pisterna. Du ansvarar själv för dina beslut i fjällen.",
@@ -3019,6 +3094,8 @@ function route(){
   const id = location.hash.slice(1);
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
   if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; }
+  if (avalMap){ avalMap.remove(); avalMap = null; }
+  avalLiftsPending = null;
   if (id) renderDetail(id); else renderOverview();
 }
 addEventListener("hashchange", route);
