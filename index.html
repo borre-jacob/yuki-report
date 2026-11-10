@@ -1527,7 +1527,7 @@ function avalLevel(r, d){
   if (r.area === "alps" && d.eaws){
     const day = off => new Date(Date.now() + off * 864e5).toLocaleDateString("sv-SE", {timeZone: "Europe/Vienna"});
     const b = [day(0), day(1)].map(x => d.eaws.bulletins[d.eaws.resorts[r.id]?.[x]]).find(b => b && new Date(b.validTime?.endTime) > Date.now());
-    return b ? eawsTop(b) : 0;
+    return b ? eawsMax(b.dangerRatings || []) : 0;   // the day's highest level, as on the resort page
   }
   return 0;
 }
