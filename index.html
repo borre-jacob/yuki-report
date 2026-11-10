@@ -213,9 +213,20 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .mdays .bar{width:74%;max-width:36px;border-radius:3px 3px 0 0;background:var(--future)}
 .mdays .bar.past{background:var(--snow)}
 .mdays .col{position:relative}
-.mdays .rng{position:absolute;left:50%;width:2px;margin-left:-1px;background:var(--ink);opacity:.55;border-radius:1px}
-.mdays .rng::before,.mdays .rng::after{content:"";position:absolute;left:-3px;width:8px;height:2px;background:inherit}
-.mdays .rng::before{top:0} .mdays .rng::after{bottom:0}
+.mdays .rng{position:absolute;left:50%;width:84%;max-width:42px;transform:translateX(-50%);border-radius:4px;border:1.5px solid;z-index:0}
+.mdays .rng.ok{background:color-mix(in srgb,var(--toilet) 18%,transparent);border-color:color-mix(in srgb,var(--toilet) 70%,transparent)}
+.mdays .rng.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);border-color:var(--warn)}
+.mdays .bar,.mdays .v{position:relative;z-index:1}
+/* The models' range under the big number */
+.mbar{display:flex;flex-direction:column;gap:5px;margin-top:8px;max-width:280px}
+.mtrack{position:relative;height:10px;border-radius:5px;background:var(--line)}
+.mtrack i{position:absolute;top:0;bottom:0;border-radius:5px}
+.mtrack b{position:absolute;top:-4px;width:3px;height:18px;margin-left:-1.5px;border-radius:2px;background:var(--future)}
+.mbar.ok .mtrack i{background:var(--toilet)} .mbar.warn .mtrack i{background:var(--warn)}
+.mbar span{font-size:13px;font-weight:600} .mbar.ok span{color:var(--toilet)} .mbar.warn span{color:var(--warn)}
+.daycard .unc{display:inline-block;margin-left:8px;vertical-align:4px;font:600 12px var(--body);padding:2px 8px;border-radius:999px}
+.daycard .unc.ok{color:var(--toilet);background:color-mix(in srgb,var(--toilet) 14%,var(--surface))}
+.daycard .unc.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
 .daycard .mlist{display:block;margin-top:8px}
 .daycard .mlist b{color:var(--ink)}
 .mdays .v{font:600 10.5px var(--mono)}
@@ -2603,6 +2614,14 @@ async function loadModels(r){
 }
 // How far apart the models may be and still count as agreeing: 5 cm, or 40 % of the middle value when that is more
 const modelsAgree = g => g.max - g.min <= Math.max(5, 0.4 * g.mid);
+// The models' range for the next 3 days as a bar from 0, with a mark at the forecast's own value
+function modelBar(g, v){
+  if (!g || g.max < 1) return "";
+  const ok = modelsAgree(g), top = Math.max(g.max, v) * 1.15, pct = x => (x / top * 100).toFixed(1);
+  return `<div class="mbar ${ok ? "ok" : "warn"}">
+    <div class="mtrack"><i style="left:${pct(g.min)}%;width:${Math.max(1.5, pct(g.max) - pct(g.min))}%"></i><b style="left:${pct(v)}%"></b></div>
+    <span>${ok ? `✓ ${T("Säker prognos", "Confident forecast")}` : `± ${T("Osäker prognos", "Uncertain forecast")}`}: ${T("modellerna", "the models")} ${uSnowN(g.min)}–${uSnow(g.max)}</span></div>`;
+}
 
 // ---------- Resort forecast: a summary on top, then the tabs Days / Table / Heights ----------
 // Everything is drawn from the same Open-Meteo answer: hourly snow, rain, freezing level, temperature and wind
@@ -2690,16 +2709,16 @@ function drawForecast(){
     : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${bqText ? bqText + " " : ""}${T("vid toppen", "at the top")}.`
     : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${uSnow(sum7)} ${T("totalt vid toppen", "in all at the top")}.`
     : `<b>${T("Ingen snö i sikte", "No snow in sight")}</b> ${T("den närmaste veckan.", "for the coming week.")}`;
+  const unsure = range72 && range72.max >= 2 && !modelsAgree(range72);
   const sentence = [lead,
+    unsure ? T(`Vädermodellerna är oense: mellan ${uSnowN(range72.min)} och ${uSnow(range72.max)} de kommande 3 dygnen, så räkna med att det kan bli både mindre och mer.`,
+      `The weather models disagree: between ${uSnowN(range72.min)} and ${uSnow(range72.max)} over the next 3 days, so it could be less or more.`) : "",
     peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : "",
     rainDays.length ? `${T("Regn i dalen", "Rain at the base")} ${rainDays.map(rel).join(T(" och ", " and "))}.`
       : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : "",
     thinNow ? (F.depth < 0.01 ? T("Vädermodellen har ingen snö vid toppen ännu. Kolla att orten har öppnat.", "The weather model has no snow at the top yet. Check that the resort has opened.")
       : T(`Med bara ca ${uSnow(F.depth * 100)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${uSnow(F.depth * 100)} of snow you can rarely ski off-piste. Check that the resort has opened.`)) : ""].filter(Boolean).join(" ");
   const chips = [
-    range72 && range72.max >= 2 ? (modelsAgree(range72)
-      ? `<span class="schip ok">✓ ${T("Säker prognos, modellerna är överens", "Confident forecast, the models agree")}</span>`
-      : `<span class="schip warn">± ${T(`Osäker prognos, ${rangeTxt(range72)}`, `Uncertain forecast, ${rangeTxt(range72)}`)}</span>`) : "",
     bestV >= 3 && bq.kind ? `<span class="schip sq-${snowqKey(bq)}">❄ ${snowqText(bq)} ${rel(bestD)}</span>` : "",
     thinNow ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
     rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
@@ -2712,8 +2731,8 @@ function drawForecast(){
   const dmax = Math.max(5, ...days10.map(d => Math.max(top.daily.snowfall_sum[top.daily.time.indexOf(d)] || 0, d >= today ? dayRange(d)?.max || 0 : 0)));
   $("#stats").innerHTML = `<section class="sum" aria-label="${T("Sammanfattning", "Summary")}">
     <div class="sumtop">
-      <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${uSnowN(next72)}<small> ${SNOW_U}</small></div></div>
-      <div class="sumside">${range72 && range72.max >= 1 ? `${T("Modellerna", "The models")} <b>${rangeTxt(range72)}</b><br>` : ""}${T("Senaste 3 dygn", "Last 3 days")} <b>${uSnow(past72)}</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${uSnow(F.depth * 100)}</b>` : ""}</div>
+      <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${uSnowN(next72)}<small> ${SNOW_U}</small></div>${modelBar(range72, next72)}</div>
+      <div class="sumside">${T("Senaste 3 dygn", "Last 3 days")} <b>${uSnow(past72)}</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${uSnow(F.depth * 100)}</b>` : ""}</div>
     </div>
     <p class="sumtext">${sentence}</p>
     ${chips ? `<div class="schips">${chips}</div>` : ""}
@@ -2723,11 +2742,11 @@ function drawForecast(){
         // Lift the number above the model line when the line reaches higher than the bar
         const lift = whisk ? Math.max(0, g.max / dmax * 70 - Math.max(2, v / dmax * 70)) : 0;
         return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${whisk ? ` (${T("modellerna", "models")} ${rangeTxt(g)})` : ""}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v" style="margin-bottom:${lift}px">${v >= 0.5 ? uSnowN(v, 0) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div>${whisk
-          ? `<i class="rng" style="bottom:${g.min / dmax * 70}px;height:${Math.max(2, (g.max - g.min) / dmax * 70)}px"></i>` : ""}</div>`; }).join("")}</div>
+          ? `<i class="rng ${modelsAgree(g) ? "ok" : "warn"}" style="bottom:${g.min / dmax * 70}px;height:${Math.max(3, (g.max - g.min) / dmax * 70)}px"></i>` : ""}</div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Strecket visar spannet mellan vädermodellerna ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
-      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The line shows the spread between the weather models ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
+    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Det genomskinliga fältet visar spannet mellan vädermodellerna, orange när de är oense, ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
+      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The see-through band shows the spread between the weather models, orange when they disagree, ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
   </section>`;
 
   // --- Days ---
@@ -2744,13 +2763,13 @@ function drawForecast(){
     const hm = Math.max(1, ...snowH, ...rainH.map(x => x * 0.7));
     return `<button type="button" class="daycard ${best ? "best" : ""}" data-d="${d}" aria-expanded="${open}">
       <span class="d">${k === 0 ? T("Idag", "Today") : cap(WD[wdOf(d)])}<small>${+d.slice(8)}/${+d.slice(5, 7)}</small></span>
-      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${uSnowN(v)}<small> ${SNOW_U}</small></span>${v >= 3 && qOf(d).kind ? `<span class="sq sq-${snowqKey(qOf(d))}">${snowqText(qOf(d))}</span>` : ""}</span>
+      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${uSnowN(v)}<small> ${SNOW_U}</small>${(() => { const g = dayRange(d);
+        return g && g.max >= 2 ? (modelsAgree(g) ? `<span class="unc ok">✓ ${T("säker", "confident")}</span>` : `<span class="unc warn">± ${rangeTxt(g)}</span>`) : ""; })()}</span>${v >= 3 && qOf(d).kind ? `<span class="sq sq-${snowqKey(qOf(d))}">${snowqText(qOf(d))}</span>` : ""}</span>
       <span class="right">${dayBadge(lv, rel(d))}<span class="chev" aria-hidden="true">▾</span></span>
       <span class="sub">
         <span>${T("Nollgräns", "Freezing level")} ${fls.length ? `${uHN(Math.round(Math.min(...fls) / 10) * 10)}–${uH(Math.round(Math.max(...fls) / 10) * 10)}` : "–"}${rn ? ` · <span class="r">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
         <span>${T("Vind", "Wind")} ${dir != null ? CMP[Math.round(((dir % 360) + 360) % 360 / 45) % 8] + " " : ""}${uWindN(sp)}, ${T("byar", "gusts")} ${uWind(g)}</span>
         <span>${uTempN(top.daily.temperature_2m_min[i])} ${T("till", "to")} ${uTemp(top.daily.temperature_2m_max[i])}</span>
-        ${dayRange(d)?.max >= 1 ? `<span>${T("Modellerna", "Models")} ${rangeTxt(dayRange(d))}</span>` : ""}
       </span>
       <span class="exp">${T(`Snö per timme på mitten (${uH(r.mid)})${rainH.some(x => x >= 0.2) ? ", grönt är regn" : ""}`, `Snow per hour at mid height (${uH(r.mid)})${rainH.some(x => x >= 0.2) ? ", green is rain" : ""}`)}
         <span class="hbars">${hs.map((h, j) => { const rr = rainH[j] >= 0.2 && isRain(snowH[j], rainH[j]); const val = rr ? rainH[j] * 0.7 : snowH[j];
