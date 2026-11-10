@@ -208,10 +208,16 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .schip .alv{margin:0}
 .rainfill{background:repeating-linear-gradient(135deg,var(--toilet) 0 3px,color-mix(in srgb,var(--toilet) 30%,var(--surface)) 3px 6px)}
 .mdays,.mlab{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px}
-.mdays{align-items:end;height:92px;border-bottom:1px solid var(--line);margin-top:4px}
+.mdays{align-items:end;height:104px;border-bottom:1px solid var(--line);margin-top:4px}
 .mdays .col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px}
 .mdays .bar{width:74%;max-width:36px;border-radius:3px 3px 0 0;background:var(--future)}
 .mdays .bar.past{background:var(--snow)}
+.mdays .col{position:relative}
+.mdays .rng{position:absolute;left:50%;width:2px;margin-left:-1px;background:var(--ink);opacity:.55;border-radius:1px}
+.mdays .rng::before,.mdays .rng::after{content:"";position:absolute;left:-3px;width:8px;height:2px;background:inherit}
+.mdays .rng::before{top:0} .mdays .rng::after{bottom:0}
+.daycard .mlist{display:block;margin-top:8px}
+.daycard .mlist b{color:var(--ink)}
 .mdays .v{font:600 10.5px var(--mono)}
 .mlab{text-align:center;font:500 10px var(--mono);color:var(--muted)}
 .mlab b{color:var(--ink)}
@@ -2812,7 +2818,37 @@ async function loadForecast(r){
   if (!fcOpen.has("init:" + r.id)) fcOpen = new Set(["init:" + r.id]);
   drawForecast();
   drawAvalWeather();
+  loadModels(r);
 }
+
+// Several weather models for the snow at the top, so the page can say how sure the forecast is: the same answer
+// from all of them is a confident forecast, a wide spread an uncertain one. Fetched after the main forecast, so the
+// page never waits for it; on failure the page simply shows no range. Each area gets the global models plus the
+// best regional one. Some models stop earlier (ICON ~7 days, Météo-France ~4); a day uses the models that cover it.
+const MODELS = {
+  japan: ["ecmwf_ifs025", "icon_seamless", "gfs_seamless", "jma_seamless"],
+  scandinavia: ["ecmwf_ifs025", "icon_seamless", "gfs_seamless", "metno_seamless"],
+  alps: ["ecmwf_ifs025", "icon_seamless", "gfs_seamless", "meteofrance_seamless"],
+};
+const MODEL_NAME = {ecmwf_ifs025: "ECMWF", icon_seamless: "ICON", gfs_seamless: "GFS", jma_seamless: "JMA",
+  metno_seamless: "MET Norway", meteofrance_seamless: "Météo-France"};
+async function loadModels(r){
+  const names = MODELS[r.area] || MODELS.alps;
+  const p = new URLSearchParams({latitude: r.lat, longitude: r.lon, elevation: r.top, hourly: "snowfall", daily: "snowfall_sum",
+    models: names.join(","), past_days: "3", forecast_days: "10", timezone: "auto"});
+  try {
+    const res = await netFetch("https://api.open-meteo.com/v1/forecast?" + p);
+    if (!res.ok) return;
+    const d = await res.json();
+    if (fcData?.r.id !== r.id) return;
+    fcData.models = {names, time: d.hourly.time, dtime: d.daily.time,
+      hourly: Object.fromEntries(names.map(m => [m, d.hourly["snowfall_" + m]])),
+      daily: Object.fromEntries(names.map(m => [m, d.daily["snowfall_sum_" + m]]))};
+    drawForecast();
+  } catch {}
+}
+// How far apart the models may be and still count as agreeing: 5 cm, or 40 % of the middle value when that is more
+const modelsAgree = g => g.max - g.min <= Math.max(5, 0.4 * g.mid);
 
 // ---------- Resort forecast: a summary on top, then the tabs Days / Table / Heights ----------
 // Everything is drawn from the same Open-Meteo answer: hourly snow, rain, freezing level, temperature and wind
@@ -2867,6 +2903,20 @@ function drawForecast(){
   const fluffy = d => { const k = qOf(d).kind; return !k || k === "dry" || k === "powder"; };
   const powderOn = (d, v) => v >= POWDER_CM && deepEnough(d) && fluffy(d);
   const thinNow = F.depth != null && F.depth * 100 < BASE_OK_CM;
+  // Spread between the weather models (null until they arrive, or with fewer than two covering the time)
+  const M = F.models;
+  const spread = vals => { const v = vals.filter(x => x != null).sort((a, b) => a - b);
+    return v.length >= 2 ? {min: v[0], max: v.at(-1), mid: v[Math.floor(v.length / 2)], n: v.length} : null; };
+  const dayModels = d => M ? M.names.map(m => ({m, v: M.daily[m]?.[M.dtime.indexOf(d)]})).filter(x => x.v != null) : [];
+  const dayRange = d => spread(dayModels(d).map(x => x.v));
+  const range72 = (() => {
+    if (!M) return null;
+    const k = M.time.indexOf(H[idx]);
+    if (k < 0) return null;
+    return spread(M.names.map(m => { const seg = (M.hourly[m] || []).slice(k + 1, k + 73);
+      return seg.length === 72 && seg.every(v => v != null) ? seg.reduce((a, b) => a + b, 0) : null; }));
+  })();
+  const rangeTxt = g => `${uSnowN(g.min)}–${uSnow(g.max)}`;
 
   // --- Summary ---
   const next72 = sumRange(top.hourly.snowfall, idx + 1, idx + 73), past72 = sumRange(top.hourly.snowfall, idx - 72, idx + 1);
@@ -2893,6 +2943,9 @@ function drawForecast(){
     thinNow ? (F.depth < 0.01 ? T("Vädermodellen har ingen snö vid toppen ännu. Kolla att orten har öppnat.", "The weather model has no snow at the top yet. Check that the resort has opened.")
       : T(`Med bara ca ${uSnow(F.depth * 100)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${uSnow(F.depth * 100)} of snow you can rarely ski off-piste. Check that the resort has opened.`)) : ""].filter(Boolean).join(" ");
   const chips = [
+    range72 && range72.max >= 2 ? (modelsAgree(range72)
+      ? `<span class="schip ok">✓ ${T("Säker prognos, modellerna är överens", "Confident forecast, the models agree")}</span>`
+      : `<span class="schip warn">± ${T(`Osäker prognos, ${rangeTxt(range72)}`, `Uncertain forecast, ${rangeTxt(range72)}`)}</span>`) : "",
     bestV >= 3 && bq.kind ? `<span class="schip sq-${snowqKey(bq)}">❄ ${snowqText(bq)} ${rel(bestD)}</span>` : "",
     thinNow ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
     rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
@@ -2902,21 +2955,25 @@ function drawForecast(){
     avl.today ? `<span class="schip">${dayBadge(avl.today, T("idag", "today"))} ${T("Lavinfara idag", "Avalanche danger today")}: ${DANGER[avl.today].n.toLowerCase()}</span>` : "",
   ].join("");
   const days10 = top.daily.time.slice(Math.max(0, todayIdx - 3), todayIdx + 7);
-  const dmax = Math.max(5, ...days10.map(d => top.daily.snowfall_sum[top.daily.time.indexOf(d)] || 0));
+  const dmax = Math.max(5, ...days10.map(d => Math.max(top.daily.snowfall_sum[top.daily.time.indexOf(d)] || 0, d >= today ? dayRange(d)?.max || 0 : 0)));
   $("#stats").innerHTML = `<section class="sum" aria-label="${T("Sammanfattning", "Summary")}">
     <div class="sumtop">
       <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${uSnowN(next72)}<small> ${SNOW_U}</small></div></div>
-      <div class="sumside">${T("Senaste 3 dygn", "Last 3 days")} <b>${uSnow(past72)}</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${uSnow(F.depth * 100)}</b>` : ""}</div>
+      <div class="sumside">${range72 && range72.max >= 1 ? `${T("Modellerna", "The models")} <b>${rangeTxt(range72)}</b><br>` : ""}${T("Senaste 3 dygn", "Last 3 days")} <b>${uSnow(past72)}</b>${F.depth != null ? `<br>${T("Snödjup ca", "Snow depth about")} <b>${uSnow(F.depth * 100)}</b>` : ""}</div>
     </div>
     <p class="sumtext">${sentence}</p>
     ${chips ? `<div class="schips">${chips}</div>` : ""}
     <div>
       <div class="mdays" style="--n:${days10.length}">${days10.map(d => { const i = top.daily.time.indexOf(d), v = top.daily.snowfall_sum[i] || 0, past = d < today, rn = !past && dayRain(d) >= 1;
-        return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v">${v >= 0.5 ? uSnowN(v, 0) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div></div>`; }).join("")}</div>
+        const g = !past ? dayRange(d) : null, whisk = g && g.max >= 1;
+        // Lift the number above the model line when the line reaches higher than the bar
+        const lift = whisk ? Math.max(0, g.max / dmax * 70 - Math.max(2, v / dmax * 70)) : 0;
+        return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${whisk ? ` (${T("modellerna", "models")} ${rangeTxt(g)})` : ""}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v" style="margin-bottom:${lift}px">${v >= 0.5 ? uSnowN(v, 0) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div>${whisk
+          ? `<i class="rng" style="bottom:${g.min / dmax * 70}px;height:${Math.max(2, (g.max - g.min) / dmax * 70)}px"></i>` : ""}</div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
-      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
+    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Strecket visar spannet mellan vädermodellerna ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
+      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The line shows the spread between the weather models ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
   </section>`;
 
   // --- Days ---
@@ -2939,11 +2996,13 @@ function drawForecast(){
         <span>${T("Nollgräns", "Freezing level")} ${fls.length ? `${uHN(Math.round(Math.min(...fls) / 10) * 10)}–${uH(Math.round(Math.max(...fls) / 10) * 10)}` : "–"}${rn ? ` · <span class="r">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
         <span>${T("Vind", "Wind")} ${dir != null ? CMP[Math.round(((dir % 360) + 360) % 360 / 45) % 8] + " " : ""}${uWindN(sp)}, ${T("byar", "gusts")} ${uWind(g)}</span>
         <span>${uTempN(top.daily.temperature_2m_min[i])} ${T("till", "to")} ${uTemp(top.daily.temperature_2m_max[i])}</span>
+        ${dayRange(d)?.max >= 1 ? `<span>${T("Modellerna", "Models")} ${rangeTxt(dayRange(d))}</span>` : ""}
       </span>
       <span class="exp">${T(`Snö per timme på mitten (${uH(r.mid)})${rainH.some(x => x >= 0.2) ? ", grönt är regn" : ""}`, `Snow per hour at mid height (${uH(r.mid)})${rainH.some(x => x >= 0.2) ? ", green is rain" : ""}`)}
         <span class="hbars">${hs.map((h, j) => { const rr = rainH[j] >= 0.2 && isRain(snowH[j], rainH[j]); const val = rr ? rainH[j] * 0.7 : snowH[j];
           return `<i class="${rr ? "r" : ""}" style="height:${val > 0.05 ? Math.max(2, val / hm * 56) : 0}px" title="${H[h].slice(11, 16)}: ${rr ? uRain(rainH[j]) + " " + T("regn", "rain") : uSnow(snowH[j], 1)}"></i>`; }).join("")}</span>
-        <span class="hlab"><span>00</span><span>06</span><span>12</span><span>18</span></span></span>
+        <span class="hlab"><span>00</span><span>06</span><span>12</span><span>18</span></span>
+        ${dayRange(d)?.max >= 1 ? `<span class="mlist">${T("Snö vid toppen per modell", "Snow at the top per model")}: ${dayModels(d).map(x => `${MODEL_NAME[x.m]} <b>${uSnowN(x.v)}</b>`).join(" · ")} ${SNOW_U}</span>` : ""}</span>
     </button>`;
   }).join("");
   $("#fp-days").querySelectorAll(".daycard").forEach(b => b.onclick = () => {
