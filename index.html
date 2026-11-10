@@ -195,6 +195,14 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .schips{display:flex;flex-wrap:wrap;gap:6px}
 .schip{font-size:12.5px;border-radius:999px;padding:3px 10px;background:var(--bg);display:inline-flex;align-items:center;gap:6px}
 .schip.ok{background:color-mix(in srgb,var(--snow) 14%,var(--surface))}
+/* Snow type: a pill on the day cards and in the summary chips */
+.sq{display:inline-block;margin-top:4px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
+.sq-dry,.sq-powder{background:var(--snow-soft);color:var(--snow)}
+.sq-light{background:var(--bg);color:var(--ink)}
+.sq-heavy{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.sq-wet{background:color-mix(in srgb,var(--toilet) 16%,var(--surface));color:var(--toilet)}
+.schip.sq-dry,.schip.sq-powder,.schip.sq-heavy,.schip.sq-wet{border-color:transparent}
+.schip.sq-light{background:var(--bg)}
 .schip.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
 .schip.rain{background:color-mix(in srgb,var(--toilet) 16%,var(--surface))}
 .schip .alv{margin:0}
@@ -1021,7 +1029,7 @@ const inRegion = (r, f) => f === "all" || (f === "fav" ? favs.has(r.id) : f === 
 // The choices for the region filter in an area, in display order. head: a country, sub: a region in it.
 function regionItems(a){
   const cs = countriesOf(a), out = [];
-  if (favCount(a)) out.push({v: "fav", label: `★ ${T("Mina favoriter", "My favourites")} (${favCount(a)})`});
+  out.push({v: "fav", label: `★ ${T("Mina favoriter", "My favourites")}${favCount(a) ? ` (${favCount(a)})` : ""}`});   // always there, also when empty
   if (cs.length < 2){
     out.push({v: "all", label: T("Alla regioner", "All regions")});
     regionsOf(a).forEach(g => out.push({v: g, label: g}));
@@ -1186,7 +1194,7 @@ const starBtn = r => `<button type="button" class="star" data-fav="${r.id}" aria
 
 // ---------- State ----------
 const state = {
-  mode: store.get("yr-mode") || "past",       // "past" | "fut"
+  mode: store.get("yr-mode") === "fut" ? "fut" : "past",       // "past" | "fut"
   area: AREAS[store.get("yr-area")] ? store.get("yr-area") : "japan",
   region: "all",                               // set from storage per area below
   overview: null,                              // {resortId: {past72, next72, daily, dailyTimes, todayIdx}}
@@ -1195,7 +1203,45 @@ const state = {
 };
 
 state.region = store.get("yr-region-" + state.area) || "all";
-if (state.region === "fav" && !favCount(state.area)) state.region = "all";
+
+// ---------- Snow quality ----------
+// The type of new snow comes from the temperature and wind while it falls (weighted by how much falls each hour)
+// and any rain in the same hours.
+const SNOWQ = {
+  dry:    {n: T("Torrt puder", "Dry powder")},
+  powder: {n: T("Puder", "Powder")},
+  heavy:  {n: T("Tung snö", "Heavy snow")},
+  wet:    {n: T("Blöt snö", "Wet snow")},
+};
+const WINDY_MS = 8;      // mean wind while it snows: above this the snow is packed and blown into drifts
+function snowKind(t, rain){
+  if (t == null) return null;
+  if (t > 0.5 || rain >= 2) return "wet";
+  return t <= -7 ? "dry" : t <= -3 ? "powder" : "heavy";
+}
+// Per calendar day from hourly data: snow, snowfall-weighted temperature and wind, and rain
+function snowDays(time, h, days){
+  const idx = new Map(time.map((t, i) => [t, i]));
+  const out = {snow: [], t: [], w: [], rain: []};
+  for (const day of days){
+    const i0 = idx.get(day + "T00:00");
+    if (i0 == null){ for (const k in out) out[k].push(null); continue; }
+    let snow = 0, tot = 0, ts = 0, ws = 0, rain = 0;
+    for (let i = i0; i < Math.min(time.length, i0 + 24); i++){
+      const v = h.snowfall[i] || 0;
+      snow += v; rain += h.rain?.[i] || 0;
+      if (v > 0){ tot += v; ts += v * (h.temperature_2m?.[i] ?? 0); ws += v * (h.wind_speed_10m?.[i] ?? 0); }
+    }
+    out.snow.push(snow); out.t.push(tot ? ts / tot : null); out.w.push(tot ? ws / tot : null); out.rain.push(rain);
+  }
+  return out;
+}
+// The snow type of day k of snowDays()
+const snowDay = (p, k) => { const snow = p.snow[k] || 0;
+  return snow < 1 ? {snow, kind: null, windy: false} : {snow, kind: snowKind(p.t[k], p.rain[k] || 0), windy: (p.w[k] || 0) >= WINDY_MS}; };
+// It is only powder with at least POWDER_CM of new snow; less cold, light snow is "dry new snow"
+const snowqKey = q => !q?.kind ? "" : (q.kind === "dry" || q.kind === "powder") && q.snow < POWDER_CM ? "light" : q.kind;
+const snowqText = q => { const k = snowqKey(q); return !k ? "" : (k === "light" ? T("Torr nysnö", "Dry new snow") : SNOWQ[k].n) + (q.windy ? T(" i hård vind", " in strong wind") : ""); };
 
 // ---------- Overview data (one request for all resorts in the chosen area) ----------
 // Snow for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_snow.py, workflow "Publicera appen").
@@ -1266,7 +1312,6 @@ async function loadOverview(){
 let overviewMap = null, markerLayer = null;
 
 function renderOverview(){
-  if (state.region === "fav" && !favCount(state.area)) state.region = "all";   // the last favourite was removed on its page
   const app = $("#app");
   app.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
@@ -1404,10 +1449,8 @@ function wireList(list, refill){
   list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
   list.querySelectorAll(".star").forEach(b => b.onclick = () => {
     const on = toggleFav(b.dataset.fav);
-    const wasFav = state.region === "fav";
-    if (wasFav && !favCount(state.area)){ state.region = "all"; store.set("yr-region-" + state.area, "all"); }
     $("#q").value = regionLabel(state.area, state.region);
-    if (wasFav) return fillOverview(false, state.region === "fav");   // a removed favourite leaves the list and the map
+    if (state.region === "fav") return fillOverview(false, true);   // a removed favourite leaves the list and the map
     b.setAttribute("aria-pressed", on); b.textContent = on ? "★" : "☆";
     b.title = on ? T("Ta bort från favoriter", "Remove from favourites") : T("Lägg till som favorit", "Add to favourites");
   });
@@ -1421,7 +1464,7 @@ function setArea(a){
   if (a === state.area) return;
   state.area = a; state.showAll = false; store.set("yr-area", a);
   state.region = store.get("yr-region-" + a) || "all";
-  if (!areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
+  if (state.region !== "fav" && !areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
   renderOverview();
   refreshOverview();
 }
@@ -1476,8 +1519,13 @@ function fillOverview(listOnly = false, keepView = false){
         <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${uSnow(other)}</span>
       </span>
     </button>${starBtn(r)}</div>`;
-  }) || `<div class="msg">${state.region === "fav" ? T("Inga favoriter här ännu. Tryck på stjärnan vid en ort för att lägga till den.", "No favourites here yet. Tap the star next to a resort to add it.") : T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`;
+  }) || (state.region === "fav"
+    ? `<div class="msg">${T(`Inga favoriter i ${AREAS[state.area].name} ännu. Tryck på stjärnan ☆ vid en ort för att spara den här.`, `No favourites in ${AREAS[state.area].name} yet. Tap the star ☆ next to a resort to save it here.`)}
+        <button type="button" class="more" id="favall">${T("Visa alla orter", "Show all resorts")}</button></div>`
+    : `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`);
   wireList(list, () => fillOverview(true));
+  const favAll = $("#favall");
+  if (favAll) favAll.onclick = () => { state.region = "all"; store.set("yr-region-" + state.area, "all"); $("#q").value = regionLabel(state.area, "all"); fillOverview(); };
   if (listOnly) return;
 
   // Map markers sized and coloured by the selected metric
@@ -2567,7 +2615,11 @@ function drawForecast(){
   // Modelled snow depth at the top around midday, in cm (null when the model gives none)
   const depthAt = d => { const h = hoursOf(d), v = top.hourly.snow_depth?.[h[12] ?? h[0]]; return v == null ? null : v * 100; };
   const deepEnough = d => { const v = depthAt(d); return v == null || v >= BASE_OK_CM; };
-  const powderOn = (d, v) => v >= POWDER_CM && deepEnough(d);
+  // Snow type per calendar day at the top, from the temperature and wind while it falls
+  const qCal = snowDays(H, top.hourly, top.daily.time);
+  const qOf = d => snowDay(qCal, top.daily.time.indexOf(d));
+  const fluffy = d => { const k = qOf(d).kind; return !k || k === "dry" || k === "powder"; };
+  const powderOn = (d, v) => v >= POWDER_CM && deepEnough(d) && fluffy(d);
   const thinNow = F.depth != null && F.depth * 100 < BASE_OK_CM;
 
   // --- Summary ---
@@ -2581,17 +2633,21 @@ function drawForecast(){
   const baseSnow72 = sumRange(base.hourly.snowfall, idx + 1, idx + 73);
   let gust = 0, gustAt = idx;
   for (let i = idx + 1; i < Math.min(idx + 73, H.length); i++) if ((top.hourly.wind_gusts_10m?.[i] || 0) > gust){ gust = top.hourly.wind_gusts_10m[i]; gustAt = i; }
-  const lead = powderOn(bestD, bestV) ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${T("vid toppen", "at the top")}.`
-    : bestV >= POWDER_CM ? `<b>${uSnow(bestV)} ${T("nysnö", "new snow")} ${rel(bestD)}</b>, ${T("men snötäcket är tunt.", "but the snowpack is thin.")}`
-    : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${T("vid toppen", "at the top")}.`
+  const bq = qOf(bestD), bqText = snowqText(bq).toLowerCase();
+  const lead = powderOn(bestD, bestV) ? `<b>${T("Puderdag", "Powder day")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${bqText || T("nysnö", "new snow")} ${T("vid toppen", "at the top")}${bq.windy ? T(", så räkna med packad snö och drivor på läsidorna", ", so expect packed snow and drifts on lee slopes") : ""}.`
+    : bestV >= POWDER_CM && !fluffy(bestD) ? `<b>${uSnow(bestV)} ${T("nysnö", "new snow")} ${rel(bestD)}</b>, ${bq.kind === "wet" ? T("men den blir blöt och tung.", "but it will be wet and heavy.") : T("men den blir tung.", "but it will be heavy.")}`
+    : bestV >= POWDER_CM ? `<b>${uSnow(bestV)} ${bqText || T("nysnö", "new snow")} ${rel(bestD)}</b>, ${T("men snötäcket är tunt.", "but the snowpack is thin.")}`
+    : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${bqText ? bqText + " " : ""}${T("vid toppen", "at the top")}.`
     : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${uSnow(sum7)} ${T("totalt vid toppen", "in all at the top")}.`
     : `<b>${T("Ingen snö i sikte", "No snow in sight")}</b> ${T("den närmaste veckan.", "for the coming week.")}`;
   const sentence = [lead,
     peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : "",
     rainDays.length ? `${T("Regn i dalen", "Rain at the base")} ${rainDays.map(rel).join(T(" och ", " and "))}.`
       : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : "",
-    thinNow ? T(`Med bara ca ${uSnow(F.depth * 100)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${uSnow(F.depth * 100)} of snow you can rarely ski off-piste. Check that the resort has opened.`) : ""].filter(Boolean).join(" ");
+    thinNow ? (F.depth < 0.01 ? T("Vädermodellen har ingen snö vid toppen ännu. Kolla att orten har öppnat.", "The weather model has no snow at the top yet. Check that the resort has opened.")
+      : T(`Med bara ca ${uSnow(F.depth * 100)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only about ${uSnow(F.depth * 100)} of snow you can rarely ski off-piste. Check that the resort has opened.`)) : ""].filter(Boolean).join(" ");
   const chips = [
+    bestV >= 3 && bq.kind ? `<span class="schip sq-${snowqKey(bq)}">❄ ${snowqText(bq)} ${rel(bestD)}</span>` : "",
     thinNow ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
     rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
       : baseSnow72 >= 2 ? `<span class="schip ok">❄ ${T("Snö i hela backen", "Snow on the whole mountain")}</span>` : "",
@@ -2613,8 +2669,8 @@ function drawForecast(){
         return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><span class="v">${v >= 0.5 ? uSnowN(v, 0) : ""}</span><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${Math.max(2, v / dmax * 70)}px"></div></div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö och snötäcket är minst ${uSnow(BASE_OK_CM)}.`,
-      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new snow on a snowpack of at least ${uSnow(BASE_OK_CM)}.`)}</p>
+    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
+      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
   </section>`;
 
   // --- Days ---
@@ -2631,7 +2687,7 @@ function drawForecast(){
     const hm = Math.max(1, ...snowH, ...rainH.map(x => x * 0.7));
     return `<button type="button" class="daycard ${best ? "best" : ""}" data-d="${d}" aria-expanded="${open}">
       <span class="d">${k === 0 ? T("Idag", "Today") : cap(WD[wdOf(d)])}<small>${+d.slice(8)}/${+d.slice(5, 7)}</small></span>
-      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${uSnowN(v)}<small> ${SNOW_U}</small></span></span>
+      <span>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}<span class="amt ${v < 3 ? "zero" : ""}" style="display:block">${uSnowN(v)}<small> ${SNOW_U}</small></span>${v >= 3 && qOf(d).kind ? `<span class="sq sq-${snowqKey(qOf(d))}">${snowqText(qOf(d))}</span>` : ""}</span>
       <span class="right">${dayBadge(lv, rel(d))}<span class="chev" aria-hidden="true">▾</span></span>
       <span class="sub">
         <span>${T("Nollgräns", "Freezing level")} ${fls.length ? `${uHN(Math.round(Math.min(...fls) / 10) * 10)}–${uH(Math.round(Math.max(...fls) / 10) * 10)}` : "–"}${rn ? ` · <span class="r">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
