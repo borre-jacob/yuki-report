@@ -1268,9 +1268,22 @@ const DEM_SIZE = 512, DEM_MAXZ = 14, DEM_BASEZ = 12, SLOPE_MINZ = 12, SMOOTH_M =
 let slopeMode = store.get("yr-slope") ?? 1;   // 0 off, 1 all steep slopes (default), 2 only those the bulletin points out
 let slopeLayer = null, slopeFilter = null, avalMap = null, avalMapTouched = false, avalLiftPts = [];
 // The map in the avalanche panel: base map, the slope layer, the resort and its lifts for orientation
+// Built only when it comes near the screen, so a visit that never scrolls down fetches no elevation tiles
+let avalMapObs = null;
 function initAvalMap(r){
   if (avalMap){ avalMap.remove(); avalMap = null; }
+  avalMapObs?.disconnect(); avalMapObs = null;
   const el = $("#avalmap"); if (!el) return;
+  if ("IntersectionObserver" in window){
+    avalMapObs = new IntersectionObserver(es => {
+      if (!es.some(e => e.isIntersecting)) return;
+      avalMapObs.disconnect(); avalMapObs = null;
+      if (location.hash.slice(1) === r.id && el.isConnected) buildAvalMap(r, el);
+    }, {rootMargin: "300px"});
+    avalMapObs.observe(el);
+  } else buildAvalMap(r, el);
+}
+function buildAvalMap(r, el){
   avalMap = L.map(el, {scrollWheelZoom: false});
   avalMapTouched = false;
   ["pointerdown", "wheel", "touchstart", "keydown"].forEach(ev => el.addEventListener(ev, () => avalMapTouched = true, {once: true, passive: true}));
@@ -1307,48 +1320,82 @@ const fitAvalMap = r => {
 };
 const demCache = new Map();
 // Slope (degrees), aspect sector (0 = N … 7 = NW) and height for every pixel of one elevation tile
+// Heights, slope (degrees) and aspect sector (0 = N … 7 = NW) for every pixel of one elevation tile.
+// px: RGBA bytes of the S×S tile. Runs in a Web Worker when the browser can (see demWorker), so scrolling stays smooth.
+function demCompute(px, z, y, S, SMOOTH_M){
+  const n = S * S, raw = new Float32Array(n);
+  for (let i = 0; i < n; i++) raw[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
+  const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / 2 ** z)));
+  const res = Math.cos(lat) * 2 * Math.PI * 6378137 / (S * 2 ** z);   // metres per pixel
+  // Box blur over about 2 × SMOOTH_M, done as two passes
+  const R = Math.max(1, Math.min(6, Math.round(SMOOTH_M / res))), tmp = new Float32Array(n), h = new Float32Array(n);
+  const blur = (src, dst, dx, dy) => {
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
+      let sum = 0, cnt = 0;
+      for (let t = -R; t <= R; t++){
+        const a = i + t * dx, b = j + t * dy;
+        if (a >= 0 && a < S && b >= 0 && b < S){ sum += src[b * S + a]; cnt++; }
+      }
+      dst[j * S + i] = sum / cnt;
+    }
+  };
+  blur(raw, tmp, 1, 0); blur(tmp, h, 0, 1);
+  const slope = new Uint8Array(n), sector = new Uint8Array(n);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
+    const at = (a, b) => h[Math.min(S - 1, Math.max(0, b)) * S + Math.min(S - 1, Math.max(0, a))];
+    const dx = (at(i + 1, j) - at(i - 1, j)) / (2 * res), dy = (at(i, j + 1) - at(i, j - 1)) / (2 * res);   // east, south
+    const k = j * S + i;
+    slope[k] = Math.min(90, Math.round(Math.atan(Math.hypot(dx, dy)) * 180 / Math.PI));
+    // Aspect: the way the slope faces (downhill), clockwise from north
+    sector[k] = Math.round(((Math.atan2(-dx, dy) * 180 / Math.PI + 360) % 360) / 45) % 8;
+  }
+  return {h, slope, sector};
+}
+// The worker fetches and decodes the tile itself and sends the arrays back without copying.
+// Browsers without OffscreenCanvas in workers (older Safari) do it on the page instead.
+let demWorker = null, demJobs = new Map(), demJobId = 0;
+try {
+  if (typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined"){
+    const src = `${demCompute.toString()}
+      onmessage = async e => {
+        const {id, url, z, y, S, SM} = e.data;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(res.status);
+          const bmp = await createImageBitmap(await res.blob());
+          const c = new OffscreenCanvas(S, S), g = c.getContext("2d");
+          g.drawImage(bmp, 0, 0, S, S);
+          const d = demCompute(g.getImageData(0, 0, S, S).data, z, y, S, SM);
+          postMessage({id, d}, [d.h.buffer, d.slope.buffer, d.sector.buffer]);
+        } catch (err) { postMessage({id, err: String(err)}); }
+      };`;
+    demWorker = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
+    demWorker.onmessage = e => { const j = demJobs.get(e.data.id); if (!j) return; demJobs.delete(e.data.id); e.data.err ? j.fail(new Error(e.data.err)) : j.ok(e.data.d); };
+    demWorker.onerror = () => { demWorker = null; for (const j of demJobs.values()) j.fail(new Error("worker")); demJobs.clear(); };
+  }
+} catch { demWorker = null; }
 function demTile(z, x, y){
   const key = `${z}/${x}/${y}`;
   if (demCache.has(key)) return demCache.get(key);
-  const p = new Promise((ok, fail) => {
+  const url = DEM_URL(z, x, y);
+  const onPage = () => new Promise((ok, fail) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      const S = DEM_SIZE, n = S * S;
-      const c = document.createElement("canvas"); c.width = c.height = S;
-      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(img, 0, 0, S, S);
-      const px = g.getImageData(0, 0, S, S).data;
-      const raw = new Float32Array(n);
-      for (let i = 0; i < n; i++) raw[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
-      const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / 2 ** z)));
-      const res = Math.cos(lat) * 2 * Math.PI * 6378137 / (S * 2 ** z);   // metres per pixel
-      // Box blur over about 2 × SMOOTH_M, done as two passes
-      const R = Math.max(1, Math.min(6, Math.round(SMOOTH_M / res))), tmp = new Float32Array(n), h = new Float32Array(n);
-      const blur = (src, dst, dx, dy) => {
-        for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
-          let sum = 0, cnt = 0;
-          for (let t = -R; t <= R; t++){
-            const a = i + t * dx, b = j + t * dy;
-            if (a >= 0 && a < S && b >= 0 && b < S){ sum += src[b * S + a]; cnt++; }
-          }
-          dst[j * S + i] = sum / cnt;
-        }
-      };
-      blur(raw, tmp, 1, 0); blur(tmp, h, 0, 1);
-      const slope = new Uint8Array(n), sector = new Uint8Array(n);
-      for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
-        const at = (a, b) => h[Math.min(S - 1, Math.max(0, b)) * S + Math.min(S - 1, Math.max(0, a))];
-        const dx = (at(i + 1, j) - at(i - 1, j)) / (2 * res), dy = (at(i, j + 1) - at(i, j - 1)) / (2 * res);   // east, south
-        const k = j * S + i;
-        slope[k] = Math.min(90, Math.round(Math.atan(Math.hypot(dx, dy)) * 180 / Math.PI));
-        // Aspect: the way the slope faces (downhill), clockwise from north
-        sector[k] = Math.round(((Math.atan2(-dx, dy) * 180 / Math.PI + 360) % 360) / 45) % 8;
-      }
-      ok({h, slope, sector});
+      const c = document.createElement("canvas"); c.width = c.height = DEM_SIZE;
+      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(img, 0, 0, DEM_SIZE, DEM_SIZE);
+      ok(demCompute(g.getImageData(0, 0, DEM_SIZE, DEM_SIZE).data, z, y, DEM_SIZE, SMOOTH_M));
     };
     img.onerror = () => fail(new Error("dem"));
-    img.src = DEM_URL(z, x, y);
+    img.src = url;
   });
+  const inWorker = () => new Promise((ok, fail) => {
+    const id = ++demJobId;
+    demJobs.set(id, {ok, fail});
+    demWorker.postMessage({id, url, z, y, S: DEM_SIZE, SM: SMOOTH_M});
+  });
+  // A missing tile (no detailed data there) fails in both; any other worker failure tries on the page
+  const p = demWorker ? inWorker().catch(e => /^(Error: )?4\d\d$/.test(e.message) ? Promise.reject(e) : onPage()) : onPage();
   demCache.set(key, p);
   p.catch(() => demCache.delete(key));
   if (demCache.size > 60) demCache.delete(demCache.keys().next().value);
@@ -3095,6 +3142,7 @@ function route(){
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
   if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; }
   if (avalMap){ avalMap.remove(); avalMap = null; }
+  avalMapObs?.disconnect(); avalMapObs = null;
   avalLiftsPending = null;
   if (id) renderDetail(id); else renderOverview();
 }
