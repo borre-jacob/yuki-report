@@ -1029,7 +1029,7 @@ const inRegion = (r, f) => f === "all" || (f === "fav" ? favs.has(r.id) : f === 
 // The choices for the region filter in an area, in display order. head: a country, sub: a region in it.
 function regionItems(a){
   const cs = countriesOf(a), out = [];
-  if (favCount(a)) out.push({v: "fav", label: `★ ${T("Mina favoriter", "My favourites")} (${favCount(a)})`});
+  out.push({v: "fav", label: `★ ${T("Mina favoriter", "My favourites")}${favCount(a) ? ` (${favCount(a)})` : ""}`});   // always there, also when empty
   if (cs.length < 2){
     out.push({v: "all", label: T("Alla regioner", "All regions")});
     regionsOf(a).forEach(g => out.push({v: g, label: g}));
@@ -1203,7 +1203,6 @@ const state = {
 };
 
 state.region = store.get("yr-region-" + state.area) || "all";
-if (state.region === "fav" && !favCount(state.area)) state.region = "all";
 
 // ---------- Snow quality ----------
 // The type of new snow comes from the temperature and wind while it falls (weighted by how much falls each hour)
@@ -1313,7 +1312,6 @@ async function loadOverview(){
 let overviewMap = null, markerLayer = null;
 
 function renderOverview(){
-  if (state.region === "fav" && !favCount(state.area)) state.region = "all";   // the last favourite was removed on its page
   const app = $("#app");
   app.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
@@ -1451,10 +1449,8 @@ function wireList(list, refill){
   list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
   list.querySelectorAll(".star").forEach(b => b.onclick = () => {
     const on = toggleFav(b.dataset.fav);
-    const wasFav = state.region === "fav";
-    if (wasFav && !favCount(state.area)){ state.region = "all"; store.set("yr-region-" + state.area, "all"); }
     $("#q").value = regionLabel(state.area, state.region);
-    if (wasFav) return fillOverview(false, state.region === "fav");   // a removed favourite leaves the list and the map
+    if (state.region === "fav") return fillOverview(false, true);   // a removed favourite leaves the list and the map
     b.setAttribute("aria-pressed", on); b.textContent = on ? "★" : "☆";
     b.title = on ? T("Ta bort från favoriter", "Remove from favourites") : T("Lägg till som favorit", "Add to favourites");
   });
@@ -1468,7 +1464,7 @@ function setArea(a){
   if (a === state.area) return;
   state.area = a; state.showAll = false; store.set("yr-area", a);
   state.region = store.get("yr-region-" + a) || "all";
-  if (!areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
+  if (state.region !== "fav" && !areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
   renderOverview();
   refreshOverview();
 }
@@ -1523,8 +1519,13 @@ function fillOverview(listOnly = false, keepView = false){
         <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${uSnow(other)}</span>
       </span>
     </button>${starBtn(r)}</div>`;
-  }) || `<div class="msg">${state.region === "fav" ? T("Inga favoriter här ännu. Tryck på stjärnan vid en ort för att lägga till den.", "No favourites here yet. Tap the star next to a resort to add it.") : T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`;
+  }) || (state.region === "fav"
+    ? `<div class="msg">${T(`Inga favoriter i ${AREAS[state.area].name} ännu. Tryck på stjärnan ☆ vid en ort för att spara den här.`, `No favourites in ${AREAS[state.area].name} yet. Tap the star ☆ next to a resort to save it here.`)}
+        <button type="button" class="more" id="favall">${T("Visa alla orter", "Show all resorts")}</button></div>`
+    : `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`);
   wireList(list, () => fillOverview(true));
+  const favAll = $("#favall");
+  if (favAll) favAll.onclick = () => { state.region = "all"; store.set("yr-region-" + state.area, "all"); $("#q").value = regionLabel(state.area, "all"); fillOverview(); };
   if (listOnly) return;
 
   // Map markers sized and coloured by the selected metric
