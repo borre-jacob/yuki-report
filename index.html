@@ -150,6 +150,13 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
   border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;text-align:left;width:100%}
 .row:hover{border-color:var(--snow)}
 .rw{position:relative;min-width:0}
+.rw.sel .row{border-color:var(--future);box-shadow:0 0 0 1px var(--future) inset}
+.row .openhint{display:none;font-size:12px;font-weight:600;color:var(--future);margin-top:2px}
+.rw.sel .openhint{display:block}
+.inview{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding:2px 2px 4px}
+.inview button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.selring{animation:selpulse 1.6s ease-in-out infinite}
+@keyframes selpulse{50%{stroke-opacity:.35}}
 .rw .rank{align-self:start;padding-top:2px}
 .star{position:absolute;left:7px;bottom:7px;width:32px;height:32px;display:grid;place-items:center;border:0;background:none;border-radius:8px;
   font-size:19px;line-height:1;color:var(--muted);cursor:pointer}
@@ -1230,6 +1237,8 @@ const state = {
   overview: null,                              // {resortId: {past72, next72, daily, dailyTimes, todayIdx}}
   avalLv: {},                                  // {resortId: today's avalanche danger 1-5}, from the bulletin files
   fetchedAt: null,
+  inView: null,                                // the map's bounds after the user zoomed or panned: the list shows only these
+  selected: null,                              // resort picked in the list: ringed on the map, a second click opens it
 };
 
 state.region = store.get("yr-region-" + state.area) || "all";
@@ -1392,6 +1401,13 @@ function renderOverview(){
       return snowIcon(v, maxPinVal, `<small>${kids.length}</small>`, "group", lv);
     },
   }).addTo(overviewMap);
+  selLayer = L.layerGroup().addTo(overviewMap);
+  // After the user zooms or pans, the list shows only the resorts on the map (not after the app fits the map itself)
+  overviewMap.on("moveend", () => {
+    if (mapAuto) return;
+    state.inView = overviewMap.getBounds();
+    fillOverview(true);
+  });
   fillOverview();
 }
 // ---------- Search / region field ----------
@@ -1447,7 +1463,7 @@ function setupSearch(){
       if (other) refreshOverview();   // the list for that area is ready when going back
       return;
     }
-    state.region = x.v; state.showAll = false; store.set("yr-region-" + state.area, state.region);
+    state.region = x.v; state.showAll = false; state.selected = null; store.set("yr-region-" + state.area, state.region);
     close(); input.blur(); renderOverview();
   };
   input.onfocus = () => { typed = ""; input.value = ""; active = -1; draw(); };
@@ -1464,7 +1480,7 @@ function setupSearch(){
   // pointerdown so the choice happens before the field loses focus
   list.onpointerdown = e => { const li = e.target.closest("[role=option]"); if (!li) return; e.preventDefault(); choose(items[+li.dataset.i]); };
 }
-function setMode(m){ state.mode = m; state.showAll = false; store.set("yr-mode", m); renderOverview(); }
+function setMode(m){ state.mode = m; state.showAll = false; state.selected = null; store.set("yr-mode", m); renderOverview(); }
 
 // The list shows the top TOP_N resorts until "Visa alla" is pressed (the map always shows every resort).
 // The choice holds while browsing resorts and back, and resets when area, region or ranking changes.
@@ -1476,7 +1492,7 @@ function listRows(rows, rowHtml){
     ? `<button type="button" class="more" id="more">${state.showAll ? T(`Visa bara topp ${TOP_N}`, `Show only top ${TOP_N}`) : T(`Visa alla ${rows.length} orter`, `Show all ${rows.length} resorts`)}</button>` : "");
 }
 function wireList(list, refill){
-  list.querySelectorAll(".row").forEach(b => b.onclick = () => go(b.dataset.id));
+  list.querySelectorAll(".row").forEach(b => b.onclick = () => selectResort(b.dataset.id));
   list.querySelectorAll(".star").forEach(b => b.onclick = () => {
     const on = toggleFav(b.dataset.fav);
     $("#q").value = regionLabel(state.area, state.region);
@@ -1492,7 +1508,7 @@ function wireList(list, refill){
 }
 function setArea(a){
   if (a === state.area) return;
-  state.area = a; state.showAll = false; store.set("yr-area", a);
+  state.area = a; state.showAll = false; state.selected = null; store.set("yr-area", a);
   state.region = store.get("yr-region-" + a) || "all";
   if (state.region !== "fav" && !areaResorts(a).some(r => inRegion(r, state.region))) state.region = "all";
   renderOverview();
@@ -1521,6 +1537,7 @@ function listWithoutSnow(msg, listOnly = false){
 // keepView: redraw without moving the map (used when the avalanche levels arrive)
 function fillOverview(listOnly = false, keepView = false){
   const list = $("#list"); if (!list) return;
+  if (!listOnly && !keepView) state.inView = null;   // the map is about to be fitted to every resort again
   if (!areaResorts(state.area).some(r => state.overview?.[r.id])){
     list.innerHTML = `<div class="msg">${T(`Hämtar snödata för ${areaResorts(state.area).length} orter…`, `Fetching snow data for ${areaResorts(state.area).length} resorts…`)}</div>`;
     fitMap(areaResorts(state.area)); return;
@@ -1530,30 +1547,38 @@ function fillOverview(listOnly = false, keepView = false){
     .map(r => ({r, o: state.overview[r.id]})).filter(x => x.o)
     .sort((a,b) => (b.o[key] - a.o[key]) || (b.o.next72 + b.o.past72 - a.o.next72 - a.o.past72));
   const maxDay = Math.max(1, ...rows.flatMap(x => x.o.daily.map(v => v||0)));
-  list.innerHTML = listRows(rows, (x, i) => {
+  const rankOf = new Map(rows.map((x, i) => [x.r.id, i + 1]));
+  const shownRows = state.inView ? rows.filter(x => state.inView.contains([x.r.lat, x.r.lon])) : rows;
+  const viewNote = shownRows.length < rows.length
+    ? `<div class="inview"><span>${T(`Visar ${shownRows.length} av ${rows.length} orter i kartans vy`, `Showing ${shownRows.length} of ${rows.length} resorts in the map view`)}</span>
+        <button type="button" id="viewall">${T("Visa alla", "Show all")}</button></div>` : "";
+  list.innerHTML = viewNote + (listRows(shownRows, (x, i) => {
     const {r, o} = x;
     const spark = o.daily.map((v, j) => {
       const h = Math.max(1, Math.round((v||0) / maxDay * 22));
       return `<i class="${j >= o.todayIdx ? "f" : ""} ${j===o.todayIdx?"today":""}" style="height:${h}px" title="${dayLabel(o.dailyTimes[j])}: ${uSnow(v,1)}"></i>`;
     }).join("");
     const main = o[key], other = state.mode === "past" ? o.next72 : o.past72;
-    return `<div class="rw"><button class="row" data-id="${r.id}">
-      <span class="rank">${i+1}</span>
+    return `<div class="rw${state.selected === r.id ? " sel" : ""}" data-rid="${r.id}"><button class="row" data-id="${r.id}">
+      <span class="rank">${rankOf.get(r.id)}</span>
       <span class="info">
         <span class="name">${esc(r.name)}${alvBadge(state.avalLv[r.id])}</span>
         <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${uHN(r.base)}–${uH(r.top)}</span>
         <span class="spark" aria-hidden="true">${spark}</span>
+        <span class="openhint">${T("Tryck igen för att öppna orten →", "Tap again to open the resort →")}</span>
       </span>
       <span class="big">
         <b>${uSnowN(main)}<small> ${SNOW_U}</small></b>
         <span class="sub">${state.mode==="past" ? T("kommande 3 d", "next 3 d") : T("senaste 3 d", "last 3 d")}: ${uSnow(other)}</span>
       </span>
     </button>${starBtn(r)}</div>`;
-  }) || (state.region === "fav"
+  }) || (state.inView && rows.length ? `<div class="msg">${T("Inga orter i kartans vy.", "No resorts in the map view.")}</div>` : state.region === "fav"
     ? `<div class="msg">${T(`Inga favoriter i ${AREAS[state.area].name} ännu. Tryck på stjärnan ☆ vid en ort för att spara den här.`, `No favourites in ${AREAS[state.area].name} yet. Tap the star ☆ next to a resort to save it here.`)}
         <button type="button" class="more" id="favall">${T("Visa alla orter", "Show all resorts")}</button></div>`
-    : `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`);
+    : `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`));
   wireList(list, () => fillOverview(true));
+  const viewAll = $("#viewall");
+  if (viewAll) viewAll.onclick = () => fitMap(rows.map(x => x.r)) || fillOverview(true);
   const favAll = $("#favall");
   if (favAll) favAll.onclick = () => { state.region = "all"; store.set("yr-region-" + state.area, "all"); $("#q").value = regionLabel(state.area, "all"); fillOverview(); };
   if (listOnly) return;
@@ -1570,6 +1595,7 @@ function fillOverview(listOnly = false, keepView = false){
   }));
   drawRampLegend(SNOW_RAMP[state.mode]);
   if (!keepView) fitMap(rows.map(x => x.r));
+  drawSelection();
   loadAvalLevels(state.area);
 }
 
@@ -1650,10 +1676,36 @@ function drawRampLegend(ramp){
   };
   rampLegend.addTo(overviewMap);
 }
+// The app moving the map itself (fitting the area or region): the list then shows every resort again
+let mapAuto = false, selLayer = null;
 function fitMap(rs){
   if (!overviewMap || !rs.length) return;
-  overviewMap.invalidateSize();
-  overviewMap.fitBounds(L.latLngBounds(rs.map(r => [r.lat, r.lon])).pad(0.05));
+  state.inView = null;
+  mapAuto = true;
+  try {
+    overviewMap.invalidateSize();
+    overviewMap.fitBounds(L.latLngBounds(rs.map(r => [r.lat, r.lon])).pad(0.05), {animate: false});
+  } finally { mapAuto = false; }
+}
+// First click on a resort in the list: ring it on the map and zoom in a little. A second click opens it.
+function selectResort(id){
+  if (state.selected === id) return go(id);
+  state.selected = id;
+  const r = RESORTS.find(x => x.id === id);
+  $("#list")?.querySelectorAll(".rw").forEach(w => w.classList.toggle("sel", w.dataset.rid === id));
+  drawSelection();
+  if (!r || !overviewMap) return;
+  const z = overviewMap.getZoom();
+  overviewMap.flyTo([r.lat, r.lon], Math.max(z, 10), {duration: 0.6});   // 10: where the pins stop grouping
+  // On a phone the map sits above the list: bring it into view
+  if (matchMedia("(max-width:860px)").matches) $(".mapbox")?.scrollIntoView({behavior: "smooth", block: "start"});
+}
+function drawSelection(){
+  if (!selLayer) return;
+  selLayer.clearLayers();
+  const r = state.selected && RESORTS.find(x => x.id === state.selected);
+  if (!r || r.area !== state.area) return;
+  L.circleMarker([r.lat, r.lon], {radius: 27, color: css("--future"), weight: 6, fill: false, interactive: false, className: "selring"}).addTo(selLayer);
 }
 
 // ---------- Detail view ----------
