@@ -1696,16 +1696,21 @@ function selectResort(id){
   drawSelection();
   if (!r || !overviewMap) return;
   const z = overviewMap.getZoom();
-  overviewMap.flyTo([r.lat, r.lon], Math.max(z, 10), {duration: 0.6});   // 10: where the pins stop grouping
+  overviewMap.flyTo([r.lat, r.lon], Math.max(z, SELECT_ZOOM), {duration: 0.6});
   // On a phone the map sits above the list: bring it into view
   if (matchMedia("(max-width:860px)").matches) $(".mapbox")?.scrollIntoView({behavior: "smooth", block: "start"});
 }
+// About a region in view; the pins may still be grouped there, so the picked one is drawn on top with a ring
+const SELECT_ZOOM = 8.5;
 function drawSelection(){
   if (!selLayer) return;
   selLayer.clearLayers();
   const r = state.selected && RESORTS.find(x => x.id === state.selected);
   if (!r || r.area !== state.area) return;
+  const o = state.overview?.[r.id], v = o ? o[state.mode === "past" ? "past72" : "next72"] : null;
   L.circleMarker([r.lat, r.lon], {radius: 27, color: css("--future"), weight: 6, fill: false, interactive: false, className: "selring"}).addTo(selLayer);
+  L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", "", state.avalLv[r.id]), zIndexOffset: 1000, title: r.name})
+    .bindTooltip(`<b>${esc(r.name)}</b>${v != null ? `<br>${uSnow(v)}` : ""}`, {direction: "top"}).on("click", () => go(r.id)).addTo(selLayer);
 }
 
 // ---------- Detail view ----------
