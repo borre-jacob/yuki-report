@@ -428,6 +428,17 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .dirbtn.cam{border-color:var(--line);color:var(--ink);font-weight:500}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+<!-- Cloudflare Web Analytics: anonymous visit counts without cookies or local storage (see integritet.html).
+     Loaded only on the real site, so local testing is not counted. "spa" counts page changes inside the app. -->
+<script>
+if (location.hostname === "yukireport.com"){
+  const cf = document.createElement("script");
+  cf.defer = true;
+  cf.src = "https://static.cloudflareinsights.com/beacon.min.js";
+  cf.setAttribute("data-cf-beacon", '{"token": "844b123702904e5f8b28b8356cfe1c7c", "spa": true}');
+  document.head.appendChild(cf);
+}
+</script>
 </head>
 <body>
 <div class="wrap">

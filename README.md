@@ -25,6 +25,10 @@ Yuki Report är en PWA och fungerar offline: prognoser, lavinläge och kartdelar
 
 Service workern ligger i `sw.js`. Höj `VERSION` där när `sw.js`, ikonerna, typsnitten, `integritet.html` eller manifestet ändras. Då visar appen "Ny version finns – ladda om". Ändringar i `index.html` kommer med automatiskt.
 
+## Besöksstatistik
+
+Besök räknas anonymt med [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/), utan kakor eller lagring i webbläsaren. Skriptet laddas bara på yukireport.com, så lokala tester räknas inte, och service workern cachar det aldrig. Statistiken finns i Cloudflares konto under Analytics & Logs → Web Analytics. Integritetssidan beskriver vad som skickas.
+
 ## Datakällor
 
 - Väder: [Open-Meteo](https://open-meteo.com/). Snön för alla orter i översikten hämtas centralt var tredje timme av GitHub Actions (`.github/workflows/pages.yml` kör `tools/fetch_snow.py`) och publiceras som `data/snow/<område>.json` tillsammans med appen, utan att committas. GitHub försenar och hoppar ibland över schemalagda körningar, så schemat körs varje timme men hämtar bara när den publicerade datan är äldre än 2,5 timmar. Misslyckas publiceringen försöker arbetsflödet igen efter en minut. Antalet anrop blir då detsamma hur många som än använder appen. Är filen äldre än 4 timmar hämtar appen direkt från Open-Meteo. Detaljsidan för en ort hämtar alltid live.

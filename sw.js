@@ -10,8 +10,9 @@
    - OpenFreeMap: style, fonts and sprites stale-while-revalidate; visited map tiles are kept,
      at most TILE_MAX of them (oldest removed first).
    - Google Maps tiles and scripts are never cached (Google's terms): they go straight to the network.
+   - Cloudflare Web Analytics (static.cloudflareinsights.com) is never cached: other hosts go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v9";
+const VERSION = "v10";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";
