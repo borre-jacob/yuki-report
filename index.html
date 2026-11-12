@@ -303,7 +303,7 @@ details.how .hint{margin-top:6px}
 .mgi-moon{fill:#9aa8c7} .mgi-cl{fill:#b4bdcb} .mgi-snow{fill:var(--future)} .mgi-rain{stroke:var(--toilet);stroke-width:2;stroke-linecap:round}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mgi-cl{fill:#6b7890}}
 :root[data-theme="dark"] .mgi-cl{fill:#6b7890}
-#obs .h3sub{font-size:13px;font-weight:500;color:var(--muted)}
+.h3sub{font-size:13px;font-weight:500;color:var(--muted)}
 .obsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .obsc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .obsh{font-size:14px}.obsh span{color:var(--muted);font-size:12.5px}
@@ -319,6 +319,15 @@ details.how .hint{margin-top:6px}
 .obsg .dl{position:absolute;bottom:-16px;transform:translateX(-50%);font:500 10px var(--mono);color:var(--muted);white-space:nowrap}
 .obsg .dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--snow);box-shadow:0 0 0 3px var(--surface)}
 .obsf{font-size:12px;color:var(--muted)}.obsf b{color:var(--ink)}.obsf .r{color:var(--warn);font-weight:600}
+.camgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.cam{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.camimg{position:relative;display:block;padding:0;border:0;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--line);aspect-ratio:400/224}
+.camimg img{display:block;width:100%;height:100%;object-fit:cover}
+.camplay{position:absolute;left:8px;bottom:8px;padding:3px 8px;border-radius:999px;background:rgba(10,18,32,.72);color:#fff;font-size:11.5px;font-weight:600}
+.camframe{width:100%;aspect-ratio:16/10;border:0;border-radius:10px;background:var(--line)}
+.cam figcaption{font-size:13px;display:flex;flex-direction:column}
+.cam figcaption span{font-size:12px;color:var(--muted)}
+.camsrc{margin:0;font-size:12px;color:var(--muted)}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
 .fctable table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
@@ -1824,7 +1833,6 @@ async function renderDetail(id){
           <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
           ${(CAMS[r.id] || []).map(c => `<a class="dirbtn cam" href="${esc(c.url)}" target="_blank" rel="noopener">📷 ${esc(c.label)} ↗</a>`).join("")}
         </div>
-        ${CAMS[r.id] ? "" : `<span class="label" style="text-transform:none;letter-spacing:0">${T("Ingen webbkamera hittad för den här orten.", "No webcam found for this resort.")}</span>`}
       </div>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="fc" id="fc" hidden>
@@ -1836,6 +1844,7 @@ async function renderDetail(id){
         <div id="fp-heat" role="tabpanel" aria-labelledby="ft-heat" class="panel" hidden></div>
       </div>
       <div class="panel" id="obs" hidden></div>
+      <div class="panel" id="cams" hidden></div>
       <div class="panel" id="aval">
         <h3>${T("Lavinläget", "Avalanche conditions")}</h3>
         ${avalOfficial(r)}
@@ -1894,6 +1903,7 @@ async function renderDetail(id){
   liftLayer = L.featureGroup();
 
   loadObs(r);
+  loadCams(r);
   loadForecast(r).catch(e => {
     // fetch() throws a TypeError when there is no network and no saved answer
     $("#stats").innerHTML = e instanceof TypeError
@@ -2014,6 +2024,42 @@ function drawObs(){
   box.innerHTML = `<h3>${T("Uppmätt snö", "Measured snow")} <span class="h3sub">${T("senaste veckan", "last week")}</span></h3>
     <div class="obsgrid">${cards}</div>
     <details class="how"><summary>${T("Om mätningarna", "About the readings")}</summary><p class="hint">${T("Ökningen av snödjupet är ett mått på nysnön, men den blir ofta något lägre än det som föll eftersom snön sätter sig. Stationerna står inte i backen, så snön där kan skilja sig. Mätvärdena hämtas var tredje timme.", "The rise in snow depth is a measure of the new snow, but it is often a little lower than what fell because the snow settles. The stations are not on the slopes, so the snow there can differ. Readings are fetched every three hours.")}</p></details>`;
+}
+
+// Webcams at the resort from Windy (tools/fetch_cams.py, once a day): data/cams/<area>.json. Only cameras at most
+// 3 km from a lift, at most four, the highest first. The still image links to Windy's day timelapse player, which
+// opens in place; Windy asks for the credit line under the pictures.
+const camFiles = {};
+function camData(area){
+  const c = camFiles[area];
+  if (c && Date.now() - c.t < 30 * 60e3) return c.p;
+  const p = netFetch(`data/cams/${area}.json`).then(res => res.ok ? res.json() : null).catch(() => null);
+  camFiles[area] = {p, t: Date.now()};
+  p.then(d => { if (!d) delete camFiles[area]; });
+  return p;
+}
+async function loadCams(r){
+  const d = await camData(r.area), box = $("#cams");
+  if (!box || location.hash.slice(1) !== r.id) return;
+  const cams = d?.resorts?.[r.id] || [];
+  if (!cams.length){ box.hidden = true; return; }
+  const u = (c, k) => c[k] || (d.tpl?.[k] || "").replace("{id}", c.id);
+  const name = t => { t = t.replace(/[\u200e\u200f]/g, ""); return (t.includes(": ") ? t.slice(t.indexOf(": ") + 2) : t).trim() || t; };
+  box.hidden = false;
+  box.innerHTML = `<h3>${T("Webbkameror", "Webcams")} <span class="h3sub">${T("vid backen", "at the slopes")}</span></h3>
+    <div class="camgrid">${cams.map(c => `<figure class="cam">
+      <button type="button" class="camimg" data-play="${esc(u(c, "play"))}" aria-label="${esc(T(`Visa dagens tidsförlopp: ${name(c.t)}`, `Show today's timelapse: ${name(c.t)}`))}">
+        <img src="${esc(u(c, "img"))}" alt="${esc(name(c.t))}" loading="lazy" width="400" height="224">
+        <span class="camplay">▶ ${T("Dagens tidsförlopp", "Today's timelapse")}</span></button>
+      <figcaption><b>${esc(name(c.t))}</b><span>${c.a != null ? uH(c.a) + " · " : ""}${c.d < 0.3 ? T("vid en lift", "by a lift") : T(`${fmt(c.d, 1)} km från närmaste lift`, `${fmt(c.d, 1)} km from the nearest lift`)}</span></figcaption>
+    </figure>`).join("")}</div>
+    <p class="camsrc">${T("Webbkameror från", "Webcams provided by")} <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> — <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">${T("lägg till en webbkamera", "add a webcam")}</a></p>`;
+  box.querySelectorAll(".cam img").forEach(img => img.onerror = () => img.closest(".cam").remove());
+  box.querySelectorAll(".camimg").forEach(b => b.onclick = () => {
+    const f = document.createElement("iframe");
+    f.src = b.dataset.play; f.title = b.querySelector("img").alt; f.loading = "lazy"; f.allowFullscreen = true; f.className = "camframe";
+    b.replaceWith(f);
+  });
 }
 
 // Avalanche bulletins for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_avalanche.py,
