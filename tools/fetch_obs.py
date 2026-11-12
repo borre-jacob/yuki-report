@@ -12,7 +12,9 @@ Sources, all open and without keys:
   Austria      GeoSphere Austria TAWES (every 10 min)
   Sweden       SMHI (one depth a day, mostly measured in the morning)
   Finland      FMI (automatic snow depth)
-Norway, France and Italy have no station source yet.
+  Norway       MET Norway Frost (needs a free client ID in the environment variable FROST_CLIENT_ID; without it
+               Norway is skipped)
+France and Italy have no station source yet.
 
 Each resort gets up to two stations within 25 km whose height is near the slopes: the best one near the base,
 and a higher one when there is one. The workflow puts the published files in <dir> first, so history that a
@@ -224,6 +226,59 @@ def smhi():
                 s["ser"][iso(t)] = round(float(row["value"]) * 100)
 
 
+# --- Norway: MET Norway Frost. Stations that measured snow depth in the last week, then their values.
+def frost():
+    cid = os.environ.get("FROST_CLIENT_ID", "").strip()
+    if not cid:
+        print("frost: no FROST_CLIENT_ID, Norway skipped", file=sys.stderr)
+        return
+    def fget(path):
+        p = subprocess.run(["curl", "-sS", "-m", "90", "-A", UA, "-u", cid + ":", "https://frost.met.no/" + path],
+                           capture_output=True, text=True)
+        try:
+            return json.loads(p.stdout)
+        except Exception:
+            return {}
+    span = f"{START.strftime('%Y-%m-%dT%H:%M')}/{NOW.strftime('%Y-%m-%dT%H:%M')}"
+    avail = fget(f"observations/availableTimeSeries/v0.jsonld?elements=surface_snow_thickness&referencetime={span}")
+    ids = sorted({a["sourceId"].split(":")[0] for a in avail.get("data", [])})
+    if not ids:
+        raise RuntimeError("Frost: no stations with snow depth " + str(avail.get("error", ""))[:120])
+    meta = {}
+    for i in range(0, len(ids), 100):
+        for m in fget("sources/v0.jsonld?ids=" + ",".join(ids[i:i + 100])).get("data", []):
+            if m.get("geometry") and m.get("country", "Norge") in ("Norge", "Norway", "NO"):
+                meta[m["id"]] = m
+    cands = {sid: add("met", sid, m.get("shortName") or m["name"].title(), m.get("masl"),
+                      m["geometry"]["coordinates"][1], m["geometry"]["coordinates"][0], "NO", dt=24) for sid, m in meta.items()}
+    used = {id(x) for r in resorts if r["cc"] == "NO" for x in pick(r, cands.values())}
+    keep = [sid for sid, s in cands.items() if id(s) in used]
+    for sid in set(cands) - set(keep):
+        del stations["met:" + sid]
+    for i in range(0, len(keep), 50):
+        d = fget("observations/v0.jsonld?elements=surface_snow_thickness&referencetime=" + span
+                 + "&sources=" + ",".join(keep[i:i + 50]))
+        for row in d.get("data", []):
+            s = stations.get("met:" + row["sourceId"].split(":")[0])
+            t = parse(row["referenceTime"])
+            for o in row.get("observations", []):
+                v = o.get("value")
+                if s is None or v is None or v < 0:
+                    continue
+                if t.minute == 0:
+                    s["ser"][iso(t)] = round(v)
+    # A station with more than one reading a day is automatic and shown every 3 hours; a manual one gets its
+    # daily reading at 06 UTC, so all of them share one grid
+    for sid in keep:
+        s = stations["met:" + sid]
+        days = {k[:10] for k in s["ser"]}
+        if len(s["ser"]) > len(days) * 1.5:
+            s["dt"] = 3
+            s["ser"] = {k: v for k, v in s["ser"].items() if parse(k).hour % 3 == 0}
+        else:
+            s["ser"] = {k[:10] + "T06:00Z": v for k, v in sorted(s["ser"].items())}
+
+
 def pick(r, cands):
     """Up to two stations for a resort: the best one near the base, plus a higher one if there is one."""
     ok = []
@@ -248,7 +303,7 @@ def pick(r, cands):
     return sorted(out, key=lambda s: s["a"] or 0)
 
 
-for name, fn in (("jma", jma), ("slf", slf), ("geosphere", geosphere), ("fmi", fmi), ("smhi", smhi)):
+for name, fn in (("jma", jma), ("slf", slf), ("geosphere", geosphere), ("fmi", fmi), ("smhi", smhi), ("frost", frost)):
     try:
         fn()
     except Exception as e:

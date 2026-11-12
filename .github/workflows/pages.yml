@@ -67,6 +67,8 @@ jobs:
           done
           python3 tools/fetch_avalanche.py index.html data/avalanche || echo "Lavinhämtningen misslyckades, behåller de senast publicerade filerna."
       - name: Hämta uppmätt snö från mätstationer
+        env:
+          FROST_CLIENT_ID: ${{ secrets.FROST_CLIENT_ID }}
         run: |
           mkdir -p data/obs
           # Start from the published files: they hold the history that JMA and SLF only give for a short time

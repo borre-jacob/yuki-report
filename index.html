@@ -1928,7 +1928,7 @@ const AVAL = {
   furano:{a:7}, asahidake:{a:7},
 };
 // Measured snow depth from weather stations near the resort, fetched centrally every 3 hours (tools/fetch_obs.py):
-// data/obs/<area>.json. Japan JMA, Switzerland SLF, Austria GeoSphere, Sweden SMHI, Finland FMI; up to two stations
+// data/obs/<area>.json. Japan JMA, Switzerland SLF, Austria GeoSphere, Sweden SMHI, Finland FMI, Norway MET; up to two stations
 // per resort, one near the base and a higher one when there is one. No station, no panel.
 const obsFiles = {};
 let obsCur = null;
@@ -1953,6 +1953,7 @@ const OBS_SRC = {
   geo: ["GeoSphere Austria", "https://www.geosphere.at/"],
   smhi: ["SMHI", "https://www.smhi.se/data/meteorologi/snodjup"],
   fmi: ["FMI", "https://en.ilmatieteenlaitos.fi/snow-depth"],
+  met: ["MET Norway", "https://seklima.met.no/"],
 };
 // A station's values as [{t: ms, v: cm}], and the change since `h` hours before the latest value
 const obsSeries = s => s.v.map((v, i) => ({t: Date.parse(s.t0) + i * s.dt * 3600e3, v})).filter(x => x.v != null);
