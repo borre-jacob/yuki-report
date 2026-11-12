@@ -220,6 +220,12 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .mdays .bar{width:74%;max-width:36px;border-radius:3px 3px 0 0;background:var(--future)}
 .mdays .bar.past{background:var(--snow)}
 .mdays .col{position:relative}
+.flg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:6px;align-items:center}
+.flg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.lg-past{background:var(--snow)} .lg-fut{background:var(--future)}
+.lg-rng{border:1.5px dashed var(--future);background:color-mix(in srgb,var(--future) 16%,transparent)}
+details.how summary{font-size:12px;color:var(--muted);cursor:pointer;width:max-content}
+details.how .hint{margin-top:6px}
 .mdays .rng{position:absolute;left:50%;width:84%;max-width:42px;transform:translateX(-50%);border-radius:4px;z-index:0;
   border:1.5px dashed var(--future);background:color-mix(in srgb,var(--future) 16%,transparent)}
 .mdays .bar{position:relative;z-index:1}
@@ -297,7 +303,7 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .mgi-moon{fill:#9aa8c7} .mgi-cl{fill:#b4bdcb} .mgi-snow{fill:var(--future)} .mgi-rain{stroke:var(--toilet);stroke-width:2;stroke-linecap:round}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mgi-cl{fill:#6b7890}}
 :root[data-theme="dark"] .mgi-cl{fill:#6b7890}
-#obs .obsl{margin:-4px 0 0;font-size:13px;color:var(--muted)}
+#obs .h3sub{font-size:13px;font-weight:500;color:var(--muted)}
 .obsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .obsc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .obsh{font-size:14px}.obsh span{color:var(--muted);font-size:12.5px}
@@ -2004,10 +2010,9 @@ function drawObs(){
   }).join("");
   if (!cards){ box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = `<h3>${T("Uppmätt snö", "Measured snow")}</h3>
-    <p class="obsl">${T("Snödjup från mätstationer nära orten den senaste veckan.", "Snow depth from weather stations near the resort over the last week.")}</p>
+  box.innerHTML = `<h3>${T("Uppmätt snö", "Measured snow")} <span class="h3sub">${T("senaste veckan", "last week")}</span></h3>
     <div class="obsgrid">${cards}</div>
-    <p class="hint">${T("Ökningen av snödjupet är ett mått på nysnön, men den blir ofta något lägre än det som föll eftersom snön sätter sig. Stationerna står inte i backen, så snön där kan skilja sig. Mätvärdena hämtas var tredje timme.", "The rise in snow depth is a measure of the new snow, but it is often a little lower than what fell because the snow settles. The stations are not on the slopes, so the snow there can differ. Readings are fetched every three hours.")}</p>`;
+    <details class="how"><summary>${T("Om mätningarna", "About the readings")}</summary><p class="hint">${T("Ökningen av snödjupet är ett mått på nysnön, men den blir ofta något lägre än det som föll eftersom snön sätter sig. Stationerna står inte i backen, så snön där kan skilja sig. Mätvärdena hämtas var tredje timme.", "The rise in snow depth is a measure of the new snow, but it is often a little lower than what fell because the snow settles. The stations are not on the slopes, so the snow there can differ. Readings are fetched every three hours.")}</p></details>`;
 }
 
 // Avalanche bulletins for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_avalanche.py,
@@ -2959,8 +2964,11 @@ function drawForecast(){
           loMark ? `<span class="rv in" style="bottom:${Math.max(1, boxLow + 1)}px">${uSnowN(g.min, 0)}</span>` : ""}</div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
-    <p class="hint">${T(`Snö vid toppen (${uH(r.top)}) per dygn. Blått har fallit, lila väntas, randigt betyder regn i dalen. Siffran ovanpå stapeln är prognosen. Det streckade lila fältet visar spannet mellan vädermodellerna, och de små siffrorna visar var det slutar, ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
-      `Snow at the top (${uH(r.top)}) per day. Blue has fallen, purple is expected, striped means rain at the base. The number on top of the bar is the forecast. The dashed purple box shows the spread between the weather models, and the small numbers show where it ends, ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p>
+    <div class="flg"><span>${T(`cm vid toppen (${uH(r.top)})`, `cm at the top (${uH(r.top)})`).replace("cm", SNOW_U)}</span><span><i class="lg-past"></i>${T("fallit", "fallen")}</span><span><i class="lg-fut"></i>${T("väntas", "expected")}</span>${
+      days10.some(d => d >= today && dayRain(d) >= 1) ? `<span><i class="rainfill"></i>${T("regn i dalen", "rain at the base")}</span>` : ""}${
+      days10.some(d => d >= today && dayRange(d)?.max >= 1) ? `<span><i class="lg-rng"></i>${T("modellernas spann", "model spread")}</span>` : ""}</div>
+    <details class="how"><summary>${T("Så räknar vi", "How it is worked out")}</summary><p class="hint">${T(`Spannet kommer från ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är vädermodellens uppskattning och kan avvika från ortens mätning. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
+      `The spread comes from ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is the weather model's estimate and may differ from the resort's measurement. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p></details>
   </section>`;
 
   // --- Hour by hour, drawn the way Yr and Meteoblue do it: sky every three hours, a temperature curve, snow and rain
@@ -2986,7 +2994,7 @@ function drawForecast(){
     const rr = snow.map((s, j) => rain[j] >= 0.2 && rain[j] > s * 0.7);
     const toU = cm => IN ? cm / 2.54 : cm;
     const val = snow.map((s, j) => toU(rr[j] ? rain[j] * 0.7 : s));
-    const mx = Math.max(...val), steps = IN ? [0.2, 0.4, 1, 2, 4] : [0.5, 1, 2, 4, 6, 10];
+    const mx = Math.max(...val), steps = IN ? [0.2, 0.4, 1, 2, 4] : [0.4, 1, 2, 4, 6, 10];
     const scale = steps.find(x => x >= mx) || Math.ceil(mx);
     const di = mid.daily.time.indexOf(d), sr = hourOf(mid.daily.sunrise?.[di]), ss = hourOf(mid.daily.sunset?.[di]);
     const dark = h => sr != null && (h < sr || h >= ss);
@@ -3027,12 +3035,12 @@ function drawForecast(){
       <span class="c mg-b"><span class="gl" style="top:0"></span><span class="gl" style="top:50%"></span>
         ${mx < 0.05 ? `<span class="none">${T("Ingen snö väntas", "No snow expected")}</span>` : ""}
         ${val.map((v, j) => `<i class="${rr[j] ? "r" : ""}" style="height:${v >= 0.02 ? Math.max(2, v / scale * 100).toFixed(1) + "%" : 0}"></i>`).join("")}</span>
-      <span class="lab" style="grid-row:4;align-self:center">${WIND_U}</span>
+      <span class="lab" style="grid-row:4;align-self:center;line-height:1.15">${WIND_U}<br><small style="font-size:9.5px">${T("byar", "gusts")}</small></span>
       <span class="c mg-w">${blocks.map(b => `<span class="${b.g >= 15 ? "x" : b.g >= 10 ? "s" : ""}"><svg viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(${Math.round(b.dir + 180)}deg)"><path d="M12 2l6 10h-4.2v10h-3.6V12H6z" fill="currentColor"/></svg>${uWindN(b.sp)}<small>${uWindN(b.g)}</small></span>`).join("")}</span>
       <span class="c mg-h">${["00", "03", "06", "09", "12", "15", "18", "21"].map(x => `<span>${x}</span>`).join("")}</span>
       <span class="mg-hit">${hs.map((h, j) => `<span data-j="${j}"></span>`).join("")}</span>
     </span>
-    <span class="mg-read">${T("Tryck på en timme för detaljer. Små siffror under vinden är byar.", "Tap an hour for details. Small numbers under the wind are gusts.")}</span>`;
+    <span class="mg-read">${T("Tryck på en timme för detaljer.", "Tap an hour for details.")}</span>`;
   };
 
   // --- Days ---
