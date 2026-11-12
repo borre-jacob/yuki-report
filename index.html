@@ -297,6 +297,22 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .mgi-moon{fill:#9aa8c7} .mgi-cl{fill:#b4bdcb} .mgi-snow{fill:var(--future)} .mgi-rain{stroke:var(--toilet);stroke-width:2;stroke-linecap:round}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mgi-cl{fill:#6b7890}}
 :root[data-theme="dark"] .mgi-cl{fill:#6b7890}
+#obs .obsl{margin:-4px 0 0;font-size:13px;color:var(--muted)}
+.obsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.obsc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.obsh{font-size:14px}.obsh span{color:var(--muted);font-size:12.5px}
+.obsn{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+.obsn .dep{font:900 28px/1 var(--display);color:var(--snow);white-space:nowrap}.obsn .dep small{font-size:13px;font-weight:700}
+.obsn .lbl{font-size:12px;color:var(--muted);margin-left:-6px}
+.obsn .chg{font-size:12.5px;color:var(--muted)}.obsn .chg b{color:var(--ink);font-variant-numeric:tabular-nums}
+.obsn .chg.up b{color:var(--snow)}
+.obsg{position:relative;height:64px;margin:6px 0 16px;border-bottom:1px solid var(--line)}
+.obsg svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.obsg .ar{fill:var(--snow-soft)}.obsg .ln{fill:none;stroke:var(--snow);stroke-width:2;stroke-linejoin:round}
+.obsg .tk{position:absolute;top:0;bottom:0;border-left:1px dashed var(--line)}
+.obsg .dl{position:absolute;bottom:-16px;transform:translateX(-50%);font:500 10px var(--mono);color:var(--muted);white-space:nowrap}
+.obsg .dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--snow);box-shadow:0 0 0 3px var(--surface)}
+.obsf{font-size:12px;color:var(--muted)}.obsf b{color:var(--ink)}.obsf .r{color:var(--warn);font-weight:600}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
 .fctable table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
@@ -1813,6 +1829,7 @@ async function renderDetail(id){
         <div id="fp-table" role="tabpanel" aria-labelledby="ft-table" class="panel" hidden></div>
         <div id="fp-heat" role="tabpanel" aria-labelledby="ft-heat" class="panel" hidden></div>
       </div>
+      <div class="panel" id="obs" hidden></div>
       <div class="panel" id="aval">
         <h3>${T("Lavinläget", "Avalanche conditions")}</h3>
         ${avalOfficial(r)}
@@ -1870,6 +1887,7 @@ async function renderDetail(id){
   poiMap.createPane("lifts").style.zIndex = 450;   // above the facility dots
   liftLayer = L.featureGroup();
 
+  loadObs(r);
   loadForecast(r).catch(e => {
     // fetch() throws a TypeError when there is no network and no saved answer
     $("#stats").innerHTML = e instanceof TypeError
@@ -1903,6 +1921,95 @@ const AVAL = {
   rusutsu:{a:6}, kiroro:{a:6},
   furano:{a:7}, asahidake:{a:7},
 };
+// Measured snow depth from weather stations near the resort, fetched centrally every 3 hours (tools/fetch_obs.py):
+// data/obs/<area>.json. Japan JMA, Switzerland SLF, Austria GeoSphere, Sweden SMHI, Finland FMI; up to two stations
+// per resort, one near the base and a higher one when there is one. No station, no panel.
+const obsFiles = {};
+let obsCur = null;
+function obsData(area){
+  const c = obsFiles[area];
+  if (c && Date.now() - c.t < 10 * 60e3) return c.p;
+  const p = netFetch(`data/obs/${area}.json`).then(res => res.ok ? res.json() : null).catch(() => null);
+  obsFiles[area] = {p, t: Date.now()};
+  p.then(d => { if (!d) delete obsFiles[area]; });
+  return p;
+}
+async function loadObs(r){
+  obsCur = null;
+  const d = await obsData(r.area);
+  if (location.hash.slice(1) !== r.id) return;
+  obsCur = {r, d};
+  drawObs();
+}
+const OBS_SRC = {
+  jma: ["JMA AMeDAS", "https://www.jma.go.jp/bosai/amedas/"],
+  slf: ["SLF", "https://www.slf.ch/de/lawinenbulletin-und-schneesituation/messwerte/"],
+  geo: ["GeoSphere Austria", "https://www.geosphere.at/"],
+  smhi: ["SMHI", "https://www.smhi.se/data/meteorologi/snodjup"],
+  fmi: ["FMI", "https://en.ilmatieteenlaitos.fi/snow-depth"],
+};
+// A station's values as [{t: ms, v: cm}], and the change since `h` hours before the latest value
+const obsSeries = s => s.v.map((v, i) => ({t: Date.parse(s.t0) + i * s.dt * 3600e3, v})).filter(x => x.v != null);
+function obsChange(ser, h){
+  const last = ser.at(-1); if (!last) return null;
+  const want = last.t - h * 3600e3;
+  let best = null;
+  for (const x of ser) if (Math.abs(x.t - want) <= 3 * 3600e3 && (!best || Math.abs(x.t - want) < Math.abs(best.t - want))) best = x;
+  return best ? last.v - best.v : null;
+}
+function drawObs(){
+  const box = $("#obs");
+  if (!box) return;
+  const C = obsCur, r = C?.r, ids = C?.d?.resorts?.[r?.id];
+  if (!C || location.hash.slice(1) !== r.id || !ids?.length){ box.hidden = true; return; }
+  const F = fcData && fcData.r.id === r.id ? fcData : null, off = (F?.mid.utc_offset_seconds ?? 0) * 1000;
+  const fmtT = t => F ? new Date(t + off).toISOString().slice(11, 16) : new Date(t).toLocaleTimeString(LOCALE, {hour: "2-digit", minute: "2-digit"});
+  const ago = t => { const h = Math.round((Date.now() - t) / 3600e3); return h < 1 ? T("nyss", "just now") : h < 48 ? T(`${h} tim sedan`, `${h} h ago`) : T(`${Math.round(h / 24)} dygn sedan`, `${Math.round(h / 24)} days ago`); };
+  const sign = v => v == null ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "±") + uSnowN(Math.abs(v), 0);
+  const where = s => { if (s.a == null) return ""; const f = (s.a - r.base) / Math.max(1, r.top - r.base);
+    return s.a < r.base - 100 ? T("nedanför backen", "below the slopes") : f < 0.25 ? T("vid dalen", "near the base") : f < 0.65 ? T("mitt i backen", "mid-mountain") : T("högt upp", "high up"); };
+  const stations = ids.map(k => ({k, s: C.d.stations[k]})).filter(x => x.s);
+  // The model's snow for the same 72 hours, at the height (top, mid or base) closest to the station
+  const model = s => {
+    if (!F || s.a == null) return null;
+    const locs = [[F.base, r.base], [F.mid, r.mid], [F.top, r.top]];
+    const [loc, h] = locs.reduce((a, b) => Math.abs(b[1] - s.a) < Math.abs(a[1] - s.a) ? b : a);
+    return {v: sumRange(loc.hourly.snowfall, F.idx - 71, F.idx + 1), h};
+  };
+  const cards = stations.map(({k, s}) => {
+    const ser = obsSeries(s), last = ser.at(-1);
+    if (!last) return "";
+    const d24 = obsChange(ser, 24), d72 = obsChange(ser, 72), dist = Math.round(distKm(r.lat, r.lon, s.lat, s.lon));
+    const old = Date.now() - last.t > 30 * 3600e3;
+    // Sparkline of the depth over the week, with day ticks at local midnight
+    const t0 = Date.now() - 7 * 86400e3, t1 = Date.now(), mx = Math.max(10, ...ser.map(x => x.v)) * 1.15;
+    const X = t => ((t - t0) / (t1 - t0) * 100).toFixed(2), Y = v => (100 - v / mx * 100).toFixed(2);
+    const pts = ser.filter(x => x.t >= t0).map(x => `${X(x.t)},${Y(x.v)}`);
+    const days = [];
+    for (let d = Math.ceil((t0 + off) / 86400e3) * 86400e3 - off; d < t1; d += 86400e3) days.push(d);
+    const m = model(s);
+    return `<div class="obsc">
+      <div class="obsh"><b>${esc(s.n)}</b> <span>${s.a != null ? uH(s.a) + " · " : ""}${T(`${dist} km bort`, `${dist} km away`)}${where(s) ? " · " + where(s) : ""}</span></div>
+      <div class="obsn"><span class="dep">${uSnowN(last.v, 0)}<small> ${SNOW_U}</small></span><span class="lbl">${T("snödjup", "snow depth")}</span>
+        <span class="chg ${d24 > 0 ? "up" : ""}"><b>${sign(d24)}</b> ${T("senaste dygnet", "last 24 h")}</span>
+        <span class="chg ${d72 > 0 ? "up" : ""}"><b>${sign(d72)}</b> ${T("senaste 3 dygnen", "last 3 days")}</span></div>
+      ${pts.length > 1 ? `<div class="obsg"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polygon points="${X(Math.max(t0, ser.find(x => x.t >= t0).t))},100 ${pts.join(" ")} ${X(last.t)},100" class="ar"/>
+          <polyline points="${pts.join(" ")}" class="ln" vector-effect="non-scaling-stroke"/></svg>
+        ${days.map(d => `<span class="tk" style="left:${X(d)}%"></span>${d + 43200e3 < t1 ? `<span class="dl" style="left:${X(d + 43200e3)}%">${WD[new Date(d + off + 43200e3).getUTCDay()]}</span>` : ""}`).join("")}
+        <span class="dot" style="left:${X(last.t)}%;top:${Y(last.v)}%"></span></div>` : ""}
+      <div class="obsf">${old ? `<span class="r">${T("Senaste mätningen", "Latest reading")} ${ago(last.t)}</span>` : `${T("Mätt", "Measured")} ${s.dt >= 24 ? T("en gång om dagen, senast", "once a day, last at") : T("kl.", "at")} ${fmtT(last.t)} (${ago(last.t)})`} · <a href="${OBS_SRC[s.src][1]}" target="_blank" rel="noopener">${OBS_SRC[s.src][0]}</a>
+        ${m && d72 != null ? `<br>${T(`Prognosmodellen räknade med <b>${uSnow(m.v, 0)}</b> nysnö på ${uH(m.h)} de senaste 3 dygnen.`, `The forecast model expected <b>${uSnow(m.v, 0)}</b> of new snow at ${uH(m.h)} over the last 3 days.`)}` : ""}</div>
+    </div>`;
+  }).join("");
+  if (!cards){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<h3>${T("Uppmätt snö", "Measured snow")}</h3>
+    <p class="obsl">${T("Snödjup från mätstationer nära orten den senaste veckan.", "Snow depth from weather stations near the resort over the last week.")}</p>
+    <div class="obsgrid">${cards}</div>
+    <p class="hint">${T("Ökningen av snödjupet är ett mått på nysnön, men den blir ofta något lägre än det som föll eftersom snön sätter sig. Stationerna står inte i backen, så snön där kan skilja sig. Mätvärdena hämtas var tredje timme.", "The rise in snow depth is a measure of the new snow, but it is often a little lower than what fell because the snow settles. The stations are not on the slopes, so the snow there can differ. Readings are fetched every three hours.")}</p>`;
+}
+
 // Avalanche bulletins for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_avalanche.py,
 // workflow "Publicera appen"): data/avalanche/<area>.json. Kept for 10 minutes per page load; "Uppdatera" fetches again.
 // Varsom and EAWS can also be asked directly, used when the file is missing or older than AVAL_LIVE_AGE.
@@ -2683,6 +2790,7 @@ async function loadForecast(r){
   if (!fcOpen.has("init:" + r.id)) fcOpen = new Set(["init:" + r.id]);
   drawForecast();
   drawAvalWeather();
+  drawObs();
   loadModels(r);
 }
 

@@ -1,4 +1,4 @@
-# Publish the app on GitHub Pages, with the snow forecast and avalanche bulletins for every resort
+# Publish the app on GitHub Pages, with the snow forecast, avalanche bulletins and measured snow for every resort
 # fetched once for all users. Runs on every push to main, and the schedule refreshes the data about every 3 hours.
 # GitHub delays and skips scheduled runs, so the schedule fires every hour and the check job lets a run through
 # only when the published data is older than 2.5 hours. Open-Meteo calls stay the same as with a 3-hour schedule.
@@ -66,6 +66,14 @@ jobs:
             curl -sSf "${{ steps.pages.outputs.base_url }}/data/avalanche/$area.json" -o "data/avalanche/$area.json" || rm -f "data/avalanche/$area.json"
           done
           python3 tools/fetch_avalanche.py index.html data/avalanche || echo "Lavinhämtningen misslyckades, behåller de senast publicerade filerna."
+      - name: Hämta uppmätt snö från mätstationer
+        run: |
+          mkdir -p data/obs
+          # Start from the published files: they hold the history that JMA and SLF only give for a short time
+          for area in japan scandinavia alps; do
+            curl -sSf "${{ steps.pages.outputs.base_url }}/data/obs/$area.json" -o "data/obs/$area.json" || rm -f "data/obs/$area.json"
+          done
+          python3 tools/fetch_obs.py index.html data/obs || echo "Hämtningen av mätvärden misslyckades, behåller de senast publicerade filerna."
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
