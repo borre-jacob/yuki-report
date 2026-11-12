@@ -3118,11 +3118,11 @@ function drawForecast(){
       ${row(T("Nollgräns", "Freezing"), p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? Math.max(...f) : null;
         return [m != null && m > r.base ? "hot" : "", m == null ? "–" : uHN(Math.round(m / 10) * 10)]; }, "sep")}
       ${row(`${TEMP_U} ${T("topp", "top")}`, p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? uTempN(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; })}
-      ${row(`${T("Vind", "Wind")} <small>(${WIND_U})</small>`, windCell)}
+      ${row(`${T("Vind", "Wind")} <small>${WIND_U} (${T("byar", "gusts")})</small>`, windCell)}
       <tr class="sep"><th scope="row">${T("Lavin", "Aval.")}</th>${dayCols.map((d, k) => `<td colspan="${P.filter(p => p.d === d).length}" class="ds">${dayBadge(k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0, rel(d))}</td>`).join("")}</tr>
     </tbody></table></div>
-    <p class="hint">${T(`Snö i ${SNOW_U} per dygnsdel: förmiddag 06–12, eftermiddag 12–18 och natt 18–06. Mörkare ruta betyder mer snö. Nollgränsen är den högsta under perioden och visas i orange när den ligger över dalen. Vind i ${WIND_U} med byar inom parentes.`,
-      `Snow in ${SNOW_U} per part of the day: morning 06–12, afternoon 12–18 and night 18–06. A darker box means more snow. The freezing level is the highest in the period and shows in orange when it is above the base. Wind in ${WIND_U} with gusts in brackets.`)}</p>`;
+    <div class="flg"><span>${SNOW_U} ${T("snö", "snow")}</span><span><i style="background:${shadeSnow(2)}"></i>${T("lite", "a little")}</span><span><i style="background:${shadeSnow(15)}"></i>${T("mycket", "a lot")}</span>
+      <span>${T("Fm 06–12 · Em 12–18 · Natt 18–06", "AM 06–12 · PM 12–18 · Night 18–06")}</span><span style="color:var(--warn);font-weight:600">${T("orange nollgräns: över dalen", "orange freezing level: above the base")}</span></div>`;
 
   // --- Heights: snow or rain at five heights from the top down to the base ---
   const HP = periods(4);
@@ -3154,10 +3154,9 @@ function drawForecast(){
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${HP.map((p, j) => `${(j + .5) / HP.length * 100},${flY(p)}`).join(" ")}" fill="none" stroke="var(--onsen)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>
     </div>
     <div class="heatx"><span></span><div style="grid-template-columns:repeat(${hDays.length},1fr)">${hDays.map(d => `<span>${d === today ? T("idag", "today") : WD[wdOf(d)]}</span>`).join("")}</div></div>
-    <div class="hlegend"><span><i style="background:var(--future)"></i>${T(`Snö (${SNOW_U})`, `Snow (${SNOW_U})`)}</span><span><i class="rainfill"></i>${T("Regn", "Rain")}</span><span><i style="background:var(--onsen);height:3px"></i>${T("Nollgräns", "Freezing level")}</span></div>
+    <div class="hlegend"><span>${T(`Höjd i ${HEIGHT_U}`, `Height in ${HEIGHT_U}`)}</span><span><i style="background:var(--future)"></i>${T(`Snö (${SNOW_U})`, `Snow (${SNOW_U})`)}</span><span><i class="rainfill"></i>${T("Regn", "Rain")}</span><span><i style="background:var(--onsen);height:3px"></i>${T("Nollgräns", "Freezing level")}</span></div>
     <p class="verdict">${verdict}</p>
-    <p class="hint">${T(`Höjd i ${FT ? "fot" : "meter"} uppåt och tid åt höger, med förmiddag, eftermiddag och natt för varje dag. Värdena mellan topp, mitt och dal är uppskattade utifrån de tre höjderna.`,
-      `Height in ${FT ? "feet" : "metres"} upwards and time to the right, with morning, afternoon and night for each day. The values between top, mid and base are estimated from the three heights.`)}</p>`;
+    <details class="how"><summary>${T("Så räknar vi", "How it is worked out")}</summary><p class="hint">${T("Prognosen finns för toppen, mitten och dalen. Höjderna däremellan är uppskattade utifrån dem.", "The forecast exists for the top, mid and base. The heights in between are estimated from them.")}</p></details>`;
   $("#fc").hidden = false;
 }
 
