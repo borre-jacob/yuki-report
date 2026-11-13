@@ -326,6 +326,22 @@ details.how .hint{margin-top:6px}
 .pre h1{font:700 26px/1.2 var(--display);margin:0 0 6px}.pre h2{font-size:18px;margin:18px 0 4px}.pre h3{font-size:15px;margin:12px 0 2px}
 .pre p{margin:0 0 8px;line-height:1.55}
 .sumside .dsrc{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+/* Jump links on the resort page: stay at the top while scrolling */
+.jumps{position:sticky;top:0;z-index:20;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:8px 4px;
+  background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.jumps::-webkit-scrollbar{display:none}
+.jumps a{flex:none;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  font-size:13.5px;font-weight:600;text-decoration:none}
+.jumps a:hover{border-color:var(--snow)}
+.jumps a[hidden]{display:none}
+#stats,#fc,#cams,#aval,#karta{scroll-margin-top:60px}
+/* The verdict at the top of the summary */
+.dom{margin:0;align-self:flex-start;padding:7px 14px;border-radius:12px;font:700 17px/1.3 var(--display)}
+.v-powder{background:var(--future);color:#fff}
+.v-good{background:var(--future-soft);color:var(--future)}
+.v-some{background:var(--snow-soft);color:var(--snow)}
+.v-thin{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.v-calm{background:var(--bg);color:var(--muted)}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
 .fctable table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
@@ -1861,6 +1877,9 @@ async function renderDetail(id){
           <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
         </div>
       </div>
+      <nav class="jumps" aria-label="${T("Hoppa till", "Jump to")}">
+        <a href="#stats">${T("Prognos", "Forecast")}</a><a href="#cams" hidden>${T("Kameror", "Webcams")}</a><a href="#aval">${T("Lavin", "Avalanche")}</a><a href="#karta">${T("Karta", "Map")}</a>
+      </nav>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="fc" id="fc" hidden>
         <div class="ftabs" role="tablist" aria-label="${T("Visa prognosen som", "Show the forecast as")}">
@@ -1875,7 +1894,7 @@ async function renderDetail(id){
         <h3>${T("Lavinläget", "Avalanche conditions")}</h3>
         ${avalOfficial(r)}
       </div>
-      <div class="panel">
+      <div class="panel" id="karta">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <h3>${T(`Liftar, ${AREAS[r.area].sauna.toLowerCase()}, toaletter och parkering`, `Lifts, ${AREAS[r.area].sauna.toLowerCase()}, toilets and parking`)}</h3>
           <div class="chips" id="chips">
@@ -1907,6 +1926,10 @@ async function renderDetail(id){
     poiOn[b.dataset.k] = !poiOn[b.dataset.k]; b.setAttribute("aria-pressed", poiOn[b.dataset.k]); drawPois(r);
   });
   window.scrollTo(0, 0);
+  document.querySelectorAll(".jumps a").forEach(a => a.onclick = e => {
+    e.preventDefault();
+    document.querySelector(a.getAttribute("href"))?.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
+  });
 
   // Start zoomed on the ski area when we know where its lifts are, otherwise on the resort point
   poiMap = L.map("poimap");
@@ -2018,7 +2041,9 @@ async function loadCams(r){
   const d = await camData(r.area), box = $("#cams");
   if (!box || curId() !== r.id) return;
   const cams = d?.resorts?.[r.id] || [], links = CAMS[r.id] || [];
-  if (!cams.length && !links.length){ box.hidden = true; return; }
+  const jump = $('.jumps a[href="#cams"]');
+  if (!cams.length && !links.length){ box.hidden = true; if (jump) jump.hidden = true; return; }
+  if (jump) jump.hidden = false;
   const u = (c, k) => c[k] || (d.tpl?.[k] || "").replace("{id}", c.id);
   const name = t => { t = t.replace(/[\u200e\u200f]/g, ""); return (t.includes(": ") ? t.slice(t.indexOf(": ") + 2) : t).trim() || t; };
   box.hidden = false;
@@ -2959,6 +2984,13 @@ function drawForecast(){
     : bestV >= 3 ? `<b>${T("Mest snö", "Most snow")} ${rel(bestD)}</b>, ${uSnow(bestV)} ${bqText ? bqText + " " : ""}${T("vid toppen", "at the top")}.`
     : sum7 >= 1 ? `<b>${T("Lite snö den närmaste veckan", "Little snow in the coming week")}</b>, ${uSnow(sum7)} ${T("totalt vid toppen", "in all at the top")}.`
     : `<b>${T("Ingen snö i sikte", "No snow in sight")}</b> ${T("den närmaste veckan.", "for the coming week.")}`;
+  // The answer in a few words, first in the summary: is it worth going?
+  const dom = powderOn(bestD, bestV) ? ["powder", T(`Puderdag ${rel(bestD)}`, `Powder day ${rel(bestD)}`)]
+    : bestV >= POWDER_CM && !thinNow ? ["good", T(`Mycket nysnö ${rel(bestD)}`, `Lots of new snow ${rel(bestD)}`)]
+    : thinNow && bestV < POWDER_CM ? ["thin", T("Tunt snötäcke, kolla att orten har öppnat", "Thin snowpack, check that the resort is open")]
+    : bestV >= POWDER_CM ? ["good", T(`Mycket nysnö ${rel(bestD)}`, `Lots of new snow ${rel(bestD)}`)]
+    : bestV >= 3 ? ["some", T(`Lite nysnö ${rel(bestD)}`, `A little new snow ${rel(bestD)}`)]
+    : ["calm", T("Ingen nysnö att tala om den närmaste veckan", "No new snow to speak of in the coming week")];
   const unsure = range72 && range72.max >= 2 && !modelsAgree(range72);
   const sentence = [lead,
     unsure ? T(`Vädermodellerna är oense: mellan ${uSnowN(range72.min)} och ${uSnow(range72.max)} de kommande 3 dygnen, så räkna med att det kan bli både mindre och mer.`,
@@ -2971,7 +3003,7 @@ function drawForecast(){
       : T(`Med bara ${meas ? "" : "ca "}${uSnow(depthCm)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only ${meas ? "" : "about "}${uSnow(depthCm)} of snow you can rarely ski off-piste. Check that the resort has opened.`)) : ""].filter(Boolean).join(" ");
   const chips = [
     bestV >= 3 && bq.kind ? `<span class="schip sq-${snowqKey(bq)}">❄ ${snowqText(bq)} ${rel(bestD)}</span>` : "",
-    thinNow ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
+    thinNow && dom[0] !== "thin" ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
     rainDays.length ? `<span class="schip rain">${T("Regn i dalen", "Rain at the base")} ${rel(rainDays[0])}</span>`
       : baseSnow72 >= 2 ? `<span class="schip ok">❄ ${T("Snö i hela backen", "Snow on the whole mountain")}</span>` : "",
     gust >= 20 ? `<span class="schip warn">${T("Hård vind", "Strong wind")} ${rel(H[gustAt].slice(0, 10))}, ${T("byar", "gusts")} ${uWind(gust)}</span>`
@@ -2981,6 +3013,7 @@ function drawForecast(){
   const days10 = top.daily.time.slice(Math.max(0, todayIdx - 3), todayIdx + 7);
   const dmax = Math.max(5, ...days10.map(d => Math.max(top.daily.snowfall_sum[top.daily.time.indexOf(d)] || 0, d >= today ? dayRange(d)?.max || 0 : 0)));
   $("#stats").innerHTML = `<section class="sum" aria-label="${T("Sammanfattning", "Summary")}">
+    <p class="dom v-${dom[0]}">${dom[1]}</p>
     <div class="sumtop">
       <div><span class="label">${T("Kommande 3 dygn vid toppen", "Next 3 days at the top")}</span><div class="sumbig">${uSnowN(next72)}<small> ${SNOW_U}</small></div>${modelBar(range72, next72)}</div>
       <div class="sumside">${T("Senaste 3 dygn", "Last 3 days")} <b>${uSnow(past72)}</b>${meas ? `<br>${T("Snödjup", "Snow depth")} <b>${uSnow(meas.cm)}</b><small class="dsrc">${meas.alt != null ? T(`uppmätt på ${uH(meas.alt)}, ${esc(meas.name)}`, `measured at ${uH(meas.alt)}, ${esc(meas.name)}`) : T(`uppmätt vid ${esc(meas.name)}`, `measured at ${esc(meas.name)}`)}</small>`
