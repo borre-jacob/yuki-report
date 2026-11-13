@@ -32,7 +32,7 @@ document.documentElement.lang=p?p[1]:l==="sv"||l==="en"?l:/^sv\b/i.test(navigato
 <!-- MapLibre (the OpenFreeMap base map) and GoogleMutant load when a map needs them: see mapLib() -->
 <style>
 /* Layout: one-screen tool. Start = ranked resort list + snow map side by side (stacked on phone).
-   Detail = resort forecast charts, then a facilities map with onsen / toilets / parking. */
+   Detail = resort forecast charts, then a map with lifts and parking (and onsen in Japan). */
 :root{
   --bg:#f3f6f9; --surface:#ffffff; --ink:#14213a; --muted:#5b6b82; --line:#d9e1ea;
   --snow:#2f6fd6; --snow-soft:#cfe0fa; --future:#7c5cd6; --future-soft:#e3dafa;
@@ -353,6 +353,11 @@ details.how .hint{margin-top:6px}
 .snowpin.tour::before{content:"▲";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-size:10px;line-height:1;color:var(--ink);text-shadow:0 0 2px var(--surface)}
 .startpin{width:28px;height:28px;border-radius:6px;background:var(--snow);color:#fff;font:700 14px/28px var(--body);text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .legend .tourkey::before{display:none}
+.mypin{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.pinbtn{border:1px solid var(--snow);background:color-mix(in srgb,var(--snow) 12%,var(--surface));color:var(--ink);border-radius:999px;padding:8px 14px;font:600 14px var(--body);cursor:pointer}
+.pinlink{font-size:13.5px;font-weight:600;color:var(--snow-ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.pinmsg{font-size:12.5px;color:var(--muted)}
+.mepin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e11d48;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .tourtag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font:600 10.5px var(--body);color:var(--muted-2);vertical-align:2px}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
@@ -590,7 +595,7 @@ if (location.hostname === "yukireport.com"){
     <p class="copy">© 2026 Jacob Borre – Yuki Report. Koden är <a href="https://github.com/borre-jacob/yuki-report/blob/main/LICENSE" target="_blank" rel="noopener">MIT-licensierad</a>.</p>
     <p class="src">Väder: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
       (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), modelldata beräknad för backens mellanhöjd.
-      Orter, liftar, onsen, toaletter och parkering: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-bidragsgivare</a>
+      Orter, liftar, onsen och parkering: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-bidragsgivare</a>
       (<a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>).
       Kartstil: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>.
       Lavinprognoser: Japan Avalanche Network, Varsom (NVE), Naturvårdsverket och de europeiska lavinvarningstjänsterna i
@@ -605,7 +610,7 @@ if (location.hostname === "yukireport.com"){
     <p class="copy">© 2026 Jacob Borre – Yuki Report. The code is <a href="https://github.com/borre-jacob/yuki-report/blob/main/LICENSE" target="_blank" rel="noopener">MIT licensed</a>.</p>
     <p class="src">Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
       (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), model data for the middle height of the slopes.
-      Resorts, lifts, onsen, toilets and parking: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
+      Resorts, lifts, onsen and parking: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
       (<a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>).
       Map style: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>.
       Avalanche bulletins: Japan Avalanche Network, Varsom (NVE), the Swedish Environmental Protection Agency and the European avalanche warning services in
@@ -1956,46 +1961,24 @@ function drawSelection(){
 
 // ---------- Detail view ----------
 let poiMap = null;
+// The info map shows lifts and car parks, and onsen in Japan. Toilets, saunas outside Japan and overnight places
+// (campsites, motorhome sites, rest areas, michi-no-eki) are left out.
 const POI_TYPES = {
-  onsen:  {label:"Onsen",                                                c:"--onsen"},   // label switched to "Bastu & bad" outside Japan
-  toilet: {label:T("Toaletter", "Toilets"),                              c:"--toilet"},
-  park:   {label:T("Parkering & övernattning", "Parking & overnight"),   c:"--park"},
+  onsen:  {label:"Onsen",                    c:"--onsen"},   // Japan only
+  park:   {label:T("Parkering", "Parking"),  c:"--park"},
 };
-const poiOn = {onsen:true, toilet:true, park:true};
-const TIPS_JAPAN = EN ? [
-  `<b>Michi-no-eki</b> (道の駅, roadside stations) have free parking and toilets around the clock. Resting overnight in the car is usually fine, but don't camp (no chairs, no cooking outside).`,
-  `<b>RV Parks</b> (RVパーク) are paid motorhome sites, often with power and a toilet. Also search <a href="https://www.kurumatabi.com/rvpark/" target="_blank" rel="noopener">kurumatabi.com/rvpark</a>.`,
-  `Many ski resort car parks don't allow overnight stays. Ask at the information desk.`,
-  `Tattoo bans are common at onsen. Check beforehand if it affects you.`,
-] : [
-  `<b>Michi-no-eki</b> (道の駅, vägstationer) har gratis parkering och toaletter dygnet runt. Att vila över natten i bilen är oftast okej, men campa inte (inga stolar, ingen matlagning ute).`,
-  `<b>RV Park</b> (RVパーク) är betalda ställplatser för husbilar, ofta med el och toalett. Sök även på <a href="https://www.kurumatabi.com/rvpark/" target="_blank" rel="noopener">kurumatabi.com/rvpark</a>.`,
-  `Många skidorters parkeringar tillåter inte övernattning. Fråga i informationen.`,
-  `Onsen med tatueringsförbud är vanligt. Kolla innan om det berör dig.`,
-];
-const TIPS_SCANDINAVIA = EN ? [
-  `Many resorts have <b>motorhome parking or campsites with power</b>, handy for heaters and engine warmers. Book ahead for the winter school holidays and Easter.`,
-  `Sleeping one night in a motorhome in public car parks and rest areas is generally fine unless signs say otherwise. Don't put out tables and chairs.`,
-  `Mind the cold: protect the water from freezing, carry plenty of gas or diesel for the heater and check that the toilet cassette doesn't freeze.`,
-  `Saunas are often found at campsites, swimming pools and hotels in the resorts. Ask about a day ticket.`,
-] : [
-  `Många skidorter har <b>husbilsparkering eller camping med el</b>, bra för värmare och motorvärmare. Boka i förväg under sportlov och påsk.`,
-  `På allmänna parkeringar och rastplatser går det i regel bra att sova en natt i husbilen om inga skyltar säger annat. Ställ inte ut bord och stolar.`,
-  `Tänk på kylan: frostskydda vattnet, ha gott om gasol eller diesel till värmaren och kolla att toalettkassetten inte fryser.`,
-  `Bastu finns ofta på campingar, i simhallar och på hotell i skidorterna. Fråga om dagsbiljett.`,
-];
+const poiOn = {onsen:true, park:true};
+const poiTypesFor = r => Object.entries(POI_TYPES).filter(([k]) => k !== "onsen" || r.area === "japan");
+const keepPoi = (r, type, sub) => type === "park" ? /^Parkering/.test(sub || "") : type === "onsen" && r.area === "japan";
+// Tips under the info map (the ones about sleeping in the car went with the overnight places)
+const TIPS_JAPAN = [T("Onsen med tatueringsförbud är vanligt. Kolla innan om det berör dig.", "Tattoo bans are common at onsen. Check beforehand if it affects you.")];
+const TIPS_SCANDINAVIA = [];
 const TIPS_ALPS = EN ? [
-  `Look for motorhome sites: <b>Stellplatz</b> (Austria, Switzerland), <b>aire de camping-car</b> (France) and <b>area di sosta camper</b> (Italy). Many resorts have one by the lifts, often with power. Apps such as park4night show more.`,
-  `Sleeping in a motorhome in ordinary car parks is banned in many places, especially in Switzerland and several Austrian states such as Tyrol. Follow the signs and use motorhome sites or winter campsites.`,
-  `Winter equipment is a must in the mountains: winter tyres and snow chains in the car (required by law in mountain areas in France and Italy during the winter season). Chain signs apply to motorhomes too.`,
-  `Austria and Switzerland require a road toll sticker (vignette), and Italy and France have toll motorways. Motorhomes over 3.5 tonnes have their own rules in Austria (GO-Box).`,
-  `Thermal baths (Therme, terme) and pools with saunas are found in many Alpine valleys, often open in the evening after skiing.`,
+  `Winter equipment is a must in the mountains: winter tyres and snow chains in the car (required by law in mountain areas in France and Italy during the winter season).`,
+  `Austria and Switzerland require a road toll sticker (vignette), and Italy and France have toll motorways.`,
 ] : [
-  `Leta efter ställplatser: <b>Stellplatz</b> (Österrike, Schweiz), <b>aire de camping-car</b> (Frankrike) och <b>area di sosta camper</b> (Italien). Många skidorter har en egen vid liften, ofta med el. Appar som park4night visar fler.`,
-  `Att sova i husbilen på vanliga parkeringar är förbjudet på många håll, särskilt i Schweiz och i flera österrikiska förbundsländer som Tyrolen. Följ skyltarna och använd ställplatser eller vintercamping.`,
-  `Vinterutrustning är ett krav i bergen: vinterdäck och snökedjor i bilen (i Frankrike och Italien under vintersäsongen enligt lag i bergsområden). Kedjeskyltar gäller även husbilar.`,
-  `Österrike och Schweiz kräver vägavgift (vignette) och Italien och Frankrike har betalmotorvägar. Husbilar över 3,5 ton har egna regler i Österrike (GO-Box).`,
-  `Termalbad (Therme, terme) och badhus med bastu finns i många alpdalar, ofta med kvällsöppet efter skidåkningen.`,
+  `Vinterutrustning är ett krav i bergen: vinterdäck och snökedjor i bilen (i Frankrike och Italien under vintersäsongen enligt lag i bergsområden).`,
+  `Österrike och Schweiz kräver vägavgift (vignette) och Italien och Frankrike har betalmotorvägar.`,
 ];
 const TIPS = {japan: TIPS_JAPAN, scandinavia: TIPS_SCANDINAVIA, alps: TIPS_ALPS};
 
@@ -2032,17 +2015,18 @@ async function renderDetail(id){
       <div class="panel" id="cams" hidden></div>
       <div class="panel" id="karta">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <h3>${T(`Liftar, ${AREAS[r.area].sauna.toLowerCase()}, toaletter och parkering`, `Lifts, ${AREAS[r.area].sauna.toLowerCase()}, toilets and parking`)}</h3>
+          <h3>${r.area === "japan" ? T("Liftar, onsen och parkering", "Lifts, onsen and parking") : T("Liftar och parkering", "Lifts and parking")}</h3>
           <div class="chips" id="chips">
             <button class="chip" id="chip-lift" aria-pressed="${liftOn}" style="--c:var(--lift)"><i></i>${T("Liftar", "Lifts")} <span class="num" id="cnt-lift"></span></button>
-            ${Object.entries(POI_TYPES).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${k === "onsen" ? AREAS[r.area].sauna : t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
+            ${poiTypesFor(r).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
           </div>
         </div>
+        <div class="mypin" id="mypin"></div>
         <div class="dgrid">
           <div class="poimapbox"><div id="poimap" role="region" aria-label="${T("Karta med faciliteter", "Map of facilities")}"></div></div>
           <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
             <div class="pois" id="pois"><div class="msg">${T("Laddar platser…", "Loading places…")}</div></div>
-            <ul class="tips">${TIPS[r.area].map(t => `<li>${t}</li>`).join("")}</ul>
+            ${TIPS[r.area].length ? `<ul class="tips">${TIPS[r.area].map(t => `<li>${t}</li>`).join("")}</ul>` : ""}
           </div>
         </div>
       </div>
@@ -2086,6 +2070,7 @@ async function renderDetail(id){
   io.observe(el);
   L.circleMarker([r.lat, r.lon], {radius:9, color:css("--snow"), weight:3, fillColor:css("--snow"), fillOpacity:.25})
     .addTo(poiMap).bindTooltip(r.name);
+  drawMyPin(r);
   // A touring area: the summit above, and the start where the tour begins
   if (isTour(r)) L.marker([r.slat, r.slon], {icon: L.divIcon({className: "", iconSize: [28, 28], html: `<div class="startpin">P</div>`}), zIndexOffset: 900})
     .addTo(poiMap).bindTooltip(`${T("Start", "Start")} ${uH(r.base)}`, {direction: "top"});
@@ -3397,9 +3382,44 @@ async function loadPlaces(r){
   const {pois = [], lifts = []} = await res.json();
   // Only facilities within POI_MAX_KM of the resort (the place files are built that way; this also trims older
   // copies kept offline)
-  return placeCache[r.id] = {lifts, pois: pois.filter(p => p[7] == null || p[7] <= POI_MAX_KM).map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
+  return placeCache[r.id] = {lifts, pois: pois.filter(p => (p[7] == null || p[7] <= POI_MAX_KM) && keepPoi(r, p[0], p[5])).map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
     ({type, name: name || subText(sub), named: !!name, jp, lat, lon, sub: subText(sub), hours, d, web: safeUrl(web), phone: phone || ""}))};
 }
+// ---------- My start pin ----------
+// One tap puts a pin where you are (GPS, works without mobile coverage), e.g. where you start a tour or left the
+// car. It is kept only on this device, per resort, with nothing but the position, and the app asks for the
+// position only when the button is pressed.
+let myPinMarker = null;
+const myPinKey = r => "yr-pin-" + r.id;
+function drawMyPin(r, fit = false){
+  const box = $("#mypin"), pin = store.get(myPinKey(r));
+  if (!box) return;
+  if (myPinMarker){ myPinMarker.remove(); myPinMarker = null; }
+  if (pin && poiMap){
+    myPinMarker = L.marker([pin.lat, pin.lon], {icon: L.divIcon({className: "", iconSize: [30, 38], iconAnchor: [15, 36], html: `<div class="mepin" aria-hidden="true"></div>`}), zIndexOffset: 1100,
+      title: T("Min startplats", "My start")}).addTo(poiMap).bindTooltip(T("Min startplats", "My start"), {direction: "top", offset: [0, -30]});
+    if (fit) poiMap.fitBounds(L.latLngBounds([[r.lat, r.lon], [pin.lat, pin.lon]]).pad(0.3), {maxZoom: 15});
+  }
+  box.innerHTML = `<button type="button" class="pinbtn" id="pinbtn">📍 ${pin ? T("Flytta min startplats hit", "Move my start here") : T("Markera min startplats", "Mark my start")}</button>${
+    pin ? `<a class="pinlink" href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning tillbaka", "Directions back")} ↗</a><button type="button" class="pinlink" id="pindel">${T("Ta bort", "Remove")}</button>` : ""
+    }<span class="pinmsg" id="pinmsg" role="status">${pin ? "" : T("Sparas bara i din telefon.", "Kept only on your phone.")}</span>`;
+  $("#pinbtn").onclick = () => {
+    if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
+    $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
+    navigator.geolocation.getCurrentPosition(pos => {
+      if (curId() !== r.id) return;
+      store.set(myPinKey(r), {lat: +pos.coords.latitude.toFixed(5), lon: +pos.coords.longitude.toFixed(5)});
+      drawMyPin(r, true);
+    }, err => {
+      $("#pinmsg").textContent = err.code === 1
+        ? T("Appen fick inte använda din position. Tillåt platstjänster för webbläsaren och försök igen.", "The app was not allowed to use your position. Allow location for the browser and try again.")
+        : T("Kunde inte hämta din position. Försök igen under bar himmel.", "Could not get your position. Try again under open sky.");
+    }, {enableHighAccuracy: true, timeout: 20000, maximumAge: 60000});
+  };
+  const del = $("#pindel");
+  if (del) del.onclick = () => { try { localStorage.removeItem(myPinKey(r)); } catch {} drawMyPin(r); };
+}
+
 // Facility descriptions in the place files are Swedish ("Parkering · gratis · 50 platser"); translated word by word
 const SUB_EN = {"Camping": "Campsite", "Toalett": "Toilet", "Rastplats": "Rest area", "Husbilsplats": "Motorhome site",
   "Bastu": "Sauna", "Äventyrsbad": "Water park", "Parkering": "Parking", "Serviceområde (motorväg)": "Motorway services",
