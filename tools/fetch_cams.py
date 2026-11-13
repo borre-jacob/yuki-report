@@ -29,8 +29,9 @@ if not key:
 fresh = []
 for fn in os.listdir(out_dir):
     try:
-        at = datetime.fromisoformat(json.load(open(os.path.join(out_dir, fn)))["at"].replace("Z", "+00:00"))
-        fresh.append(now - at < timedelta(hours=20))
+        d = json.load(open(os.path.join(out_dir, fn)))
+        at = datetime.fromisoformat(d["at"].replace("Z", "+00:00"))
+        fresh.append(now - at < timedelta(hours=20) and bool(d.get("resorts")))   # an empty file is never fresh
     except Exception:
         fresh.append(False)
 if fresh and all(fresh) and os.environ.get("CAMS_FORCE") != "1":
@@ -79,7 +80,7 @@ def lift_lines(rid):
     return [l[2] for l in d.get("lifts", []) if len(l) > 2 and len(l[2]) >= 2]
 
 
-out, cams_all = {}, {}
+out, cams_all, failed = {}, {}, 0
 for n, r in enumerate(resorts):
     lines = lift_lines(r["id"])
     pts = [p for ln in lines for p in ln] or [[r["lat"], r["lon"]]]
@@ -90,6 +91,10 @@ for n, r in enumerate(resorts):
     time.sleep(0.3)
     if d is None or "webcams" not in d:
         print("windy failed for", r["id"], str(d)[:100], file=sys.stderr)
+        failed += 1
+        if failed >= 20 and failed > n // 2:
+            print("Windy keeps failing (wrong WINDY_KEY?), keeping the webcam files as they are", file=sys.stderr)
+            sys.exit(1)
         continue
     found = []
     for w in d["webcams"]:
