@@ -327,7 +327,13 @@ details.how .hint{margin-top:6px}
 .camimg{position:relative;display:block;padding:0;border:0;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--line);aspect-ratio:400/224}
 .camimg img{display:block;width:100%;height:100%;object-fit:cover}
 .camplay{position:absolute;left:8px;bottom:8px;padding:3px 8px;border-radius:999px;background:rgba(10,18,32,.72);color:#fff;font-size:11.5px;font-weight:600}
-.camframe{width:100%;aspect-ratio:16/10;border:0;border-radius:10px;background:var(--line)}
+.camdlg{width:min(1100px,100vw);max-width:100vw;max-height:100dvh;margin:auto;padding:0;border:0;border-radius:12px;background:#0b1220;color:#fff;overflow:hidden}
+.camdlg::backdrop{background:rgba(5,10,20,.8)}
+.camdlg-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 14px;font-size:14px}
+.camdlg-h b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.camdlg-h .mclose{color:#fff;background:transparent;border-color:rgba(255,255,255,.35);flex:none}
+.camdlg iframe{display:block;width:100%;aspect-ratio:16/10;max-height:calc(100dvh - 52px);border:0;background:#000}
+@media (max-width:600px){.camdlg{border-radius:0}}
 .cam figcaption{font-size:13px;display:flex;flex-direction:column}
 .cam figcaption span{font-size:12px;color:var(--muted)}
 .camlinks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.camlinks>span{font-size:12.5px;color:var(--muted)}
@@ -2064,11 +2070,24 @@ async function loadCams(r){
     ${links.length ? `<div class="camlinks">${cams.length ? `<span>${T("Fler kameror:", "More cameras:")}</span>` : ""}${links.map(c => `<a class="dirbtn cam" href="${esc(c.url)}" target="_blank" rel="noopener">📷 ${esc(c.label)} ↗</a>`).join("")}</div>` : ""}
     ${cams.length ? `<p class="camsrc">${T("Webbkameror från", "Webcams provided by")} <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> — <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">${T("lägg till en webbkamera", "add a webcam")}</a></p>` : ""}`;
   box.querySelectorAll(".cam img").forEach(img => img.onerror = () => img.closest(".cam").remove());
-  box.querySelectorAll(".camimg").forEach(b => b.onclick = () => {
-    const f = document.createElement("iframe");
-    f.src = b.dataset.play; f.title = b.querySelector("img").alt; f.loading = "lazy"; f.allowFullscreen = true; f.className = "camframe";
-    b.replaceWith(f);
-  });
+  box.querySelectorAll(".camimg").forEach(b => b.onclick = () => openCam(b.dataset.play, b.querySelector("img").alt));
+}
+// The timelapse opens in a window over the page, as wide as the screen (bigger still with the phone turned sideways)
+function openCam(url, title){
+  let dlg = $("#camdlg");
+  if (!dlg){
+    dlg = document.createElement("dialog");
+    dlg.id = "camdlg"; dlg.className = "camdlg";
+    dlg.innerHTML = `<div class="camdlg-h"><b></b><button type="button" class="mclose" aria-label="${T("Stäng", "Close")}"><span aria-hidden="true">✕</span></button></div><iframe allowfullscreen></iframe>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector("button").onclick = () => dlg.close();
+    dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });   // a tap on the dimmed backdrop
+    dlg.addEventListener("close", () => { dlg.querySelector("iframe").src = "about:blank"; });
+  }
+  dlg.querySelector("b").textContent = title;
+  const f = dlg.querySelector("iframe");
+  f.title = title; f.src = url;
+  dlg.showModal();
 }
 
 // Avalanche bulletins for every resort, fetched centrally every 3 hours by GitHub (tools/fetch_avalanche.py,
