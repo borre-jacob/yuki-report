@@ -1880,7 +1880,7 @@ async function renderDetail(id){
         </div>
       </div>
       <nav class="jumps" aria-label="${T("Hoppa till", "Jump to")}">
-        <a href="#stats">${T("Prognos", "Forecast")}</a><a href="#cams" hidden>${T("Kameror", "Webcams")}</a><a href="#aval">${T("Lavin", "Avalanche")}</a><a href="#karta">${T("Karta", "Map")}</a>
+        <a href="#stats">${T("Prognos", "Forecast")}</a><a href="#aval">${T("Lavin", "Avalanche")}</a><a href="#cams" hidden>${T("Kameror", "Webcams")}</a><a href="#karta">${T("Infokarta", "Info map")}</a>
       </nav>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="fc" id="fc" hidden>
@@ -1891,11 +1891,11 @@ async function renderDetail(id){
         <div id="fp-table" role="tabpanel" aria-labelledby="ft-table" class="panel" hidden></div>
         <div id="fp-heat" role="tabpanel" aria-labelledby="ft-heat" class="panel" hidden></div>
       </div>
-      <div class="panel" id="cams" hidden></div>
       <div class="panel" id="aval">
         <h3>${T("Lavinläget", "Avalanche conditions")}</h3>
         ${avalOfficial(r)}
       </div>
+      <div class="panel" id="cams" hidden></div>
       <div class="panel" id="karta">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <h3>${T(`Liftar, ${AREAS[r.area].sauna.toLowerCase()}, toaletter och parkering`, `Lifts, ${AREAS[r.area].sauna.toLowerCase()}, toilets and parking`)}</h3>
