@@ -327,6 +327,7 @@ details.how .hint{margin-top:6px}
 .camframe{width:100%;aspect-ratio:16/10;border:0;border-radius:10px;background:var(--line)}
 .cam figcaption{font-size:13px;display:flex;flex-direction:column}
 .cam figcaption span{font-size:12px;color:var(--muted)}
+.camlinks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.camlinks>span{font-size:12.5px;color:var(--muted)}
 .camsrc{margin:0;font-size:12px;color:var(--muted)}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
@@ -1831,7 +1832,6 @@ async function renderDetail(id){
         <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span><button type="button" class="favbtn" id="favbtn" aria-pressed="${favs.has(r.id)}"></button></h2>
         <div class="dlinks">
           <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
-          ${(CAMS[r.id] || []).map(c => `<a class="dirbtn cam" href="${esc(c.url)}" target="_blank" rel="noopener">📷 ${esc(c.label)} ↗</a>`).join("")}
         </div>
       </div>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
@@ -2028,7 +2028,8 @@ function drawObs(){
 
 // Webcams at the resort from Windy (tools/fetch_cams.py, once a day): data/cams/<area>.json. Only cameras at most
 // 3 km from a lift, at most four, the highest first. The still image links to Windy's day timelapse player, which
-// opens in place; Windy asks for the credit line under the pictures.
+// opens in place; Windy asks for the credit line under the pictures. The resort's own camera pages (CAMS) are
+// linked in the same panel, so every camera is in one place.
 const camFiles = {};
 function camData(area){
   const c = camFiles[area];
@@ -2041,19 +2042,20 @@ function camData(area){
 async function loadCams(r){
   const d = await camData(r.area), box = $("#cams");
   if (!box || location.hash.slice(1) !== r.id) return;
-  const cams = d?.resorts?.[r.id] || [];
-  if (!cams.length){ box.hidden = true; return; }
+  const cams = d?.resorts?.[r.id] || [], links = CAMS[r.id] || [];
+  if (!cams.length && !links.length){ box.hidden = true; return; }
   const u = (c, k) => c[k] || (d.tpl?.[k] || "").replace("{id}", c.id);
   const name = t => { t = t.replace(/[\u200e\u200f]/g, ""); return (t.includes(": ") ? t.slice(t.indexOf(": ") + 2) : t).trim() || t; };
   box.hidden = false;
   box.innerHTML = `<h3>${T("Webbkameror", "Webcams")} <span class="h3sub">${T("vid backen", "at the slopes")}</span></h3>
-    <div class="camgrid">${cams.map(c => `<figure class="cam">
+    ${cams.length ? `<div class="camgrid">${cams.map(c => `<figure class="cam">
       <button type="button" class="camimg" data-play="${esc(u(c, "play"))}" aria-label="${esc(T(`Visa dagens tidsförlopp: ${name(c.t)}`, `Show today's timelapse: ${name(c.t)}`))}">
         <img src="${esc(u(c, "img"))}" alt="${esc(name(c.t))}" loading="lazy" width="400" height="224">
         <span class="camplay">▶ ${T("Dagens tidsförlopp", "Today's timelapse")}</span></button>
       <figcaption><b>${esc(name(c.t))}</b><span>${c.a != null ? uH(c.a) + " · " : ""}${c.d < 0.3 ? T("vid en lift", "by a lift") : T(`${fmt(c.d, 1)} km från närmaste lift`, `${fmt(c.d, 1)} km from the nearest lift`)}</span></figcaption>
-    </figure>`).join("")}</div>
-    <p class="camsrc">${T("Webbkameror från", "Webcams provided by")} <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> — <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">${T("lägg till en webbkamera", "add a webcam")}</a></p>`;
+    </figure>`).join("")}</div>` : ""}
+    ${links.length ? `<div class="camlinks">${cams.length ? `<span>${T("Fler kameror:", "More cameras:")}</span>` : ""}${links.map(c => `<a class="dirbtn cam" href="${esc(c.url)}" target="_blank" rel="noopener">📷 ${esc(c.label)} ↗</a>`).join("")}</div>` : ""}
+    ${cams.length ? `<p class="camsrc">${T("Webbkameror från", "Webcams provided by")} <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> — <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">${T("lägg till en webbkamera", "add a webcam")}</a></p>` : ""}`;
   box.querySelectorAll(".cam img").forEach(img => img.onerror = () => img.closest(".cam").remove());
   box.querySelectorAll(".camimg").forEach(b => b.onclick = () => {
     const f = document.createElement("iframe");
