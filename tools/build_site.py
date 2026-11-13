@@ -81,8 +81,9 @@ def snow_numbers(r):
 
 
 def depth(r):
+    """The measured snow depth from the station in the ski area, as on the resort page."""
     o = obs[r["area"]]
-    for k in o.get("resorts", {}).get(r["id"], []):
+    for k in o.get("resorts", {}).get(r["id"], [])[:1]:
         s = o["stations"].get(k)
         vals = [v for v in (s or {}).get("v", []) if v is not None]
         if vals:
@@ -184,13 +185,13 @@ for r in resorts:
         if snow_txt:
             parts.append(f"<p>{E(snow_txt)}</p>")
         if dp:
-            parts.append("<p>" + E(T(lang, f"Uppmätt snödjup: {dp[2]} cm vid {dp[0]}" + (f" ({dp[1]} m)" if dp[1] else "") + ".",
-                                     f"Measured snow depth: {dp[2]} cm at {dp[0]}" + (f" ({dp[1]} m)" if dp[1] else "") + ".")) + "</p>")
+            parts.append("<p>" + E(T(lang, f"Snödjup: {dp[2]} cm, uppmätt" + (f" på {dp[1]} m" if dp[1] else "") + f" vid {dp[0]}.",
+                                     f"Snow depth: {dp[2]} cm, measured" + (f" at {dp[1]} m" if dp[1] else "") + f" at {dp[0]}.")) + "</p>")
         if ncam:
             parts.append("<p>" + E(T(lang, f"{ncam} webbkameror vid backen." if ncam > 1 else "En webbkamera vid backen.",
                                      f"{ncam} webcams at the slopes." if ncam > 1 else "One webcam at the slopes.")) + "</p>")
-        parts.append("<p>" + E(T(lang, f"Yuki Report visar snöprognosen för {r['name']} timme för timme, snötyp och puderdagar, vad vädermodellerna säger, lavinläget, uppmätt snö och en karta med liftar och parkering.",
-                                 f"Yuki Report shows the snow forecast for {r['name']} hour by hour, snow type and powder days, what the weather models say, the avalanche conditions, measured snow and a map with lifts and parking.")) + "</p>")
+        parts.append("<p>" + E(T(lang, f"Yuki Report visar snöprognosen för {r['name']} timme för timme, snötyp och puderdagar, vad vädermodellerna säger, lavinläget, snödjupet och en karta med liftar och parkering.",
+                                 f"Yuki Report shows the snow forecast for {r['name']} hour by hour, snow type and powder days, what the weather models say, the avalanche conditions, the snow depth and a map with lifts and parking.")) + "</p>")
         if same:
             parts.append(f"<h2>{E(T(lang, 'Fler orter i ' + r['region'], 'More resorts in ' + r['region']))}</h2><p>"
                          + " · ".join(f'<a href="/{lang}/{x["id"]}/">{E(x["name"])}</a>' for x in same) + "</p>")

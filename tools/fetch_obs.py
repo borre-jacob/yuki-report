@@ -1,7 +1,7 @@
 """Fetch measured snow depth from weather stations near each resort (run every few hours on GitHub).
 
 Usage: python3 tools/fetch_obs.py index.html data/obs
-Writes <dir>/<area>.json = {"at": fetch time (UTC), "stations": {id: station}, "resorts": {resort id: [station ids]}}.
+Writes <dir>/<area>.json = {"at": fetch time (UTC), "stations": {id: station}, "resorts": {resort id: [station id]}}.
 A station is {"n": name, "a": height (m), "src": source, "t0": first time (UTC, ISO hour), "dt": hours between
 values, "v": snow depth in cm (null where missing)}, about the last 7 days.
 
@@ -16,8 +16,9 @@ Sources, all open and without keys:
                Norway is skipped)
 France and Italy have no station source yet.
 
-Each resort gets up to two stations within 25 km whose height is near the slopes: the best one near the base,
-and a higher one when there is one. The workflow puts the published files in <dir> first, so history that a
+A resort gets a station only when one stands in the ski area: at most 3 km from a lift (lifts from
+data/osm/places) and between 50 m below the base and 100 m above the top; the highest such station is used. The app
+shows its reading as the resort's snow depth, and the model's estimate where there is none. The workflow puts the published files in <dir> first, so history that a
 source only gives for a short time (JMA, SLF) is kept between runs, and a source that fails keeps its data.
 """
 import json, math, os, re, subprocess, sys, time
@@ -279,29 +280,49 @@ def frost():
             s["ser"] = {k[:10] + "T06:00Z": v for k, v in sorted(s["ser"].items())}
 
 
+PLACES = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), "data", "osm", "places")
+MAX_KM = 3
+_lines = {}
+
+
+def lift_lines(rid):
+    if rid not in _lines:
+        try:
+            d = json.load(open(os.path.join(PLACES, rid + ".json")))
+            _lines[rid] = [l[2] for l in d.get("lifts", []) if len(l) > 2 and len(l[2]) >= 2]
+        except Exception:
+            _lines[rid] = []
+    return _lines[rid]
+
+
+def seg_km(p, a, b):
+    """Distance from point p to the segment a–b, in a flat projection around p (fine at these distances)."""
+    k = math.cos(math.radians(p[0]))
+    ax, ay, bx, by = (a[1] - p[1]) * k, a[0] - p[0], (b[1] - p[1]) * k, b[0] - p[0]
+    dx, dy = bx - ax, by - ay
+    t = 0 if dx == dy == 0 else max(0, min(1, -(ax * dx + ay * dy) / (dx * dx + dy * dy)))
+    return math.hypot(ax + t * dx, ay + t * dy) * 111.2
+
+
 def pick(r, cands):
-    """Up to two stations for a resort: the best one near the base, plus a higher one if there is one."""
-    ok = []
+    """The station for the resort's snow depth: one that stands in the ski area, at most MAX_KM from a lift (from
+    the resort's point when it has no lifts) and between 50 m below the base and 100 m above the top. The highest
+    one wins. A list, empty when there is none."""
+    lines, ok = lift_lines(r["id"]), []
     for s in cands:
         if s["cc"] != r["cc"]:
             continue
-        d = km(r["lat"], r["lon"], s["lat"], s["lon"])
-        if d > 25:
+        if km(r["lat"], r["lon"], s["lat"], s["lon"]) > 40:
             continue
-        if s["a"] is not None and not (r["base"] - 400 <= s["a"] <= r["top"] + 200):
+        if s["a"] is not None and not (r["base"] - 50 <= s["a"] <= r["top"] + 100):
             continue
-        ok.append((d, s))
+        p = (s["lat"], s["lon"])
+        d = min(seg_km(p, a, b) for ln in lines for a, b in zip(ln, ln[1:])) if lines else km(r["lat"], r["lon"], *p)
+        if d <= MAX_KM:
+            ok.append((d, s))
     if not ok:
         return []
-    alt = lambda s: r["base"] if s["a"] is None else s["a"]
-    low = min(ok, key=lambda x: x[0] + abs(alt(x[1]) - r["base"]) / 150)[1]
-    hi_line = r["base"] + 0.4 * (r["top"] - r["base"])
-    high = [x for x in ok if x[1] is not low and x[1]["a"] is not None and x[1]["a"] >= hi_line and (low["a"] or 0) < hi_line]
-    out = [low]
-    if high:
-        out.append(min(high, key=lambda x: x[0] + abs(x[1]["a"] - (r["base"] + r["top"]) / 2) / 150)[1])
-    return sorted(out, key=lambda s: s["a"] or 0)
-
+    return [max(ok, key=lambda x: ((x[1]["a"] or 0), -x[0]))[1]]
 
 for name, fn in (("jma", jma), ("slf", slf), ("geosphere", geosphere), ("fmi", fmi), ("smhi", smhi), ("frost", frost)):
     try:
