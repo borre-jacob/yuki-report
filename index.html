@@ -38,6 +38,8 @@ document.documentElement.lang=p?p[1]:l==="sv"||l==="en"?l:/^sv\b/i.test(navigato
   --snow:#2f6fd6; --snow-soft:#cfe0fa; --future:#7c5cd6; --future-soft:#e3dafa;
   --onsen:#c2410c; --toilet:#0f766e; --fav:#d99a00; --park:#7c3aed; --lift:#be123c; --warn:#b45309;
   --rose0:#e6ebf1; --rose1:#f4a6c0; --rose2:#d61f69;
+  /* Text on tinted backgrounds (and links): darker than the accent colours so it reads (WCAG AA, 4.5:1) */
+  --snow-ink:#1d55b0; --future-ink:#5b3cb8; --warn-ink:#8a4106; --ok-ink:#0b5c55; --muted-2:#45536a;
   --display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -47,12 +49,14 @@ document.documentElement.lang=p?p[1]:l==="sv"||l==="en"?l:/^sv\b/i.test(navigato
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
   --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
   --onsen:#fb923c; --toilet:#2dd4bf; --fav:#fbbf24; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
-  --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f; color-scheme:dark}}
+  --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f;
+  --snow-ink:#9cc2ff; --future-ink:#c9b8ff; --warn-ink:#fcd34d; --ok-ink:#5eead4; --muted-2:#b3c0d2; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
   --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
   --onsen:#fb923c; --toilet:#2dd4bf; --fav:#fbbf24; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
-  --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f; color-scheme:dark}
+  --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f;
+  --snow-ink:#9cc2ff; --future-ink:#c9b8ff; --warn-ink:#fcd34d; --ok-ink:#5eead4; --muted-2:#b3c0d2; color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -61,7 +65,7 @@ body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);
   padding-block:12px 40px}
 h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.2}
 button{font:inherit;color:inherit}
-a{color:var(--snow)}
+a{color:var(--snow-ink)}
 :focus-visible{outline:2px solid var(--snow);outline-offset:2px}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -206,10 +210,10 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .schip.ok{background:color-mix(in srgb,var(--snow) 14%,var(--surface))}
 /* Snow type: a pill on the day cards and in the summary chips */
 .sq{display:inline-block;margin-top:4px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
-.sq-dry,.sq-powder{background:var(--snow-soft);color:var(--snow)}
+.sq-dry,.sq-powder{background:var(--snow-soft);color:var(--snow-ink)}
 .sq-light{background:var(--bg);color:var(--ink)}
-.sq-heavy{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
-.sq-wet{background:color-mix(in srgb,var(--toilet) 16%,var(--surface));color:var(--toilet)}
+.sq-heavy{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn-ink)}
+.sq-wet{background:color-mix(in srgb,var(--toilet) 16%,var(--surface));color:var(--ok-ink)}
 .schip.sq-dry,.schip.sq-powder,.schip.sq-heavy,.schip.sq-wet{border-color:transparent}
 .schip.sq-light{background:var(--bg)}
 .schip.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
@@ -237,10 +241,10 @@ details.how .hint{margin-top:6px}
 .mtrack i{position:absolute;top:0;bottom:0;border-radius:5px}
 .mtrack b{position:absolute;top:-4px;width:3px;height:18px;margin-left:-1.5px;border-radius:2px;background:var(--future)}
 .mbar.ok .mtrack i{background:var(--toilet)} .mbar.warn .mtrack i{background:var(--warn)}
-.mbar span{font-size:13px;font-weight:600} .mbar.ok span{color:var(--toilet)} .mbar.warn span{color:var(--warn)}
+.mbar span{font-size:13px;font-weight:600} .mbar.ok span{color:var(--ok-ink)} .mbar.warn span{color:var(--warn-ink)}
 .daycard .unc{display:inline-block;margin-left:8px;vertical-align:4px;font:600 12px var(--body);padding:2px 8px;border-radius:999px}
-.daycard .unc.ok{color:var(--toilet);background:color-mix(in srgb,var(--toilet) 14%,var(--surface))}
-.daycard .unc.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
+.daycard .unc.ok{color:var(--ok-ink);background:color-mix(in srgb,var(--toilet) 14%,var(--surface))}
+.daycard .unc.warn{color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
 .daycard .mlist{display:block;margin-top:8px}
 .daycard .mlist b{color:var(--ink)}
 .mdays .v,.mdays .rv{position:absolute;left:-4px;right:-4px;text-align:center;z-index:2;line-height:1.1}
@@ -253,7 +257,7 @@ details.how .hint{margin-top:6px}
 .fc{display:flex;flex-direction:column;gap:10px;min-width:0}
 .fc[hidden],.fc [hidden]{display:none}
 .ftabs{display:grid;grid-template-columns:repeat(3,1fr);background:color-mix(in srgb,var(--line) 55%,var(--bg));border-radius:12px;padding:4px;gap:4px;max-width:520px}
-.ftabs button{font-weight:600;font-size:14px;border:0;border-radius:9px;padding:8px 0;background:transparent;color:var(--muted);cursor:pointer}
+.ftabs button{font-weight:600;font-size:14px;border:0;border-radius:9px;padding:8px 0;background:transparent;color:var(--muted-2);cursor:pointer}
 .ftabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .daycards{display:flex;flex-direction:column;gap:8px}
 .daycard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:4px 10px;align-items:center;cursor:pointer;background:var(--surface);text-align:left;width:100%}
@@ -340,9 +344,9 @@ details.how .hint{margin-top:6px}
 /* The verdict at the top of the summary */
 .dom{margin:0;align-self:flex-start;padding:7px 14px;border-radius:12px;font:700 17px/1.3 var(--display)}
 .v-powder{background:var(--future);color:#fff}
-.v-good{background:var(--future-soft);color:var(--future)}
-.v-some{background:var(--snow-soft);color:var(--snow)}
-.v-thin{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.v-good{background:var(--future-soft);color:var(--future-ink)}
+.v-some{background:var(--snow-soft);color:var(--snow-ink)}
+.v-thin{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn-ink)}
 .v-calm{background:var(--bg);color:var(--muted)}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
@@ -3311,7 +3315,7 @@ function drawPois(r){
       <i></i>
       <div style="min-width:0"><div class="n"><button type="button" title="${T("Visa på kartan", "Show on the map")}">${esc(i.name)}</button>${i.jp?` <span class="t">${esc(i.jp)}</span>`:""}</div>
         <div class="t">${esc(i.sub)}${i.hours?` · ${esc(i.hours)}`:""}</div>${onsenLinks(i)}</div>
-      <div class="d">${fmt(i.d,1)} km<br><a href="${gmapsDir(i.lat,i.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning", "Directions")} ↗</a></div>
+      <div class="d">${fmt(i.d,1)} km<br><a href="${gmapsDir(i.lat,i.lon)}" target="_blank" rel="noopener" aria-label="${esc(T(`Vägbeskrivning till ${i.name}`, `Directions to ${i.name}`))}">${T("Vägbeskrivning", "Directions")} ↗</a></div>
     </div>`).join("") || `<div class="msg">${T("Inget hittat i OpenStreetMap för de valda kategorierna. Prova att slå på fler kategorier.", "Nothing found in OpenStreetMap for the chosen categories. Try switching on more categories.")}</div>`;
 }
 
