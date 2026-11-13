@@ -2,7 +2,7 @@
 
 Usage: python3 tools/fetch_pois_batch.py index.html data/osm/pois.json [resorts per query, default 8]
 Same output rows as tools/fetch_pois.py; resorts already in data/osm/pois.json are skipped.
-Radii: toilets 12 km, saunas/baths and overnight places 30 km, car parks 4 km.
+Radii: 10 km for toilets, saunas/baths and overnight places, 4 km for car parks (the map shows 10 km).
 """
 import json, math, os, re, subprocess, sys, time
 
@@ -21,7 +21,7 @@ src = open(os.path.join(os.path.dirname(__file__), "fetch_pois.py"), encoding="u
 ns = {"re": re, "math": math}
 exec(src[src.index("def dist"):src.index("for rid, lat, lon in resorts")], ns)
 classify, dist = ns["classify"], ns["dist"]
-RADIUS = {"toilet": 12, "onsen": 30, "park": 30}
+RADIUS = {"toilet": 10, "onsen": 10, "park": 10}
 
 
 def query(group):

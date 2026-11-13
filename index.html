@@ -3243,12 +3243,15 @@ let poiLayer = null, liftLayer = null, liftOn = true;
 // Facility rows: [type, name, japaneseName, lat, lon, description, openingHours, kmFromResort, website, phone]
 const PLACES_DIR = "data/osm/places/";
 const placeCache = {};
+const POI_MAX_KM = 10;
 async function loadPlaces(r){
   if (placeCache[r.id]) return placeCache[r.id];
   const res = await fetch(PLACES_DIR + r.id + ".json");
   if (!res.ok) throw new Error(res.status === 404 ? T("ingen sparad data för orten", "no saved data for the resort") : T("kunde inte hämta platserna", "could not fetch the places"));
   const {pois = [], lifts = []} = await res.json();
-  return placeCache[r.id] = {lifts, pois: pois.map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
+  // Only facilities within POI_MAX_KM of the resort (the place files are built that way; this also trims older
+  // copies kept offline)
+  return placeCache[r.id] = {lifts, pois: pois.filter(p => p[7] == null || p[7] <= POI_MAX_KM).map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
     ({type, name: name || subText(sub), named: !!name, jp, lat, lon, sub: subText(sub), hours, d, web: safeUrl(web), phone: phone || ""}))};
 }
 // Facility descriptions in the place files are Swedish ("Parkering · gratis · 50 platser"); translated word by word

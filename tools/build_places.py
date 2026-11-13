@@ -1,13 +1,16 @@
 """Split the OpenStreetMap data into one small file per resort, which the app loads when a resort is opened.
 
 Usage: python3 tools/build_places.py data/osm/pois.json data/osm/lifts.json data/osm/places
-Writes <dir>/<id>.json = {"pois": [...], "lifts": [...]} and <dir>/sizes.json = {id: bytes},
+Writes <dir>/<id>.json = {"pois": [...], "lifts": [...]} and <dir>/sizes.json = {id: bytes}, with only the
+facilities within MAX_KM (10 km) of the resort,
 which the app uses to say how much "Spara offline" downloads. Stale files for removed resorts are deleted.
 Row formats are unchanged: see tools/fetch_pois.py and tools/fetch_lifts.py.
 """
 import json, os, sys
 
-pois = json.load(open(sys.argv[1], encoding="utf-8"))
+MAX_KM = 10   # facilities further from the resort than this are left out of the map
+pois = {rid: [p for p in rows if p[7] is None or p[7] <= MAX_KM]
+        for rid, rows in json.load(open(sys.argv[1], encoding="utf-8")).items()}
 lifts = json.load(open(sys.argv[2], encoding="utf-8"))
 out = sys.argv[3]
 os.makedirs(out, exist_ok=True)
