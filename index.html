@@ -355,7 +355,8 @@ details.how .hint{margin-top:6px}
 .legend .tourkey::before{display:none}
 .mypin{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .pinbtn{border:1px solid var(--snow);background:color-mix(in srgb,var(--snow) 12%,var(--surface));color:var(--ink);border-radius:999px;padding:8px 14px;font:600 14px var(--body);cursor:pointer}
-.pinlink{font-size:13.5px;font-weight:600;color:var(--snow-ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.pinpop{display:flex;flex-direction:column;gap:6px;min-width:150px}
+.pinpop button{align-self:flex-start;border:0;background:none;padding:0;color:var(--lift);font-weight:600;cursor:pointer;text-decoration:underline}
 .pinmsg{font-size:12.5px;color:var(--muted)}
 .mepin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e11d48;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .tourtag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font:600 10.5px var(--body);color:var(--muted-2);vertical-align:2px}
@@ -3385,39 +3386,49 @@ async function loadPlaces(r){
   return placeCache[r.id] = {lifts, pois: pois.filter(p => (p[7] == null || p[7] <= POI_MAX_KM) && keepPoi(r, p[0], p[5])).map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
     ({type, name: name || subText(sub), named: !!name, jp, lat, lon, sub: subText(sub), hours, d, web: safeUrl(web), phone: phone || ""}))};
 }
-// ---------- My start pin ----------
+// ---------- My pins ----------
 // One tap puts a pin where you are (GPS, works without mobile coverage), e.g. where you start a tour or left the
-// car. It is kept only on this device, per resort, with nothing but the position, and the app asks for the
-// position only when the button is pressed.
-let myPinMarker = null;
-const myPinKey = r => "yr-pin-" + r.id;
-function drawMyPin(r, fit = false){
-  const box = $("#mypin"), pin = store.get(myPinKey(r));
+// car; several pins per resort are fine. They are kept only on this device, per resort, with nothing but the
+// position, and the app asks for the position only when the button is pressed. Tap a pin for directions or to
+// remove it.
+let myPinLayer = null;
+const myPinsKey = r => "yr-pins-" + r.id;
+const myPins = r => store.get(myPinsKey(r)) || [];
+function drawMyPin(r, fitTo = null){
+  const box = $("#mypin");
   if (!box) return;
-  if (myPinMarker){ myPinMarker.remove(); myPinMarker = null; }
-  if (pin && poiMap){
-    myPinMarker = L.marker([pin.lat, pin.lon], {icon: L.divIcon({className: "", iconSize: [30, 38], iconAnchor: [15, 36], html: `<div class="mepin" aria-hidden="true"></div>`}), zIndexOffset: 1100,
-      title: T("Min startplats", "My start")}).addTo(poiMap).bindTooltip(T("Min startplats", "My start"), {direction: "top", offset: [0, -30]});
-    if (fit) poiMap.fitBounds(L.latLngBounds([[r.lat, r.lon], [pin.lat, pin.lon]]).pad(0.3), {maxZoom: 15});
+  const pins = myPins(r);
+  if (myPinLayer){ myPinLayer.remove(); myPinLayer = null; }
+  if (poiMap){
+    myPinLayer = L.layerGroup().addTo(poiMap);
+    pins.forEach((pin, n) => {
+      const pop = document.createElement("div");
+      pop.className = "pinpop";
+      pop.innerHTML = `<b>${T("Min nål", "My pin")} ${n + 1}</b><a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a><button type="button">${T("Ta bort", "Remove")}</button>`;
+      pop.querySelector("button").onclick = () => { store.set(myPinsKey(r), myPins(r).filter((_, i) => i !== n)); drawMyPin(r); };
+      L.marker([pin.lat, pin.lon], {icon: L.divIcon({className: "", iconSize: [30, 38], iconAnchor: [15, 36], html: `<div class="mepin" aria-hidden="true"></div>`}),
+        zIndexOffset: 1100, title: `${T("Min nål", "My pin")} ${n + 1}`}).addTo(myPinLayer).bindPopup(pop, {offset: [0, -30]});
+    });
+    if (fitTo) poiMap.fitBounds(L.latLngBounds([[r.lat, r.lon], fitTo]).pad(0.3), {maxZoom: 15});
   }
-  box.innerHTML = `<button type="button" class="pinbtn" id="pinbtn">📍 ${pin ? T("Flytta min startplats hit", "Move my start here") : T("Markera min startplats", "Mark my start")}</button>${
-    pin ? `<a class="pinlink" href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning tillbaka", "Directions back")} ↗</a><button type="button" class="pinlink" id="pindel">${T("Ta bort", "Remove")}</button>` : ""
-    }<span class="pinmsg" id="pinmsg" role="status">${pin ? "" : T("Sparas bara i din telefon.", "Kept only on your phone.")}</span>`;
+  box.innerHTML = `<button type="button" class="pinbtn" id="pinbtn">📍 ${T("Sätt nål här", "Drop a pin here")}</button><span class="pinmsg" id="pinmsg" role="status">${
+    pins.length ? T(`${pins.length === 1 ? "En nål sparad" : pins.length + " nålar sparade"} i din telefon. Tryck på en nål för vägbeskrivning eller för att ta bort den.`,
+                    `${pins.length === 1 ? "One pin" : pins.length + " pins"} saved on your phone. Tap a pin for directions or to remove it.`)
+                : T("Markera till exempel var du börjar en topptur. Nålarna sparas bara i din telefon.", "Mark for example where you start a tour. Pins are kept only on your phone.")}</span>`;
   $("#pinbtn").onclick = () => {
     if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
     $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
     navigator.geolocation.getCurrentPosition(pos => {
       if (curId() !== r.id) return;
-      store.set(myPinKey(r), {lat: +pos.coords.latitude.toFixed(5), lon: +pos.coords.longitude.toFixed(5)});
-      drawMyPin(r, true);
+      const pin = {lat: +pos.coords.latitude.toFixed(5), lon: +pos.coords.longitude.toFixed(5)};
+      store.set(myPinsKey(r), [...myPins(r), pin]);
+      drawMyPin(r, [pin.lat, pin.lon]);
     }, err => {
       $("#pinmsg").textContent = err.code === 1
         ? T("Appen fick inte använda din position. Tillåt platstjänster för webbläsaren och försök igen.", "The app was not allowed to use your position. Allow location for the browser and try again.")
         : T("Kunde inte hämta din position. Försök igen under bar himmel.", "Could not get your position. Try again under open sky.");
     }, {enableHighAccuracy: true, timeout: 20000, maximumAge: 60000});
   };
-  const del = $("#pindel");
-  if (del) del.onclick = () => { try { localStorage.removeItem(myPinKey(r)); } catch {} drawMyPin(r); };
 }
 
 // Facility descriptions in the place files are Swedish ("Parkering · gratis · 50 platser"); translated word by word
