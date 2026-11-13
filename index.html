@@ -227,6 +227,7 @@ select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1p
 .mdays .bar.past{background:var(--snow)}
 .mdays .col{position:relative}
 .flg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:6px;align-items:center}
+.flg .hotkey{color:var(--warn-ink);font-weight:600}
 .flg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .lg-past{background:var(--snow)} .lg-fut{background:var(--future)}
 .lg-rng{border:1.5px dashed var(--future);background:color-mix(in srgb,var(--future) 16%,transparent)}
@@ -3200,7 +3201,10 @@ function drawForecast(){
       <tr class="sep"><th scope="row">${T("Lavin", "Aval.")}</th>${dayCols.map((d, k) => `<td colspan="${P.filter(p => p.d === d).length}" class="ds">${dayBadge(k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0, rel(d))}</td>`).join("")}</tr>
     </tbody></table></div>
     <div class="flg"><span>${SNOW_U} ${T("snö", "snow")}</span><span><i style="background:${shadeSnow(2)}"></i>${T("lite", "a little")}</span><span><i style="background:${shadeSnow(15)}"></i>${T("mycket", "a lot")}</span>
-      <span>${T("Fm 06–12 · Em 12–18 · Natt 18–06", "AM 06–12 · PM 12–18 · Night 18–06")}</span><span style="color:var(--warn);font-weight:600">${T("orange nollgräns: över dalen", "orange freezing level: above the base")}</span></div>`;
+      <span>${T("Fm 06–12 · Em 12–18 · Natt 18–06", "AM 06–12 · PM 12–18 · Night 18–06")}</span>${
+      P.some(p => { const f = range(mid.hourly.freezing_level_height, p); return f.length && Math.max(...f) > r.base; })
+        ? `<span class="hotkey">${T("orange nollgräns: över dalen", "orange freezing level: above the base")}</span>` : ""}${
+      P.some(p => windCell(p)[0] === "hot") ? `<span class="hotkey">${T(`orange vind: byar från ${uWind(20)}`, `orange wind: gusts from ${uWind(20)}`)}</span>` : ""}</div>`;
 
   // --- Heights: snow or rain at five heights from the top down to the base ---
   const HP = periods(4);
