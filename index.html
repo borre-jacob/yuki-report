@@ -349,6 +349,11 @@ details.how .hint{margin-top:6px}
 .v-some{background:var(--snow-soft);color:var(--snow-ink)}
 .v-thin{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn-ink)}
 .v-calm{background:var(--bg);color:var(--muted)}
+.snowpin.tour{border-radius:7px}
+.snowpin.tour::before{content:"▲";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-size:10px;line-height:1;color:var(--ink);text-shadow:0 0 2px var(--surface)}
+.startpin{width:28px;height:28px;border-radius:6px;background:var(--snow);color:#fff;font:700 14px/28px var(--body);text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.legend .tourkey::before{display:none}
+.tourtag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font:600 10.5px var(--body);color:var(--muted-2);vertical-align:2px}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
 .fctable table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
@@ -636,7 +641,7 @@ const RESORTS = [
   {id:"furano",name:"Furano",jp:"富良野",region:"Hokkaido",lat:43.325,lon:142.348,base:235,top:1074},
   {id:"tomamu",name:"Hoshino Tomamu",jp:"トマム",region:"Hokkaido",lat:43.058,lon:142.618,base:540,top:1239},
   {id:"asahidake",name:"Asahidake",jp:"旭岳",region:"Hokkaido",lat:43.660,lon:142.800,base:1100,top:1600},
-  {id:"kamui",name:"Kamui Ski Links",jp:"カムイ",region:"Hokkaido",lat:43.835,lon:142.246,base:230,top:750},
+  {id:"kamui",name:"Kamui Ski Links",jp:"カムイ",region:"Hokkaido",lat:43.7,lon:142.2,base:140,top:730},
   {id:"sahoro",name:"Sahoro",jp:"サホロ",region:"Hokkaido",lat:43.168,lon:142.785,base:400,top:1030},
   // Tohoku
   {id:"hakkoda",name:"Hakkoda",jp:"八甲田",region:"Tohoku",lat:40.665,lon:140.867,base:660,top:1324},
@@ -664,6 +669,127 @@ const RESORTS = [
   {id:"dynaland",name:"Dynaland",jp:"ダイナランド",region:"Gifu",lat:35.972,lon:136.845,base:1050,top:1450},
   {id:"katsuyama",name:"Ski Jam Katsuyama",jp:"勝山",region:"Fukui",lat:36.089,lon:136.580,base:500,top:1300},
   {id:"daisen",name:"Daisen",jp:"大山",region:"Västra Japan",lat:35.370,lon:133.540,base:750,top:1130},
+  // ----- japan2:start · Japan, more resorts: found in OpenStreetMap (named ski areas with lifts, at least 400 m vertical), base/top = lowest/highest lift station -----
+  {id:"asarigawaonsen",name:"Asarigawa Onsen Ski Resort",jp:"",region:"Hokkaido",lat:43.14,lon:141.028,base:160,top:620},
+  {id:"daisetsuzansounkyokuroda",name:"Daisetsuzan Sounkyo Kurodake Ski Area",jp:"",region:"Hokkaido",lat:43.712,lon:142.938,base:660,top:1510},
+  {id:"hakodatenanae",name:"Hakodate Nanae Snowpark",jp:"",region:"Hokkaido",lat:41.974,lon:140.756,base:250,top:940},
+  {id:"hidakakokusai",name:"Hidaka Kokusai",jp:"",region:"Hokkaido",lat:42.863,lon:142.457,base:250,top:720},
+  {id:"nayoropiyashiri",name:"Nayoro Piyashiri",jp:"",region:"Hokkaido",lat:44.409,lon:142.512,base:250,top:660},
+  {id:"nisekomoiwa",name:"Niseko Moiwa Ski Resort",jp:"",region:"Hokkaido",lat:42.853,lon:140.63,base:340,top:800},
+  {id:"aizukogentakahata",name:"Aizu Kogen Takahata",jp:"",region:"Tohoku",lat:37.093,lon:139.456,base:720,top:1240},
+  {id:"aizukogentakatsue",name:"Aizu Kogen Takatsue Ski Resort",jp:"",region:"Tohoku",lat:37.115,lon:139.63,base:950,top:1620},
+  {id:"aizukogennango",name:"Aizukogen Nango Ski Area",jp:"",region:"Tohoku",lat:37.26,lon:139.558,base:520,top:960},
+  {id:"animtmoriyoshi",name:"Ani Ski Resort (Mt. Moriyoshi)",jp:"",region:"Tohoku",lat:39.965,lon:140.507,base:540,top:1200},
+  {id:"aomorispring",name:"Aomori Spring Resort",jp:"",region:"Tohoku",lat:40.684,lon:140.285,base:390,top:890},
+  {id:"getokogen",name:"Geto Kogen",jp:"",region:"Tohoku",lat:39.237,lon:140.9,base:640,top:1070},
+  {id:"grandeco",name:"Grandeco Snow Resort",jp:"",region:"Tohoku",lat:37.712,lon:140.127,base:1020,top:1590},
+  {id:"hachimantaipanoramaare",name:"Hachimantai Resort Panorama Ski Area",jp:"",region:"Tohoku",lat:39.886,lon:140.978,base:550,top:970},
+  {id:"hachimantaishimokura",name:"Hachimantai Resort Shimokura Ski area",jp:"",region:"Tohoku",lat:39.897,lon:140.944,base:630,top:1130},
+  {id:"hanawa",name:"Hanawa Ski Area",jp:"",region:"Tohoku",lat:40.184,lon:140.828,base:250,top:710},
+  {id:"inawashiroparadise",name:"Inawashiro Snow Paradise",jp:"",region:"Tohoku",lat:37.582,lon:140.091,base:710,top:1270},
+  {id:"iwakisanhyakuzawa",name:"Iwakisan Hyakuzawa Ski Resort",jp:"",region:"Tohoku",lat:40.635,lon:140.327,base:330,top:750},
+  {id:"iwatekogen",name:"Iwate Kogen Snow Park",jp:"",region:"Tohoku",lat:39.821,lon:140.966,base:650,top:1210},
+  {id:"minowa",name:"Minowa Ski Resort",jp:"",region:"Tohoku",lat:37.651,lon:140.262,base:1050,top:1460},
+  {id:"miyagizaoeboshi",name:"Miyagi Zao Eboshi Resort",jp:"",region:"Tohoku",lat:38.124,lon:140.511,base:690,top:1370},
+  {id:"miyagizaoshichikashuku",name:"Miyagi Zao Shichikashuku",jp:"",region:"Tohoku",lat:37.996,lon:140.374,base:530,top:960},
+  {id:"onikobe",name:"Onikobe Ski Area",jp:"",region:"Tohoku",lat:38.783,lon:140.635,base:360,top:1040},
+  {id:"owanionseninternational",name:"Owani Onsen Ski Resort International Area",jp:"",region:"Tohoku",lat:40.502,lon:140.573,base:90,top:530},
+  {id:"shizukuishi",name:"Shizukuishi Ski Resort",jp:"",region:"Tohoku",lat:39.781,lon:140.918,base:430,top:1240},
+  {id:"stmary",name:"St. Mary",jp:"",region:"Tohoku",lat:38.217,lon:140.514,base:450,top:940},
+  {id:"tengendaikogen",name:"Tengendai Kogen",jp:"",region:"Tohoku",lat:37.769,lon:140.136,base:940,top:1790},
+  {id:"bluenorikura",name:"Blue Resort Norikura",jp:"",region:"Nagano",lat:36.118,lon:137.608,base:1490,top:2000},
+  {id:"fujimipanorama",name:"Fujimi Panorama Resort",jp:"",region:"Nagano",lat:35.909,lon:138.197,base:1050,top:1780},
+  {id:"heavenssonoharaworld",name:"Heavens Sonohara Snow World",jp:"",region:"Nagano",lat:35.453,lon:137.64,base:780,top:1590},
+  {id:"iizunahigashikogen",name:"Iizuna Higashi Kogen Resort",jp:"",region:"Nagano",lat:36.738,lon:138.155,base:930,top:1530},
+  {id:"kisofukushima",name:"Kisofukushima Ski Resort",jp:"",region:"Nagano",lat:35.947,lon:137.675,base:1220,top:1880},
+  {id:"kurohimekogen",name:"Kurohime Kogen",jp:"",region:"Nagano",lat:36.825,lon:138.158,base:780,top:1180},
+  {id:"mia",name:"Mia Ski Resort",jp:"",region:"Nagano",lat:35.93,lon:137.517,base:1570,top:2120},
+  {id:"ontake",name:"Ontake Ski Area",jp:"",region:"Nagano",lat:35.869,lon:137.518,base:1690,top:2210},
+  {id:"pilatustateshina",name:"Pilatus Tateshina Snow Resort",jp:"",region:"Nagano",lat:36.071,lon:138.307,base:1750,top:2230},
+  {id:"ryuoo",name:"Ryuoo Ski Park",jp:"",region:"Nagano",lat:36.783,lon:138.463,base:860,top:1920},
+  {id:"sakaeclub",name:"Sakae Club Ski Area",jp:"",region:"Nagano",lat:36.999,lon:138.56,base:410,top:810},
+  {id:"shigakogengiant",name:"Shiga Kogen Giant Ski Area",jp:"",region:"Nagano",lat:36.715,lon:138.493,base:1340,top:1570},
+  {id:"shigakogenokushigakogen",name:"Shiga Kogen Okushiga Kogen Ski Area",jp:"",region:"Nagano",lat:36.769,lon:138.52,base:1470,top:2000},
+  {id:"shigakogenyokoteyama",name:"Shiga Kogen Yokoteyama Ski Area",jp:"",region:"Nagano",lat:36.678,lon:138.511,base:1680,top:2280},
+  {id:"shinshumatsumotonomugito",name:"Shinshu-Matsumoto Nomugitoge Ski Resort",jp:"",region:"Nagano",lat:36.049,lon:137.718,base:1420,top:2110},
+  {id:"thecupidofromance",name:"The Cupid of Romance",jp:"",region:"Nagano",lat:36.815,lon:138.404,base:470,top:1250},
+  {id:"togakushi",name:"Togakushi Ski Area",jp:"",region:"Nagano",lat:36.749,lon:138.1,base:1230,top:1730},
+  {id:"togarionsen",name:"Togari Onsen Ski Resort",jp:"",region:"Nagano",lat:36.941,lon:138.381,base:390,top:920},
+  {id:"yabuharakogen",name:"Yabuhara Kogen",jp:"",region:"Nagano",lat:35.959,lon:137.73,base:1120,top:1650},
+  {id:"charmanthiuchi",name:"Charmant Hiuchi Snow Resort",jp:"",region:"Niigata / Myoko",lat:36.997,lon:138.069,base:520,top:1010},
+  {id:"cupidvalley",name:"Cupid Valley Ski Area",jp:"",region:"Niigata / Myoko",lat:37.045,lon:138.491,base:430,top:960},
+  {id:"itoigawaseasidevalley",name:"Itoigawa Seaside Valley Ski Resort",jp:"",region:"Niigata / Myoko",lat:36.929,lon:137.89,base:250,top:720},
+  {id:"madaraokogenmountain",name:"Madarao Kogen Mountain Resort",jp:"",region:"Niigata / Myoko",lat:36.848,lon:138.277,base:810,top:1320},
+  {id:"myokosuginohara",name:"Myoko Suginohara Ski Resort",jp:"",region:"Niigata / Myoko",lat:36.868,lon:138.148,base:770,top:1860},
+  {id:"joetsuinternational",name:"Joetsu International",jp:"",region:"Niigata / Yuzawa",lat:37.034,lon:138.799,base:320,top:910},
+  {id:"kandatsukogen",name:"Kandatsu Kogen Ski Resort",jp:"",region:"Niigata / Yuzawa",lat:36.904,lon:138.809,base:470,top:940},
+  {id:"maiko",name:"Maiko Snow Resort",jp:"",region:"Niigata / Yuzawa",lat:36.976,lon:138.834,base:260,top:890},
+  {id:"muikamachihakkaisan",name:"Muikamachi Hakkaisan",jp:"",region:"Niigata / Yuzawa",lat:37.116,lon:138.983,base:360,top:1170},
+  {id:"okutadamimaruyama",name:"Okutadami Maruyama Ski Resort",jp:"",region:"Niigata / Yuzawa",lat:37.16,lon:139.236,base:750,top:1220},
+  {id:"budoh",name:"Budoh Snow Resort",jp:"",region:"Niigata",lat:38.392,lon:139.547,base:160,top:630},
+  {id:"ninox",name:"Ninox Snow Park",jp:"",region:"Niigata",lat:37.923,lon:139.478,base:320,top:920},
+  {id:"tainai",name:"Tainai Ski and Snowboard area",jp:"",region:"Niigata",lat:38.005,lon:139.504,base:150,top:680},
+  {id:"kawaba",name:"Kawaba Ski Resort",jp:"",region:"Gunma",lat:36.777,lon:139.117,base:1290,top:1860},
+  {id:"kazawa",name:"Kazawa Snow Area",jp:"",region:"Gunma",lat:36.466,lon:138.426,base:1350,top:1770},
+  {id:"kusatsuonsen",name:"Kusatsu Onsen Ski Resort",jp:"",region:"Gunma",lat:36.63,lon:138.576,base:1240,top:1660},
+  {id:"marunumakogen",name:"Marunuma Kogen Ski Resort",jp:"",region:"Gunma",lat:36.813,lon:139.339,base:1380,top:2000},
+  {id:"ogunahotaka",name:"Oguna Hotaka Ski Area",jp:"",region:"Gunma",lat:36.783,lon:139.164,base:1250,top:1800},
+  {id:"okutone",name:"Okutone",jp:"",region:"Gunma",lat:36.797,lon:139.01,base:540,top:1170},
+  {id:"palcalltsumagoihotel",name:"Palcall Tsumagoi Resort Ski & Hotel",jp:"",region:"Gunma",lat:36.559,lon:138.448,base:1400,top:2090},
+  {id:"whitevalley",name:"White Valley Ski Area",jp:"",region:"Gunma",lat:36.797,lon:138.975,base:560,top:970},
+  {id:"whiteworldozeiwakura",name:"White World Oze Iwakura",jp:"",region:"Gunma",lat:36.82,lon:139.209,base:1000,top:1720},
+  {id:"huntermountainshiobara",name:"Hunter Mountain Shiobara Ski Area",jp:"",region:"Tochigi",lat:36.929,lon:139.76,base:1140,top:1590},
+  {id:"hakusansenjoonsenseymour",name:"Hakusan Senjo Onsen Seymour Ski Area",jp:"",region:"Toyama / Ishikawa",lat:36.341,lon:136.686,base:300,top:1000},
+  {id:"ioxarosa",name:"IOX-AROSA",jp:"",region:"Toyama / Ishikawa",lat:36.515,lon:136.811,base:350,top:770},
+  {id:"samhakusanichirino",name:"SAM Hakusan Ichirino Ski Resort",jp:"",region:"Toyama / Ishikawa",lat:36.265,lon:136.712,base:540,top:1020},
+  {id:"tateyamasanroku",name:"Tateyama Sanroku Ski Area",jp:"",region:"Toyama / Ishikawa",lat:36.569,lon:137.425,base:480,top:1160},
+  {id:"hidafunayamaarkopia",name:"Hida Funayama Snow Resort Arkopia",jp:"",region:"Gifu",lat:36.033,lon:137.255,base:860,top:1260},
+  {id:"hidanagareha",name:"Hida Nagareha Resort",jp:"",region:"Gifu",lat:36.314,lon:137.237,base:760,top:1380},
+  {id:"hirayuonsen",name:"Hirayu Onsen Ski Area",jp:"",region:"Gifu",lat:36.184,lon:137.557,base:1310,top:1780},
+  {id:"meiho",name:"Meiho Ski Resort",jp:"",region:"Gifu",lat:35.948,lon:137.032,base:900,top:1570},
+  {id:"shirao",name:"Shirao Ski Area",jp:"",region:"Gifu",lat:35.897,lon:136.939,base:740,top:1220},
+  {id:"takasu",name:"Takasu Snow Park",jp:"",region:"Gifu",lat:35.999,lon:136.864,base:970,top:1530},
+  {id:"winghillsshiratori",name:"WINGHILLS Shiratori Resort",jp:"",region:"Gifu",lat:35.973,lon:136.809,base:870,top:1330},
+  {id:"washigatake",name:"Washigatake Ski Area",jp:"",region:"Gifu",lat:35.944,lon:136.928,base:900,top:1340},
+  {id:"biwakovalley",name:"Biwako Valley",jp:"",region:"Västra Japan",lat:35.212,lon:135.891,base:330,top:1160},
+  {id:"chikusahighland",name:"Chikusa Highland Ski resort",jp:"",region:"Västra Japan",lat:35.219,lon:134.383,base:670,top:1120},
+  {id:"geihokukokusai",name:"Geihoku Kokusai",jp:"",region:"Västra Japan",lat:34.708,lon:132.227,base:700,top:1130},
+  {id:"gozaisho",name:"Gozaisho Ski Area",jp:"",region:"Västra Japan",lat:35.02,lon:136.427,base:450,top:1190},
+  {id:"gransnowokuibuki",name:"Gransnow Okuibuki",jp:"",region:"Västra Japan",lat:35.519,lon:136.394,base:730,top:1180},
+  {id:"hachikita",name:"Hachi Kita Ski Area",jp:"",region:"Västra Japan",lat:35.403,lon:134.546,base:580,top:1210},
+  {id:"hakodateyama",name:"Hakodateyama Ski Resort",jp:"",region:"Västra Japan",lat:35.437,lon:135.987,base:200,top:690},
+  {id:"hyounosenkokusai",name:"Hyounosen Kokusai Ski Resort",jp:"",region:"Västra Japan",lat:35.364,lon:134.531,base:570,top:970},
+  {id:"ishizuchi",name:"Ishizuchi Ski & Snowboard Resort",jp:"",region:"Västra Japan",lat:33.796,lon:133.132,base:460,top:1380},
+  {id:"megahiraonsenmegahira",name:"Megahiraonsen Megahira Ski Area",jp:"",region:"Västra Japan",lat:34.498,lon:132.137,base:630,top:1060},
+  {id:"mizuhohighland",name:"Mizuho Highland",jp:"",region:"Västra Japan",lat:34.797,lon:132.39,base:490,top:1220},
+  {id:"ojiro",name:"Ojiro Ski Resort",jp:"",region:"Västra Japan",lat:35.464,lon:134.515,base:270,top:880},
+  {id:"okukannabe",name:"Oku Kannabe Ski Area",jp:"",region:"Västra Japan",lat:35.496,lon:134.648,base:400,top:890},
+  {id:"osorakan",name:"Osorakan Snow Park",jp:"",region:"Västra Japan",lat:34.597,lon:132.14,base:900,top:1310},
+  {id:"rokkosan",name:"Rokkosan Snow Park",jp:"",region:"Västra Japan",lat:34.771,lon:135.244,base:420,top:880},
+  // Ski touring areas: lat/lon is the summit (OpenStreetMap), top its height; slat/slon is the start (a car park
+  // below the summit, the usual winter or spring one), base its height (Open-Meteo elevation)
+  {id:"furanodake",name:"Furano-dake",jp:"富良野岳",region:"Hokkaido",lat:43.3937,lon:142.635,base:1269,top:1912,kind:"tour",slat:43.414,slon:142.6434},
+  {id:"muine",name:"Muine-yama",jp:"無意根山",region:"Hokkaido",lat:42.9308,lon:141.0405,base:384,top:1460,kind:"tour",slat:42.9419,slon:141.1287},
+  {id:"iwaonupuri",name:"Niseko-bergen (Iwaonupuri)",jp:"イワオヌプリ",region:"Hokkaido",lat:42.8853,lon:140.6405,base:794,top:1116,kind:"tour",slat:42.8764,slon:140.6417},
+  {id:"raiden",name:"Raiden",jp:"雷電山",region:"Hokkaido",lat:42.9036,lon:140.4696,base:236,top:1211,kind:"tour",slat:42.9463,slon:140.5084},
+  {id:"shiribetsu",name:"Shiribetsu-dake",jp:"尻別岳",region:"Hokkaido",lat:42.7725,lon:140.9106,base:426,top:1107,kind:"tour",slat:42.7537,slon:140.9034},
+  {id:"kamihoro",name:"Tokachidake (Kami-Horokamettoku)",jp:"上ホロカメットク山",region:"Hokkaido",lat:43.4049,lon:142.6718,base:1269,top:1920,kind:"tour",slat:43.414,slon:142.6434},
+  {id:"yotei",name:"Yotei",jp:"羊蹄山",region:"Hokkaido",lat:42.827,lon:140.8067,base:372,top:1898,kind:"tour",slat:42.7947,slon:140.7852},
+  {id:"chokai",name:"Chokai-san",jp:"鳥海山",region:"Tohoku",lat:39.0992,lon:140.0503,base:1212,top:2236,kind:"tour",slat:39.0689,slon:140.0462},
+  {id:"gassan",name:"Gassan",jp:"月山",region:"Tohoku",lat:38.5487,lon:140.0268,base:1159,top:1984,kind:"tour",slat:38.5172,slon:140.0077},
+  {id:"hachimantaiyama",name:"Hachimantai",jp:"八幡平",region:"Tohoku",lat:39.9578,lon:140.8542,base:550,top:1613,kind:"tour",slat:39.886,slon:140.978},
+  {id:"iwatesan",name:"Iwate-san",jp:"岩手山",region:"Tohoku",lat:39.8502,lon:141.0021,base:627,top:2038,kind:"tour",slat:39.8326,slon:141.0408},
+  {id:"kumanodake",name:"Zao (Kumano-dake)",jp:"熊野岳",region:"Tohoku",lat:38.1439,lon:140.4398,base:1593,top:1841,kind:"tour",slat:38.1278,slon:140.4374},
+  {id:"goryudake",name:"Goryu-dake",jp:"五竜岳",region:"Hakuba",lat:36.6584,lon:137.7527,base:1090,top:2814,kind:"tour",slat:36.6041,slon:137.7999},
+  {id:"shirouma",name:"Hakuba (Shirouma-dake)",jp:"白馬岳",region:"Hakuba",lat:36.7585,lon:137.7585,base:1240,top:2932,kind:"tour",slat:36.7472,slon:137.7997},
+  {id:"kurohimeyama",name:"Kurohime-yama",jp:"黒姫山",region:"Nagano",lat:36.8134,lon:138.1272,base:827,top:2053,kind:"tour",slat:36.8269,slon:138.1618},
+  {id:"nabekura",name:"Nabekura-yama",jp:"鍋倉山",region:"Nagano",lat:36.9766,lon:138.3823,base:430,top:1289,kind:"tour",slat:36.9381,slon:138.3934},
+  {id:"hiuchi",name:"Hiuchi-yama",jp:"火打山",region:"Niigata / Myoko",lat:36.9227,lon:138.0681,base:1327,top:2462,kind:"tour",slat:36.8687,slon:138.0787},
+  {id:"myokosan",name:"Myoko-san",jp:"妙高山",region:"Niigata / Myoko",lat:36.8913,lon:138.1135,base:1083,top:2454,kind:"tour",slat:36.9008,slon:138.1483},
+  {id:"tanigawadake",name:"Tanigawa-dake",jp:"谷川岳",region:"Gunma",lat:36.8344,lon:138.9302,base:873,top:1963,kind:"tour",slat:36.847,slon:138.9434},
+  {id:"tateyama",name:"Tateyama (Oyama)",jp:"立山",region:"Toyama / Ishikawa",lat:36.5732,lon:137.6179,base:2436,top:3003,kind:"tour",slat:36.5767,slon:137.596},
+  {id:"norikuradake",name:"Norikura-dake",jp:"乗鞍岳",region:"Gifu",lat:36.1068,lon:137.5497,base:1579,top:3026,kind:"tour",slat:36.1167,slon:137.6148},
+  // ----- japan2:end -----
   // ----- Skandinavien: found in OpenStreetMap (named ski areas with lifts), base/top = lowest/highest lift station -----
   // Sverige
   {id:"gopshusbacken",name:"Gopshusbacken",jp:"",region:"Dalarna",lat:61.094,lon:14.249,base:240,top:420,area:"scandinavia",country:"Sverige"},
@@ -1141,6 +1267,8 @@ const AREAS = {
   alps:        {name:T("Alperna", "The Alps"),        sauna:T("Bad & bastu", "Spa & sauna"),  flag:"AT CH FR IT"},
 };
 const areaResorts = a => RESORTS.filter(r => r.area === a);
+// Ski touring areas (kind "tour"): lat/lon is the summit, slat/slon the start (a car park), base the start's height
+const isTour = r => r.kind === "tour";
 const regionsOf = a => [...new Set(areaResorts(a).map(r => r.region))];
 const countriesOf = a => [...new Set(areaResorts(a).map(r => r.country))];
 // Region filter value: "all", "c:<country>" or a region name
@@ -1486,6 +1614,7 @@ function renderOverview(){
         <div class="legend">
           <span style="--c:var(--snow)">${T("Fallit", "Fallen")}</span>
           <span style="--c:var(--future)">${T("Prognos", "Forecast")}</span>
+          ${areaResorts(state.area).some(isTour) ? `<span class="tourkey">▲ ${T("topptur", "ski touring")}</span>` : ""}
           <span>${T(`${SNOW_U} vid backens mellanhöjd · staplar: 3 dygn bakåt + 7 framåt`, `${SNOW_U} at the middle of the slopes · bars: 3 days back + 7 ahead`)}</span>
           <span class="alv-key">${T("Lavinfara idag:", "Avalanche danger today:")} ${[1,2,3,4,5].map(l => `<span class="alv" style="background:${DANGER[l].c};color:${DANGER[l].ink}" title="${l} – ${DANGER[l].n}">${l}</span>`).join("")}</span>
         </div>
@@ -1642,7 +1771,7 @@ function listWithoutSnow(msg, listOnly = false){
   if (listOnly) return;
   markerLayer.clearLayers();
   maxPinVal = 1;
-  markerLayer.addLayers(rows.map(r => L.marker([r.lat, r.lon], {icon: snowIcon(null, 1), title: r.name, snow: null})
+  markerLayer.addLayers(rows.map(r => L.marker([r.lat, r.lon], {icon: snowIcon(null, 1, "", isTour(r) ? "tour" : ""), title: r.name, snow: null})
     .bindTooltip(`<b>${esc(r.name)}</b>`, {direction:"top"}).on("click", () => go(r.id))));
   fitMap(rows);
 }
@@ -1674,7 +1803,7 @@ function fillOverview(listOnly = false, keepView = false){
     return `<div class="rw${state.selected === r.id ? " sel" : ""}" data-rid="${r.id}"><button class="row" data-id="${r.id}">
       <span class="rank">${rankOf.get(r.id)}</span>
       <span class="info">
-        <span class="name">${esc(r.name)}${alvBadge(state.avalLv[r.id])}</span>
+        <span class="name">${esc(r.name)}${isTour(r) ? `<span class="tourtag">${T("Topptur", "Ski touring")}</span>` : ""}${alvBadge(state.avalLv[r.id])}</span>
         <span class="meta">${esc(r.region)}${r.country !== r.region && r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${uHN(r.base)}–${uH(r.top)}</span>
         <span class="spark" aria-hidden="true">${spark}</span>
         <span class="openhint">${T("Tryck igen för att öppna orten →", "Tap again to open the resort →")}</span>
@@ -1701,7 +1830,7 @@ function fillOverview(listOnly = false, keepView = false){
   markerLayer.addLayers(rows.map(({r, o}) => {
     const v = o[key];
     const lv = state.avalLv[r.id];
-    return L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", "", lv), title: r.name, snow: v, aval: lv})
+    return L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", isTour(r) ? "tour" : "", lv), title: r.name, snow: v, aval: lv})
       .bindTooltip(`<b>${esc(r.name)}</b><br>${uSnow(v)}${lv ? `<br>${T("Lavinfara", "Avalanche danger")} ${lv} – ${DANGER[lv].n.toLowerCase()}` : ""}`, {direction:"top"})
       .on("click", () => go(r.id));
   }));
@@ -1821,7 +1950,7 @@ function drawSelection(){
   if (!r || r.area !== state.area) return;
   const o = state.overview?.[r.id], v = o ? o[state.mode === "past" ? "past72" : "next72"] : null;
   L.circleMarker([r.lat, r.lon], {radius: 27, color: css("--future"), weight: 6, fill: false, interactive: false, className: "selring"}).addTo(selLayer);
-  L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", "", state.avalLv[r.id]), zIndexOffset: 1000, title: r.name})
+  L.marker([r.lat, r.lon], {icon: snowIcon(v, maxPinVal, "", isTour(r) ? "tour" : "", state.avalLv[r.id]), zIndexOffset: 1000, title: r.name})
     .bindTooltip(`<b>${esc(r.name)}</b>${v != null ? `<br>${uSnow(v)}` : ""}`, {direction: "top"}).on("click", () => go(r.id)).addTo(selLayer);
 }
 
@@ -1878,10 +2007,10 @@ async function renderDetail(id){
     <div style="display:flex;flex-direction:column;gap:16px">
       <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
       <div class="dhead">
-        <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""} · ${T("dal", "base")} ${uH(r.base)} · ${T("topp", "top")} ${uH(r.top)}</span>
+        <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}${isTour(r) ? ` · ${T("topptur", "ski touring")} · ${T("start", "start")} ${uH(r.base)}` : ` · ${T("dal", "base")} ${uH(r.base)}`} · ${T("topp", "top")} ${uH(r.top)}</span>
         <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span><button type="button" class="favbtn" id="favbtn" aria-pressed="${favs.has(r.id)}"></button></h2>
         <div class="dlinks">
-          <a class="dirbtn" href="${gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
+          <a class="dirbtn" href="${isTour(r) ? gmapsDir(r.slat, r.slon) : gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${isTour(r) ? T("Vägbeskrivning till startplatsen", "Directions to the start") : T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
         </div>
       </div>
       <nav class="jumps" aria-label="${T("Hoppa till", "Jump to")}">
@@ -1943,6 +2072,7 @@ async function renderDetail(id){
   let liftPts = [];
   const startView = () => liftPts.length
     ? poiMap.fitBounds(L.latLngBounds(liftPts).pad(0.1), {maxZoom: 14, animate: false})
+    : isTour(r) ? poiMap.fitBounds(L.latLngBounds([[r.lat, r.lon], [r.slat, r.slon]]).pad(0.25), {maxZoom: 14, animate: false})
     : poiMap.setView([r.lat, r.lon], 12, {animate: false});
   startView();
   // The map box can change size while the page settles; re-apply the start view until the user touches the map.
@@ -1956,6 +2086,9 @@ async function renderDetail(id){
   io.observe(el);
   L.circleMarker([r.lat, r.lon], {radius:9, color:css("--snow"), weight:3, fillColor:css("--snow"), fillOpacity:.25})
     .addTo(poiMap).bindTooltip(r.name);
+  // A touring area: the summit above, and the start where the tour begins
+  if (isTour(r)) L.marker([r.slat, r.slon], {icon: L.divIcon({className: "", iconSize: [28, 28], html: `<div class="startpin">P</div>`}), zIndexOffset: 900})
+    .addTo(poiMap).bindTooltip(`${T("Start", "Start")} ${uH(r.base)}`, {direction: "top"});
   poiLayer = L.layerGroup().addTo(poiMap);
   poiMap.createPane("lifts").style.zIndex = 450;   // above the facility dots
   liftLayer = L.featureGroup();
@@ -1984,7 +2117,7 @@ async function renderDetail(id){
 // listed: one outside gets no bulletin rather than the neighbouring area's, which could mislead.
 const JAN = id => `https://data.nadare.jp/avalanche_informations?area_id=${id}&locale=en`;
 const JAN_AREAS = {
-  2: "Hakuba", 3: "Myoko", 4: "Kagura / Tanigawa / Hotaka",
+  1: "Tateyama", 2: "Hakuba", 3: "Myoko", 4: "Kagura / Tanigawa / Hotaka",
   6: T("sydvästra Hokkaido", "southwest Hokkaido") + " (Niseko, Yotei, Yoichi)", 7: T("centrala Hokkaido", "central Hokkaido") + " (Daisetsuzan, Furano, Tokachi)",
 };
 const AVAL = {
@@ -1994,6 +2127,14 @@ const AVAL = {
   hirafu:{a:6, extra:{label:"Niseko Avalanche Research Center, " + T("daglig rapport", "daily report"), url:"https://niseko.nadare.info/"}},
   rusutsu:{a:6}, kiroro:{a:6},
   furano:{a:7}, asahidake:{a:7},
+  // Added with the larger Japan list: resorts and touring areas inside the same areas
+  myokosuginohara:{a:3}, nisekomoiwa:{a:6},
+  yotei:{a:6}, iwaonupuri:{a:6}, raiden:{a:6}, shiribetsu:{a:6},
+  kamihoro:{a:7}, furanodake:{a:7}, daisetsuzansounkyokuroda:{a:7},
+  shirouma:{a:2}, goryudake:{a:2},
+  myokosan:{a:3}, hiuchi:{a:3}, kurohimeyama:{a:3},
+  tanigawadake:{a:4}, ogunahotaka:{a:4},
+  tateyama:{a:1},
 };
 // Measured snow depth from a weather station in the ski area, fetched centrally every 3 hours (tools/fetch_obs.py):
 // data/obs/<area>.json. Japan JMA, Switzerland SLF, Austria GeoSphere, Sweden SMHI, Finland FMI, Norway MET. Only a
@@ -2994,7 +3135,7 @@ function drawForecast(){
   // The answer in a few words, first in the summary: is it worth going?
   const dom = powderOn(bestD, bestV) ? ["powder", T(`Puderdag ${rel(bestD)}`, `Powder day ${rel(bestD)}`)]
     : bestV >= POWDER_CM && !thinNow ? ["good", T(`Mycket nysnö ${rel(bestD)}`, `Lots of new snow ${rel(bestD)}`)]
-    : thinNow && bestV < POWDER_CM ? ["thin", T("Tunt snötäcke, kolla att orten har öppnat", "Thin snowpack, check that the resort is open")]
+    : thinNow && bestV < POWDER_CM ? ["thin", isTour(r) ? T("För lite snö för topptur ännu", "Too little snow for touring yet") : T("Tunt snötäcke, kolla att orten har öppnat", "Thin snowpack, check that the resort is open")]
     : bestV >= POWDER_CM ? ["good", T(`Mycket nysnö ${rel(bestD)}`, `Lots of new snow ${rel(bestD)}`)]
     : bestV >= 3 ? ["some", T(`Lite nysnö ${rel(bestD)}`, `A little new snow ${rel(bestD)}`)]
     : ["calm", T("Ingen nysnö att tala om den närmaste veckan", "No new snow to speak of in the coming week")];
@@ -3007,6 +3148,7 @@ function drawForecast(){
       : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : "",
     thinNow ? (depthCm < 1 ? (meas ? T("Det ligger ingen snö i backen ännu. Kolla att orten har öppnat.", "There is no snow on the slopes yet. Check that the resort has opened.")
         : T("Vädermodellen har ingen snö vid toppen ännu. Kolla att orten har öppnat.", "The weather model has no snow at the top yet. Check that the resort has opened."))
+      : isTour(r) ? T(`Med bara ${meas ? "" : "ca "}${uSnow(depthCm)} snö är det för tunt för topptur, med stenar och buskar under snön.`, `With only ${meas ? "" : "about "}${uSnow(depthCm)} of snow it is too thin for touring, with rocks and bushes under the snow.`)
       : T(`Med bara ${meas ? "" : "ca "}${uSnow(depthCm)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only ${meas ? "" : "about "}${uSnow(depthCm)} of snow you can rarely ski off-piste. Check that the resort has opened.`)) : ""].filter(Boolean).join(" ");
   const chips = [
     bestV >= 3 && bq.kind ? `<span class="schip sq-${snowqKey(bq)}">❄ ${snowqText(bq)} ${rel(bestD)}</span>` : "",

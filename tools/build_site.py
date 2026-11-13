@@ -188,12 +188,13 @@ for r in resorts:
                  + "Timme för timme, snötyp, lavinläge, uppmätt snödjup och webbkameror.",
                  f"Snow forecast for {r['name']} ({place}). " + (snow_txt + " " if snow_txt else "")
                  + "Hour by hour, snow type, avalanche conditions, measured snow depth and webcams.")
-        ld = {"@context": "https://schema.org", "@type": "SkiResort", "name": r["name"], "url": SITE + alt[lang],
+        ld = {"@context": "https://schema.org", "@type": "Mountain" if r.get("kind") == "tour" else "SkiResort", "name": r["name"], "url": SITE + alt[lang],
               "geo": {"@type": "GeoCoordinates", "latitude": r["lat"], "longitude": r["lon"]},
               "address": {"@type": "PostalAddress", "addressRegion": r["region"], "addressCountry": CC_ISO.get(r["country"], "JP")}}
         p = head(page, lang, title, desc, alt[lang], alt, ld)
         parts = [f"<h1>{E(r['name'])}{(' ' + E(r['jp'])) if r.get('jp') else ''}</h1>",
-                 f"<p>{E(place)} · {T(lang, 'dal', 'base')} {r['base']} m · {T(lang, 'topp', 'top')} {r['top']} m</p>"]
+                 f"<p>{E(place)} · " + (f"{T(lang, 'topptur', 'ski touring')} · start {r['base']} m" if r.get("kind") == "tour" else f"{T(lang, 'dal', 'base')} {r['base']} m")
+                 + f" · {T(lang, 'topp', 'top')} {r['top']} m</p>"]
         if snow_txt:
             parts.append(f"<p>{E(snow_txt)}</p>")
         if dp:
