@@ -38,6 +38,16 @@ def externalize(page, tag, pattern, ext):
 
 page = externalize(page, "style", r"<style>\n(.*?)</style>", "css")
 page = externalize(page, "script", r"<script>\n(// ---------- Language ----------.*?)</script>(?=\s*</body>)", "js")
+# Nothing from the map libraries may hold up the first paint: their scripts and the app's own run with "defer"
+# (still in order, so the app finds the libraries), and their stylesheets load without blocking. The text built
+# into each page shows at once. index.html in the repo keeps plain tags, since its app script is inline.
+page = re.sub(r'<script src="(https://[^"]+)"></script>', r'<script defer src="\1"></script>', page)
+page = re.sub(r'<script src="(app\.[0-9a-f]+\.js)"></script>', r'<script defer src="\1"></script>', page)
+page = re.sub(r'<link rel="stylesheet" href="(https://[^"]+)">',
+              '<link rel="stylesheet" href="\\1" media="print" onload="this.media=\'all\'">', page)
+hosts = sorted(set(re.findall(r'(?:src|href)="(https://[^/"]+)/[^"]*"(?: media="print")?', page)) & {
+    "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://unpkg.com"})
+page = page.replace("<title>", "".join(f'<link rel="preconnect" href="{h}">\n' for h in hosts) + "<title>", 1)
 
 # --- Resorts as the app lists them ---
 CC_EN = {"Sverige": "Sweden", "Norge": "Norway", "Finland": "Finland", "Österrike": "Austria", "Schweiz": "Switzerland",
