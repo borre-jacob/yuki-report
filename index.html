@@ -334,7 +334,7 @@ details.how .hint{margin-top:6px}
 .pre p{margin:0 0 8px;line-height:1.55}
 .sumside .dsrc{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
 /* Jump links on the resort page: stay at the top while scrolling */
-.jumps{position:sticky;top:0;z-index:20;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:8px 4px;
+.jumps{position:sticky;top:0;z-index:1100;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:8px 4px;
   background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .jumps::-webkit-scrollbar{display:none}
 .jumps a{flex:none;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
@@ -3194,16 +3194,12 @@ function drawForecast(){
       ${row(`${T("Topp", "Top")} <small>${uHN(r.top)}</small>`, p => cell(top, p))}
       ${row(`${T("Mitt", "Mid")} <small>${uHN(r.mid)}</small>`, p => cell(mid, p))}
       ${row(`${T("Dal", "Base")} <small>${uHN(r.base)}</small>`, p => cell(base, p))}
-      ${row(T("Nollgräns", "Freezing"), p => { const f = range(mid.hourly.freezing_level_height, p); const m = f.length ? Math.max(...f) : null;
-        return [m != null && m > r.base ? "hot" : "", m == null ? "–" : uHN(Math.round(m / 10) * 10)]; }, "sep")}
-      ${row(`${TEMP_U} ${T("topp", "top")}`, p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? uTempN(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; })}
+      ${row(`${TEMP_U} ${T("topp", "top")}`, p => { const t = range(top.hourly.temperature_2m, p); return ["", t.length ? uTempN(t.reduce((a, b) => a + b, 0) / t.length) : "–"]; }, "sep")}
       ${row(`${T("Vind", "Wind")} <small>${WIND_U} (${T("byar", "gusts")})</small>`, windCell)}
       <tr class="sep"><th scope="row">${T("Lavin", "Aval.")}</th>${dayCols.map((d, k) => `<td colspan="${P.filter(p => p.d === d).length}" class="ds">${dayBadge(k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0, rel(d))}</td>`).join("")}</tr>
     </tbody></table></div>
     <div class="flg"><span>${SNOW_U} ${T("snö", "snow")}</span><span><i style="background:${shadeSnow(2)}"></i>${T("lite", "a little")}</span><span><i style="background:${shadeSnow(15)}"></i>${T("mycket", "a lot")}</span>
       <span>${T("Fm 06–12 · Em 12–18 · Natt 18–06", "AM 06–12 · PM 12–18 · Night 18–06")}</span>${
-      P.some(p => { const f = range(mid.hourly.freezing_level_height, p); return f.length && Math.max(...f) > r.base; })
-        ? `<span class="hotkey">${T("orange nollgräns: över dalen", "orange freezing level: above the base")}</span>` : ""}${
       P.some(p => windCell(p)[0] === "hot") ? `<span class="hotkey">${T(`orange vind: byar från ${uWind(20)}`, `orange wind: gusts from ${uWind(20)}`)}</span>` : ""}</div>`;
 
   // --- Heights: snow or rain at five heights from the top down to the base ---
