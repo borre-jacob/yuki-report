@@ -29,10 +29,7 @@ document.documentElement.lang=p?p[1]:l==="sv"||l==="en"?l:/^sv\b/i.test(navigato
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
-<script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.14.1/dist/Leaflet.GoogleMutant.js"></script>
+<!-- MapLibre (the OpenFreeMap base map) and GoogleMutant load when a map needs them: see mapLib() -->
 <style>
 /* Layout: one-screen tool. Start = ranked resort list + snow map side by side (stacked on phone).
    Detail = resort forecast charts, then a facilities map with onsen / toilets / parking. */
@@ -324,6 +321,7 @@ details.how .hint{margin-top:6px}
 .camlinks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.camlinks>span{font-size:12.5px;color:var(--muted)}
 .camsrc{margin:0;font-size:12px;color:var(--muted)}
 /* Text built into each resort page for search engines (tools/build_site.py); the app replaces it when it starts */
+#app{min-height:100vh}
 .pre{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px clamp(16px,3vw,24px)}
 .pre h1{font:700 26px/1.2 var(--display);margin:0 0 6px}.pre h2{font-size:18px;margin:18px 0 4px}.pre h3{font-size:15px;margin:12px 0 2px}
 .pre p{margin:0 0 8px;line-height:1.55}
@@ -1257,16 +1255,46 @@ function loadGoogle(){
     setTimeout(() => done(googleOk), 8000);
   });
 }
+// The base map libraries are big (MapLibre alone is several hundred kB to download and run), so they load the
+// first time a map needs them instead of with the page: the text shows sooner and the resort page, whose map is
+// far down, does not pay for them until the map comes into view.
+const MAP_LIBS = {
+  maplibre: ["https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css",
+             "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js",
+             "https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"],
+  google: ["https://unpkg.com/leaflet.gridlayer.googlemutant@0.14.1/dist/Leaflet.GoogleMutant.js"],
+};
+const libLoads = {};
+function mapLib(name){
+  return libLoads[name] ||= (async () => {
+    for (const u of MAP_LIBS[name]){
+      await new Promise((res, rej) => {
+        const el = u.endsWith(".css") ? Object.assign(document.createElement("link"), {rel: "stylesheet", href: u})
+                                      : Object.assign(document.createElement("script"), {src: u});
+        el.onload = res; el.onerror = rej;
+        document.head.appendChild(el);
+      });
+    }
+  })().catch(e => { delete libLoads[name]; throw e; });
+}
+const mapAlive = map => !!map._container?.isConnected && !map._yrGone;
 function addBasemap(map){
-  if (googleOk && L.gridLayer.googleMutant){
-    const road = L.gridLayer.googleMutant({type:"roadmap"}).addTo(map);
-    L.control.layers({[T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
-      [T("Satellit", "Satellite")]: L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
-    return road;
+  map.once("unload", () => { map._yrGone = true; });
+  if (googleOk){
+    mapLib("google").then(() => {
+      if (!mapAlive(map)) return;
+      const road = L.gridLayer.googleMutant({type:"roadmap"}).addTo(map);
+      L.control.layers({[T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
+        [T("Satellit", "Satellite")]: L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
+    }).catch(() => addOpenFreeMap(map));
+    return;
   }
-  return addOpenFreeMap(map);
+  addOpenFreeMap(map);
 }
 function addOpenFreeMap(map){
+  mapLib("maplibre").then(() => { if (mapAlive(map)) addOpenFreeMapNow(map); }).catch(() => {});
+}
+function addOpenFreeMapNow(map){
   const layer = L.maplibreGL({style: "https://tiles.openfreemap.org/styles/liberty",
     attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
   const gl = layer.getMaplibreMap();
@@ -1893,7 +1921,9 @@ async function renderDetail(id){
   ["pointerdown","wheel","touchstart","keydown"].forEach(ev => el.addEventListener(ev, () => touched = true, {once:true, passive:true}));
   const settle = () => { if (!touched && poiMap){ poiMap.invalidateSize(); startView(); } };
   [300, 1000, 2500].forEach(t => setTimeout(settle, t));
-  addBasemap(poiMap);
+  // The base map (and its libraries) only once the map is near the screen; it sits far down the page
+  const bm = poiMap, io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ io.disconnect(); if (mapAlive(bm)) addBasemap(bm); } }, {rootMargin: "400px"});
+  io.observe(el);
   L.circleMarker([r.lat, r.lon], {radius:9, color:css("--snow"), weight:3, fillColor:css("--snow"), fillOpacity:.25})
     .addTo(poiMap).bindTooltip(r.name);
   poiLayer = L.layerGroup().addTo(poiMap);
