@@ -121,6 +121,8 @@ def head(p, lang, title, desc, path, alt, ld=None):
     p = re.sub(r"<title>.*?</title>", f"<title>{E(title)}</title>", p, count=1)
     p = re.sub(r'<meta name="description" content="[^"]*">', f'<meta name="description" content="{E(desc)}">\n' + "\n".join(tags), p, count=1)
     p = p.replace('<html lang="sv">', f'<html lang="{lang}">', 1)
+    if lang == "en":   # the menu button has a name before the app starts (the app sets it again)
+        p = p.replace('id="menubtn" class="menubtn" aria-label="Inställningar"', 'id="menubtn" class="menubtn" aria-label="Settings"', 1)
     return p
 
 
