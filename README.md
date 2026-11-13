@@ -20,6 +20,18 @@ Snöprognos, lavinläge, liftar, onsen/bastu, toaletter och parkering för skidr
 
 Appen är `index.html`, med platsdata per ort i `data/osm/places/`. Kör den med en lokal webbserver (`python3 -m http.server`) eller publicera repot med GitHub Pages. Direkt från filen fungerar inte, eftersom platsdatan hämtas med fetch.
 
+## Adresser och sökmotorer
+
+Varje ort har en egen adress på båda språken, till exempel `yukireport.com/sv/hemsedal/` och `/en/hemsedal/`, och startsidan finns på `/sv/` och `/en/`. Adressen bestämmer språket; `/` väljer som förut (sparat val, annars svenska på svenska telefoner). Gamla länkar som `/#hemsedal` flyttas till den nya adressen.
+
+Sidorna byggs av `tools/build_site.py` i arbetsflödet, efter att snö, lavin, mätvärden och kameror har hämtats, och publiceras från `_site/`. Varje ortsida får egen titel och beskrivning med de senaste snösiffrorna, `canonical` och `hreflang` mellan språken, Open Graph för delning, schema.org-data (`SkiResort`) och en kort text med snö, uppmätt snödjup, kameror och länkar till orter i samma region, så att sökmotorer ser innehållet utan att köra appen. Appen startar sedan som vanligt och ersätter texten. Appens stil och skript läggs i `app.<hash>.css` och `app.<hash>.js`, som alla sidor delar. Dessutom skapas `sitemap.xml`, `robots.txt` och `404.html`.
+
+Lokalt fungerar `index.html` som förut (`python3 -m http.server`), men en ortadress laddad direkt kräver det byggda resultatet:
+
+```bash
+python3 tools/build_site.py . /tmp/yuki_site && python3 -m http.server 8766 --directory /tmp/yuki_site
+```
+
 ## Installera som app
 
 Yuki Report är en PWA och fungerar offline: prognoser, lavinläge och kartdelar som du redan har tittat på finns kvar utan täckning (med en gul banner "Offline – visar senast hämtade data").

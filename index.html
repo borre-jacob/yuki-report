@@ -2,6 +2,8 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
+<!-- Every page (also /sv/<resort>/ and /en/<resort>/) loads its files from the site root -->
+<base href="/">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -15,11 +17,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Yuki Report</title>
 <meta name="description" content="Snörapport och lavinprognos för dig som jagar pudersnö i Japan, Skandinavien och Alperna. Med liftar och ställplatser för skidresan.">
-<script>/* Chosen light/dark theme and language, set before the page paints. Language: the saved choice,
-   else Swedish on Swedish phones and English for everyone else. */
+<script>/* Chosen light/dark theme and language, set before the page paints. Language: the address (/sv/… or /en/…),
+   else the saved choice, else Swedish on Swedish phones and English for everyone else. */
 try{var t=localStorage.getItem("yr-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}
 var l=null;try{l=JSON.parse(localStorage.getItem("yr-lang"))}catch(e){}
-document.documentElement.lang=l==="sv"||l==="en"?l:/^sv\b/i.test(navigator.language||"")?"sv":"en";</script>
+var p=/^\/(sv|en)(\/|$)/.exec(location.pathname);
+document.documentElement.lang=p?p[1]:l==="sv"||l==="en"?l:/^sv\b/i.test(navigator.language||"")?"sv":"en";</script>
 <link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -329,6 +332,10 @@ details.how .hint{margin-top:6px}
 .cam figcaption span{font-size:12px;color:var(--muted)}
 .camlinks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.camlinks>span{font-size:12.5px;color:var(--muted)}
 .camsrc{margin:0;font-size:12px;color:var(--muted)}
+/* Text built into each resort page for search engines (tools/build_site.py); the app replaces it when it starts */
+.pre{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px clamp(16px,3vw,24px)}
+.pre h1{font:700 26px/1.2 var(--display);margin:0 0 6px}.pre h2{font-size:18px;margin:18px 0 4px}.pre h3{font-size:15px;margin:12px 0 2px}
+.pre p{margin:0 0 8px;line-height:1.55}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
 .fctable{overflow-x:auto;margin:0 -16px;padding:0 16px}
 .fctable table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
@@ -1674,7 +1681,7 @@ async function loadAvalLevels(area){
     const lv = avalLevel(r, d);
     if ((state.avalLv[r.id] || 0) !== lv){ changed = true; if (lv) state.avalLv[r.id] = lv; else delete state.avalLv[r.id]; }
   }
-  if (changed && !location.hash && state.area === area && markerLayer) fillOverview(false, true);
+  if (changed && !curId() && state.area === area && markerLayer) fillOverview(false, true);
 }
 function avalLevel(r, d){
   if (r.area === "japan"){
@@ -1911,7 +1918,7 @@ async function renderDetail(id){
       : `<div class="msg err">${T(`Kunde inte hämta prognosen: ${esc(e.message)}. Kontrollera uppkopplingen och ladda om.`, `Could not fetch the forecast: ${esc(e.message)}. Check your connection and reload.`)}</div>`;
   });
   loadPlaces(r).then(pl => {
-    if (!poiMap || location.hash.slice(1) !== r.id) return;
+    if (!poiMap || curId() !== r.id) return;
     liftLayer = drawLifts(r);
     if (liftOn) liftLayer.addTo(poiMap);
     $("#cnt-lift").textContent = pl.lifts.length;
@@ -1953,7 +1960,7 @@ function obsData(area){
 async function loadObs(r){
   obsCur = null;
   const d = await obsData(r.area);
-  if (location.hash.slice(1) !== r.id) return;
+  if (curId() !== r.id) return;
   obsCur = {r, d};
   drawObs();
 }
@@ -1978,7 +1985,7 @@ function drawObs(){
   const box = $("#obs");
   if (!box) return;
   const C = obsCur, r = C?.r, ids = C?.d?.resorts?.[r?.id];
-  if (!C || location.hash.slice(1) !== r.id || !ids?.length){ box.hidden = true; return; }
+  if (!C || curId() !== r.id || !ids?.length){ box.hidden = true; return; }
   const F = fcData && fcData.r.id === r.id ? fcData : null, off = (F?.mid.utc_offset_seconds ?? 0) * 1000;
   const fmtT = t => F ? new Date(t + off).toISOString().slice(11, 16) : new Date(t).toLocaleTimeString(LOCALE, {hour: "2-digit", minute: "2-digit"});
   const ago = t => { const h = Math.round((Date.now() - t) / 3600e3); return h < 1 ? T("nyss", "just now") : h < 48 ? T(`${h} tim sedan`, `${h} h ago`) : T(`${Math.round(h / 24)} dygn sedan`, `${Math.round(h / 24)} days ago`); };
@@ -2041,7 +2048,7 @@ function camData(area){
 }
 async function loadCams(r){
   const d = await camData(r.area), box = $("#cams");
-  if (!box || location.hash.slice(1) !== r.id) return;
+  if (!box || curId() !== r.id) return;
   const cams = d?.resorts?.[r.id] || [], links = CAMS[r.id] || [];
   if (!cams.length && !links.length){ box.hidden = true; return; }
   const u = (c, k) => c[k] || (d.tpl?.[k] || "").replace("{id}", c.id);
@@ -2397,7 +2404,7 @@ async function fillAval(r){
   } catch (e){
     B = avalMissing([]);
   }
-  if (location.hash.slice(1) !== r.id || !$("#avalbox")) return;
+  if (curId() !== r.id || !$("#avalbox")) return;
   avalCur = {id: r.id, B};
   $("#avalbox").innerHTML = avalHtml(r, B);
   drawAvalWeather();
@@ -2810,7 +2817,7 @@ function avalWeather(F, B){
 }
 function drawAvalWeather(){
   const F = fcData, A = avalCur;
-  if (!F || !A || F.r.id !== A.id || location.hash.slice(1) !== A.id || !$("#avalwx")) return;
+  if (!F || !A || F.r.id !== A.id || curId() !== A.id || !$("#avalwx")) return;
   const W = avalWeather(F, A.B), B = A.B;
   const box = $("#avalsince");
   if (!B.small){
@@ -2911,7 +2918,7 @@ function showFcTab(k){
 
 function drawForecast(){
   const F = fcData;
-  if (!F || location.hash.slice(1) !== F.r.id || !$("#stats")) return;
+  if (!F || curId() !== F.r.id || !$("#stats")) return;
   const {r, top, base, mid, idx, todayIdx} = F;
   const H = mid.hourly.time, today = top.daily.time[todayIdx];
   const hoursOf = d => { const out = []; H.forEach((t, i) => { if (t.startsWith(d)) out.push(i); }); return out; };
@@ -3315,14 +3322,33 @@ document.addEventListener("click", e => {
 });
 
 // ---------- Routing ----------
-function go(id){ if (location.hash.slice(1) === id) route(); else location.hash = id; }
+// Every resort has its own address in each language: /sv/hemsedal/ and /en/hemsedal/ (built for search engines by
+// tools/build_site.py). The start page is /sv/ or /en/, and / picks the language as before. Old #hemsedal links
+// are moved to the new address. curId() is the resort on screen, "" on the start page.
+const RESORT_IDS = new Set(RESORTS.map(r => r.id));
+function curId(){
+  const m = /^\/(?:(?:sv|en)\/)?([a-z0-9]+)\/?$/.exec(location.pathname);
+  if (m && RESORT_IDS.has(m[1])) return m[1];
+  const h = location.hash.slice(1);
+  return RESORT_IDS.has(h) ? h : "";
+}
+const pathOf = (id, lang = LANG) => `/${lang}/${id ? id + "/" : ""}`;
+function go(id){
+  if (curId() === id && location.pathname === pathOf(id)) return route();
+  history.pushState(null, "", pathOf(id));
+  route();
+}
 function route(){
-  const id = location.hash.slice(1);
+  const id = curId(), rr = id && RESORTS.find(x => x.id === id);
+  // The same titles as the pages built by tools/build_site.py
+  document.title = rr ? T(`${rr.name}: snöprognos, puder och lavinläge | Yuki Report`, `${rr.name} snow forecast, powder and avalanche conditions | Yuki Report`)
+    : T("Yuki Report – snörapport, puder och lavinprognos för skidåkare", "Yuki Report – snow forecast, powder and avalanche conditions for skiers");
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
   if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; }
   if (id) renderDetail(id); else renderOverview();
 }
-addEventListener("hashchange", route);
+addEventListener("popstate", route);
+addEventListener("hashchange", () => { const id = curId(); if (id) history.replaceState(null, "", pathOf(id)); route(); });
 
 function setupGoogleForm(){
   const has = !!store.get("yr-gkey");
@@ -3363,7 +3389,7 @@ async function areaPlaceStatus(area){
   if (!placeSizes) return null;
   const ids = areaResorts(area).map(r => r.id).filter(id => placeSizes[id]);
   const cache = await caches.open("yuki-places");
-  const have = await Promise.all(ids.map(id => cache.match(new URL(PLACES_DIR + id + ".json", location.href)).then(Boolean)));
+  const have = await Promise.all(ids.map(id => cache.match(new URL(PLACES_DIR + id + ".json", document.baseURI)).then(Boolean)));
   return {ids, missing: ids.filter((_, i) => !have[i]), bytes: ids.reduce((a, id) => a + placeSizes[id], 0)};
 }
 async function saveArea(area, st){
@@ -3433,7 +3459,7 @@ function buildMenu(){
 }
 $("#menuopts").onchange = e => {
   const {name: k, value: v} = e.target;
-  if (k === "lang"){ store.set("yr-lang", v); location.reload(); return; }
+  if (k === "lang"){ store.set("yr-lang", v); location.href = pathOf(curId(), v); return; }
   if (k === "theme"){
     if (v === "auto"){ delete document.documentElement.dataset.theme; try { localStorage.removeItem("yr-theme"); } catch {} }
     else { document.documentElement.dataset.theme = v; try { localStorage.setItem("yr-theme", v); } catch {} }
@@ -3457,7 +3483,7 @@ $("#refresh").onclick = async e => {
   for (const k in avalFiles) delete avalFiles[k];
   for (const k in avalLvLoaded) delete avalLvLoaded[k];
   navigator.serviceWorker?.getRegistration().then(reg => reg?.update()).catch(() => {});
-  if (location.hash) route();
+  if (curId()) route();
   await refreshOverview(true);
   btn.disabled = false;
 };
@@ -3475,7 +3501,7 @@ if ("serviceWorker" in navigator && location.protocol !== "file:"){
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (hadController && !reloading){ reloading = true; location.reload(); }
     // First visit: the worker just took over, so saving for offline works from now on
-    else if (!hadController && !location.hash) showOfflineButton(state.area, true);
+    else if (!hadController && !curId()) showOfflineButton(state.area, true);
   });
 }
 
@@ -3486,6 +3512,7 @@ if ("serviceWorker" in navigator && location.protocol !== "file:"){
   showNet();
   setupGoogleForm();
   if (await loadGoogle()) $("#gstatus").textContent = "Google Maps";
+  if (location.hash && curId()) history.replaceState(null, "", pathOf(curId()));   // old #resort links
   route();
   stamp();
   refreshOverview();
@@ -3504,12 +3531,12 @@ async function refreshOverview(force = false){
     state.fetchedAt = new Date(at); stamp();
     return;
   }
-  try { await loadOverview(); stamp(); if (!location.hash && area === state.area) fillOverview(); }
+  try { await loadOverview(); stamp(); if (!curId() && area === state.area) fillOverview(); }
   catch (e){
     const have = areaResorts(area).some(r => state.overview?.[r.id]);
     if (have){ net.fallback = true; showNet(); }
     $("#updated").textContent = have ? T("Visar sparad data, kunde inte uppdatera", "Showing saved data, could not refresh") : "";
-    if (!have && !location.hash && area === state.area) listWithoutSnow(T(`Kunde inte hämta snödata (${esc(e.message)}). Orterna visas utan snö – försök igen senare med Uppdatera.`, `Could not fetch snow data (${esc(e.message)}). The resorts are shown without snow – try again later with Refresh.`));
+    if (!have && !curId() && area === state.area) listWithoutSnow(T(`Kunde inte hämta snödata (${esc(e.message)}). Orterna visas utan snö – försök igen senare med Uppdatera.`, `Could not fetch snow data (${esc(e.message)}). The resorts are shown without snow – try again later with Refresh.`));
   }
 }
 </script>

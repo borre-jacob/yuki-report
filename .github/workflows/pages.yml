@@ -86,9 +86,11 @@ jobs:
             curl -sSf "${{ steps.pages.outputs.base_url }}/data/cams/$area.json" -o "data/cams/$area.json" || rm -f "data/cams/$area.json"
           done
           python3 tools/fetch_cams.py index.html data/osm/places data/cams || echo "Hämtningen av webbkameror misslyckades, behåller de senast publicerade filerna."
+      - name: Bygg sidorna för varje ort (sökmotorer)
+        run: python3 tools/build_site.py . _site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       # GitHub Pages sometimes fails with a temporary error, so wait a minute and try once more
       - id: deployment
         uses: actions/deploy-pages@v4

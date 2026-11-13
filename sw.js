@@ -14,7 +14,7 @@
    - Cloudflare Web Analytics (static.cloudflareinsights.com) and Windy's webcam images and players are never cached:
      other hosts go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v12";
+const VERSION = "v13";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";
@@ -103,11 +103,13 @@ function timeout(promise, ms){
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 }
 
-// A page (the app or the privacy page): fresh from the network when possible (picks up new avalanche data),
-// else the cached copy. Each page is stored under its own name, so the privacy page never replaces the app.
+// A page (the app, a resort page such as /sv/hemsedal/, or the privacy page): fresh from the network when possible
+// (picks up new avalanche data), else the cached copy. Each page is stored under its own address; a resort page
+// that was never opened falls back to the app, which shows the resort from the address.
 async function page(req){
   const cache = await caches.open(SHELL);
-  const name = new URL(req.url).pathname.endsWith("/integritet.html") ? "integritet.html" : "index.html";
+  const path = new URL(req.url).pathname;
+  const name = path.endsWith("/integritet.html") ? "integritet.html" : path === "/" || path.endsWith("/index.html") ? "index.html" : path;
   try {
     // no-cache: always ask GitHub (cheap 304 when unchanged) instead of the browser's 10-minute HTTP cache
     const res = await timeout(fetch(req.url, {cache: "no-cache", credentials: "same-origin"}), NET_TIMEOUT);
@@ -123,8 +125,17 @@ async function cacheFirst(req, name){
   const hit = await cache.match(req, {ignoreSearch: name === SHELL});
   if (hit) return hit;
   const res = await fetch(req);
-  if (res.ok || res.type === "opaque") cache.put(req, res.clone());
+  if (res.ok || res.type === "opaque") cache.put(req, res.clone()).then(() => pruneApp(cache, req.url));
   return res;
+}
+
+// The app's script and style have the content hash in their name (app.<hash>.js, built by tools/build_site.py), so
+// each version is a new file. Keep the three newest of each, for pages cached with an older version.
+async function pruneApp(cache, url){
+  const m = /\/app\.[0-9a-f]+\.(js|css)$/.exec(new URL(url).pathname);
+  if (!m) return;
+  const old = (await cache.keys()).filter(k => new RegExp(`/app\\.[0-9a-f]+\\.${m[1]}$`).test(new URL(k.url).pathname));
+  for (const k of old.slice(0, -3)) await cache.delete(k);
 }
 
 // Stores the response with the time it was fetched, so the app can say how old offline data is
