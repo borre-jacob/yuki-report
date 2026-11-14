@@ -10,7 +10,7 @@
   <p style="font-size:15px;margin:0 0 20px">Tryck på knappen för att logga in på Yuki Report.<br>
     <span style="color:#5b6b82">Tap the button to log in to Yuki Report.</span></p>
   <p style="margin:0 0 24px">
-    <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#2f6fd6;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Logga in / Log in</a>
+    <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;background:#2f6fd6;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Logga in / Log in</a>
   </p>
   <p style="font-size:13px;color:#5b6b82;margin:0">Länken fungerar en gång och går ut efter en timme. Har du inte bett om att logga in kan du strunta i mejlet.<br>
     The link works once and expires after an hour. If you did not ask to log in, you can ignore this e-mail.</p>

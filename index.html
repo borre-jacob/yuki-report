@@ -3420,7 +3420,7 @@ function sb(){
     const sc = document.createElement("script");
     sc.src = SB_LIB;
     sc.onload = () => {
-      sbClient = window.supabase.createClient(SB_URL, SB_KEY, {auth: {flowType: "implicit", detectSessionInUrl: true, persistSession: true}});
+      sbClient = window.supabase.createClient(SB_URL, SB_KEY, {auth: {flowType: "implicit", detectSessionInUrl: false, persistSession: true}});
       sbClient.auth.onAuthStateChange((ev, session) => {
         const u = session?.user || null, changed = u?.id !== sbUser?.id;
         sbUser = u;
@@ -3436,8 +3436,27 @@ function sb(){
 if (/[#&]error_description=/.test(location.hash)) sbAuthError = decodeURIComponent((location.hash.match(/error_description=([^&]*)/) || [])[1] || "").replace(/\+/g, " ");
 let sbHadSession = false;
 try { sbHadSession = !!localStorage.getItem(SB_SESSION); } catch {}
-let sbChecked = !(sbHadSession || /access_token=/.test(location.hash));   // no "Logga in" flash for members
-if (!sbChecked) sb().then(c => c.auth.getSession()).catch(() => {}).finally(() => { sbChecked = true; renderAcctBtn(); });
+// The login e-mail links straight to the page on yukireport.com with ?token_hash=…&type=… (the e-mail templates in
+// Supabase use {{ .RedirectTo }}), and the app confirms it here: a link to the sender's own domain looks far less
+// like phishing to spam filters than one to supabase.co.
+const sbHashTokens = new URLSearchParams(location.hash.slice(1));
+const sbAccess = sbHashTokens.get("access_token"), sbRefresh = sbHashTokens.get("refresh_token");
+if (sbAccess) history.replaceState(null, "", location.pathname + location.search);
+const sbToken = new URLSearchParams(location.search);
+const sbHash = sbToken.get("token_hash"), sbType = sbToken.get("type");
+let sbChecked = !(sbHadSession || sbHash || sbAccess);   // no "Logga in" flash for members
+if (sbHash){
+  history.replaceState(null, "", location.pathname);   // the link works once; keep it out of the address bar
+  sb().then(c => c.auth.verifyOtp({token_hash: sbHash, type: sbType || "email"}))
+    .then(({error}) => { if (error) sbAuthError = error.message; })
+    .catch(() => { sbAuthError = "network"; })
+    .finally(() => { sbChecked = true; renderAcctBtn(); if (sbAuthError){ buildMenu(); renderAcct(); menu.showModal(); } });
+} else if (sbAccess){
+  sb().then(c => c.auth.setSession({access_token: sbAccess, refresh_token: sbRefresh || ""}))
+    .then(({error}) => { if (error) sbAuthError = error.message; })
+    .catch(() => { sbAuthError = "network"; })
+    .finally(() => { sbChecked = true; renderAcctBtn(); });
+} else if (!sbChecked) sb().then(c => c.auth.getSession()).catch(() => {}).finally(() => { sbChecked = true; renderAcctBtn(); });
 setTimeout(renderAcctBtn);
 
 function renderAcctBtn(){
@@ -3488,7 +3507,7 @@ function renderAcct(){
     };
     return;
   }
-  box.innerHTML = `<h3 id="acct-t">${T("Bli medlem", "Become a member")}</h3>
+  box.innerHTML = `<h3 id="acct-t">${T("Logga in", "Log in")}</h3>
     <p>${T("Som medlem ser du var andra medlemmar har startat sina toppturer, delar dina egna startplatser och har dina favoriter på alla dina enheter. Gratis, utan lösenord.",
            "As a member you see where other members started their tours, share your own start pins and have your favourites on all your devices. Free, no password.")}</p>
     <form class="acctform" id="acctform"><input type="email" id="acctmail" required autocomplete="email" placeholder="${T("din@epost.se", "you@example.com")}" aria-label="${T("E-postadress", "E-mail address")}">
@@ -3698,7 +3717,7 @@ function route(){
   if (id) renderDetail(id); else renderOverview();
 }
 addEventListener("popstate", route);
-addEventListener("hashchange", () => { const id = curId(); if (id) history.replaceState(null, "", pathOf(id)); route(); });
+addEventListener("hashchange", () => { if (!RESORT_IDS.has(location.hash.slice(1))) return; history.replaceState(null, "", pathOf(curId())); route(); });
 
 function setupGoogleForm(){
   const has = !!store.get("yr-gkey");
@@ -3862,7 +3881,7 @@ if ("serviceWorker" in navigator && location.protocol !== "file:"){
   showNet();
   setupGoogleForm();
   if (await loadGoogle()) $("#gstatus").textContent = "Google Maps";
-  if (location.hash && curId()) history.replaceState(null, "", pathOf(curId()));   // old #resort links
+  if (RESORT_IDS.has(location.hash.slice(1))) history.replaceState(null, "", pathOf(curId()));   // old #resort links
   route();
   stamp();
   refreshOverview();
