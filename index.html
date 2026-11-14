@@ -400,6 +400,10 @@ details.how .hint{margin-top:6px}
 .acctbtns{display:flex;gap:8px;flex-wrap:wrap}.acctbtns button{background:var(--surface);color:var(--ink);border-color:var(--line)}
 .acctbtns .danger{color:var(--lift)}
 .acctmsg{color:var(--muted)}
+.accttools{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0}
+.accttools h4{margin:0;font-size:14px}
+.acctres{display:flex;gap:8px;align-items:center;font-size:13.5px}.acctres select{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--surface);color:var(--ink)}
+.acctbtns .btnlike{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:600 13.5px var(--body);cursor:pointer}
 .mepin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e11d48;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .tourtag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font:600 10.5px var(--body);color:var(--muted-2);vertical-align:2px}
 .nolv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:4px;border:1px dashed var(--line);color:var(--muted);font-size:11px}
@@ -3552,6 +3556,14 @@ async function onAuthChange(){
   const r = RESORTS.find(x => x.id === curId());
   if (r){ drawMine(r); showFavBtn?.(); }
 }
+// The resort list for drawing a track: the open resort first, then favourites, then all by name
+function resortOptions(){
+  const cur = curId(), byName = (a, b) => a.name.localeCompare(b.name, LANG);
+  const opt = r => `<option value="${r.id}"${r.id === cur ? " selected" : ""}>${esc(r.name)}${isTour(r) ? " ▲" : ""}</option>`;
+  const fav = RESORTS.filter(r => favs.has(r.id)).sort(byName);
+  return (fav.length ? `<optgroup label="${T("Favoriter", "Favourites")}">${fav.map(opt).join("")}</optgroup>` : "")
+    + `<optgroup label="${T("Alla orter", "All resorts")}">${RESORTS.filter(r => !favs.has(r.id)).sort(byName).map(opt).join("")}</optgroup>`;
+}
 // Opens the menu at the login form, with a line on what logging in gives for what the visitor just tried
 let acctWhy = "";
 function askLogin(why = ""){
@@ -3564,9 +3576,29 @@ function renderAcct(){
   if (sbUser){
     box.innerHTML = `<h3 id="acct-t">${T("Medlem", "Member")}</h3>
       <p>${T("Inloggad som", "Logged in as")} <b>${esc(sbUser.email || "")}</b>. ${T("Du sparar favoriter, sätter nålar och spelar in hikes och lines, och ser det medlemmarna har delat på orternas infokartor.", "You save favourites, drop pins and record hikes and lines, and see what members have shared on the resorts' info maps.")}</p>
+      <div class="accttools">
+        <h4>${T("Hikes och lines", "Hikes and lines")}</h4>
+        <label class="acctres">${T("Ort", "Resort")} <select id="acctres">${resortOptions()}</select></label>
+        <div class="acctbtns"><button type="button" id="acctdraw">✏️ ${T("Rita på kartan", "Draw on the map")}</button>
+          <label class="btnlike">⤒ ${T("Ladda upp GPX-fil", "Upload a GPX file")}<input type="file" id="acctgpx" accept=".gpx,application/gpx+xml" hidden></label></div>
+        <p class="mnote" id="accttoolmsg" role="status">${T("Rita en hike eller line för orten du väljer. En GPX-fil från klockan, Strava eller liknande hamnar vid orten där spåret ligger.", "Draw a hike or line for the resort you choose. A GPX file from your watch, Strava or the like goes to the resort where the track is.")}</p>
+      </div>
       <div class="acctbtns"><button type="button" id="acctout">${T("Logga ut", "Log out")}</button><button type="button" id="acctdel" class="danger">${T("Radera mitt konto", "Delete my account")}</button></div>
       <p class="acctmsg" id="acctmsg" role="status"></p>`;
     $("#acctout").onclick = async () => { await (await sb()).auth.signOut(); };
+    $("#acctgpx").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) gpxLoad(f, $("#accttoolmsg")); };
+    $("#acctdraw").onclick = () => {
+      const id = $("#acctres").value;
+      if (rec && !rec.done){ $("#accttoolmsg").textContent = T("Avsluta inspelningen först.", "Finish the recording first."); return; }
+      menu.close();
+      if (curId() !== id) go(id);
+      // Start drawing once the resort page and its map are there
+      let tries = 0;
+      const wait = setInterval(() => {
+        if (poiMap && curId() === id && $("#mypin")){ clearInterval(wait); drawStart(RESORTS.find(x => x.id === id)); }
+        else if (++tries > 50) clearInterval(wait);
+      }, 100);
+    };
     $("#acctdel").onclick = async () => {
       if (!confirm(T("Radera ditt konto? Dina nålar, hikes, lines och favoriter tas bort och kan inte återställas.",
                      "Delete your account? Your pins, hikes, lines and favourites are removed and cannot be restored."))) return;
@@ -3672,7 +3704,7 @@ async function drawMine(r, fitTo = null){
       pins = p.data || []; tracks = t.data || [];
     } catch {}
   } else if (sbChecked) counts = await sharedCounts(r);
-  if (draw !== mineDraw || curId() !== r.id || !$("#mypin")) return;   // the page moved on meanwhile
+  if (draw !== mineDraw || curId() !== r.id || !$("#mypin") || drawing) return;   // the page moved on meanwhile
   if (mineLayer){ mineLayer.remove(); mineLayer = null; }
   if (poiMap){
     mineLayer = L.layerGroup().addTo(poiMap);
@@ -3725,17 +3757,13 @@ async function drawMine(r, fitTo = null){
       <button type="button" class="pinbtn" id="pinbtn">📍 ${T("Sätt nål", "Drop a pin")}</button>
       <button type="button" class="pinbtn hike" id="rechike"${busy ? " disabled" : ""}>▲ ${T("Spela in hike", "Record a hike")}</button>
       <button type="button" class="pinbtn line" id="recline"${busy ? " disabled" : ""}>▼ ${T("Spela in line", "Record a line")}</button>
-      <button type="button" class="pinbtn gpx" id="drawbtn"${busy ? " disabled" : ""}>✏️ ${T("Rita", "Draw")}</button>
-      <label class="pinbtn gpx">⤒ ${T("Ladda upp GPX", "Upload GPX")}<input type="file" id="gpxfile" accept=".gpx,application/gpx+xml" hidden></label>
     </div>
     <p class="pinmsg" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
       tracks.length ? `<span class="tkey"><i style="--c:${HIKE_C}" class="dash"></i>hike <i style="--c:${LINE_C}"></i>line</span> ` : ""}${
       others ? T(`Andra medlemmars nålar och spår (${others}) visas på kartan. `, `Other members' pins and tracks (${others}) show on the map. `) : ""}${
-      T("Medlemmarnas nålar och spår är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' pins and tracks are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
+      T("Rita ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Draw a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas nålar och spår är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' pins and tracks are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
   $("#rechike").onclick = () => recStart("hike", r);
-  $("#drawbtn").onclick = () => drawStart(r);
   $("#recline").onclick = () => recStart("line", r);
-  $("#gpxfile").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) gpxLoad(f, r); };
   $("#pinbtn").onclick = () => {
     if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
     $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
@@ -3832,21 +3860,30 @@ function recBar(){
 }
 
 // ----- GPX files (from a watch, Strava and the like) -----
-async function gpxLoad(file, r){
-  const msg = $("#pinmsg");
+// The track goes to the resort it lies at: the nearest resort or touring area within 15 km of any part of it
+async function gpxLoad(file, msg){
   try {
     if (file.size > 15e6) throw new Error(T("filen är för stor", "the file is too big"));
     const doc = new DOMParser().parseFromString(await file.text(), "application/xml");
     let nodes = [...doc.getElementsByTagName("trkpt")];
     if (!nodes.length) nodes = [...doc.getElementsByTagName("rtept")];
-    const pts = nodes.map(n => { const e = n.getElementsByTagName("ele")[0];
-      return [+(+n.getAttribute("lat")).toFixed(5), +(+n.getAttribute("lon")).toFixed(5), e ? Math.round(+e.textContent) : null]; });
-    const clean = cleanPts(pts);
-    if (clean.length < 2) throw new Error(T("hittade inget spår i filen", "found no track in the file"));
-    const near = Math.min(...clean.filter((_, i) => i % 10 === 0).map(p => Math.min(metres(p, [r.lat, r.lon]), isTour(r) ? metres(p, [r.slat, r.slon]) : Infinity)));
-    if (near > 15000) throw new Error(T(`spåret ligger ${Math.round(near / 1000)} km från ${r.name}`, `the track is ${Math.round(near / 1000)} km from ${r.name}`));
-    const st = trackStats(clean);
-    saveTrack({kind: st.ele && st.down > st.up ? "line" : "hike", resort: r.id, pts: clean});
+    const pts = cleanPts(nodes.map(n => { const e = n.getElementsByTagName("ele")[0];
+      return [+(+n.getAttribute("lat")).toFixed(5), +(+n.getAttribute("lon")).toFixed(5), e ? Math.round(+e.textContent) : null]; }));
+    if (pts.length < 2) throw new Error(T("hittade inget spår i filen", "found no track in the file"));
+    const probe = pts.filter((_, i) => i % Math.max(1, Math.floor(pts.length / 60)) === 0);
+    let best = null, bestD = Infinity;
+    for (const r of RESORTS){
+      if (Math.abs(r.lat - pts[0][0]) > 1 || Math.abs(r.lon - pts[0][1]) > 2) continue;
+      for (const p of probe){
+        const d = Math.min(metres(p, [r.lat, r.lon]), isTour(r) ? metres(p, [r.slat, r.slon]) : Infinity);
+        if (d < bestD){ bestD = d; best = r; }
+      }
+    }
+    if (!best || bestD > 15000) throw new Error(T("spåret ligger inte vid någon av appens orter (inom 15 km)", "the track is not near any of the app's resorts (within 15 km)"));
+    msg.textContent = "";
+    const st = trackStats(pts);
+    menu.close();
+    saveTrack({kind: st.ele && st.down > st.up ? "line" : "hike", resort: best.id, pts});
   } catch (e) { msg.textContent = T("Kunde inte läsa GPX-filen: ", "Could not read the GPX file: ") + e.message + "."; }
 }
 
