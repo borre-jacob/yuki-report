@@ -84,6 +84,11 @@ header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:1
 header.top{position:relative;padding-right:54px}
 .menubtn{position:absolute;top:0;right:0;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
   display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;cursor:pointer}
+/* Member status: a round button with the initial next to the menu when logged in, "Logga in" by Refresh when not */
+header.top.member{padding-right:108px}
+.acctbtn{position:absolute;top:0;right:54px;width:44px;height:44px;border-radius:50%;border:2px solid var(--snow);background:color-mix(in srgb,var(--snow) 14%,var(--surface));
+  color:var(--snow-ink);font:700 17px var(--body);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.status .loginbtn{border-color:var(--snow);color:var(--snow-ink)}
 .menubtn span{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink)}
 /* Settings: a panel from the right edge */
 .menu{position:fixed;inset:0 0 0 auto;margin:0;width:min(400px,100vw);height:100%;max-height:none;max-width:100vw;border:0;border-left:1px solid var(--line);
@@ -563,8 +568,10 @@ if (location.hostname === "yukireport.com"){
     </div>
     <div class="status">
       <div class="updated" id="updated"></div>
+      <button type="button" id="loginbtn" class="loginbtn" hidden></button>
       <button type="button" id="refresh"><span class="t-sv">Uppdatera</span><span class="t-en">Refresh</span></button>
     </div>
+    <button type="button" id="acctbtn" class="acctbtn" hidden></button>
     <button type="button" id="menubtn" class="menubtn" aria-label="Inställningar" aria-haspopup="dialog" aria-controls="menu"><span></span><span></span><span></span></button>
   </header>
   <dialog id="menu" class="menu" aria-labelledby="menu-t">
@@ -3429,10 +3436,26 @@ function sb(){
 if (/[#&]error_description=/.test(location.hash)) sbAuthError = decodeURIComponent((location.hash.match(/error_description=([^&]*)/) || [])[1] || "").replace(/\+/g, " ");
 let sbHadSession = false;
 try { sbHadSession = !!localStorage.getItem(SB_SESSION); } catch {}
-if (sbHadSession || /access_token=/.test(location.hash)) sb().then(c => c.auth.getSession()).catch(() => {});
+let sbChecked = !(sbHadSession || /access_token=/.test(location.hash));   // no "Logga in" flash for members
+if (!sbChecked) sb().then(c => c.auth.getSession()).catch(() => {}).finally(() => { sbChecked = true; renderAcctBtn(); });
+setTimeout(renderAcctBtn);
 
+function renderAcctBtn(){
+  const b = $("#acctbtn"), l = $("#loginbtn"), head = $("header.top");
+  if (!b || !l) return;
+  const open = () => { buildMenu(); renderAcct(); menu.showModal(); (sbUser ? $("#acctout") : $("#acctmail"))?.focus(); };
+  b.hidden = !sbUser; l.hidden = !!sbUser || !sbChecked; head.classList.toggle("member", !!sbUser);
+  if (sbUser){
+    const mail = sbUser.email || "";
+    b.textContent = (mail[0] || "?").toUpperCase();
+    b.title = T(`Inloggad som ${mail}`, `Logged in as ${mail}`);
+    b.setAttribute("aria-label", b.title);
+  } else l.textContent = T("Logga in", "Log in");
+  b.onclick = l.onclick = open;
+}
 async function onAuthChange(){
   renderAcct();
+  renderAcctBtn();
   if (sbUser){
     // Favourites: what is on this phone and what is on the account become one list, in both places
     try {
