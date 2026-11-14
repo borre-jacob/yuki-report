@@ -3392,11 +3392,14 @@ async function loadPlaces(r){
 // position, and the app asks for the position only when the button is pressed. Tap a pin for directions or to
 // remove it.
 let myPinLayer = null;
+const PINS_ON = false;   // "Sätt nål här" is paused until it launches together with member accounts
 const myPinsKey = r => "yr-pins-" + r.id;
 const myPins = r => store.get(myPinsKey(r)) || [];
 function drawMyPin(r, fitTo = null){
   const box = $("#mypin");
   if (!box) return;
+  box.hidden = !PINS_ON;
+  if (!PINS_ON) return;
   const pins = myPins(r);
   if (myPinLayer){ myPinLayer.remove(); myPinLayer = null; }
   if (poiMap){
