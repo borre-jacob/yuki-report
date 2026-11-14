@@ -80,10 +80,14 @@ create table if not exists public.tracks (
 create index if not exists tracks_resort on public.tracks (resort);
 -- Drawn on the map by hand (true) rather than recorded with GPS or loaded from a GPX file
 alter table public.tracks add column if not exists drawn boolean not null default false;
+-- The member's own name, difficulty (1 easy, 2 intermediate, 3 difficult, 4 expert) and comment
+alter table public.tracks add column if not exists name  text check (char_length(name) <= 60);
+alter table public.tracks add column if not exists grade smallint check (grade between 1 and 4);
+alter table public.tracks add column if not exists note  text check (char_length(note) <= 500);
 alter table public.tracks enable row level security;
 revoke all on public.tracks from anon, authenticated;
 grant select, insert, delete on public.tracks to authenticated;
-grant update (shared) on public.tracks to authenticated;
+grant update (shared, kind, name, grade, note) on public.tracks to authenticated;
 
 drop policy if exists "members see shared and own tracks" on public.tracks;
 create policy "members see shared and own tracks" on public.tracks for select to authenticated

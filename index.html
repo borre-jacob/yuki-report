@@ -392,6 +392,16 @@ details.how .hint{margin-top:6px}
 .tdkind{border:0;padding:0;margin:0 0 10px;display:flex;flex-direction:column;gap:6px}.tdkind legend{font-weight:600;font-size:13.5px;margin-bottom:4px}
 .tdkind label,.tdshare{display:flex;gap:8px;align-items:center;font-size:14px}.tdshare{margin:0 0 10px}
 .tdbtns{display:flex;gap:8px;flex-wrap:wrap}
+.tdfield{display:flex;flex-direction:column;gap:4px;font-size:13.5px;font-weight:600;margin:0 0 10px}
+.tdfield input,.tdfield select,.tdfield textarea{font:400 14px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);resize:vertical}
+.trackdlg{max-height:calc(100dvh - 32px);overflow:auto}
+.grade{display:inline-block;padding:0 6px;border-radius:999px;background:var(--g);color:#fff;font:600 11px var(--body);vertical-align:1px}
+.pnote{white-space:pre-line;overflow-wrap:anywhere}
+.minehead{font:600 12px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:8px 2px 4px}
+.minelist{border-top:0;max-height:none;overflow:visible}
+.poi.mine.hike i{border-radius:2px;transform:rotate(45deg)}
+.poi.mine.line i{border-radius:2px}
+.sel .mepin{box-shadow:0 0 0 4px #ff2d6f,0 2px 6px rgba(0,0,0,.4)}
 .mepin.other{background:var(--snow)}
 .acct{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
 .acct h3{margin:0;font-size:16px}.acct p{margin:0;font-size:13.5px}
@@ -2087,6 +2097,7 @@ async function renderDetail(id){
         <div class="dgrid">
           <div class="poimapbox"><div id="poimap" role="region" aria-label="${T("Karta med faciliteter", "Map of facilities")}"></div></div>
           <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <div class="pois minelist" id="minelist" hidden></div>
             <div class="pois" id="pois"><div class="msg">${T("Laddar platser…", "Loading places…")}</div></div>
             ${TIPS[r.area].length ? `<ul class="tips">${TIPS[r.area].map(t => `<li>${t}</li>`).join("")}</ul>` : ""}
           </div>
@@ -3692,6 +3703,38 @@ function simplify(pts, tol = 4){
 const cleanPts = pts => (Array.isArray(pts) ? pts : []).filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]) && Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180)
   .map(p => [+p[0], +p[1], isFinite(p[2]) && p[2] !== null ? Math.round(p[2]) : null]);
 
+// Names, difficulty and highlighting for members' hikes, lines and pins
+let mineItems = [], mineSel = null;
+const GRADES = [null, ["Lätt", "Easy", "#16a34a"], ["Medel", "Intermediate", "#2563eb"], ["Svår", "Difficult", "#dc2626"], ["Expert", "Expert", "#111827"]];
+const gradeTag = g => GRADES[g] ? `<span class="grade" style="--g:${GRADES[g][2]}">${T(GRADES[g][0], GRADES[g][1])}</span>` : "";
+// A name when the member gives none: from the heights when there are any ("Hike till 1 450 m", "Line från 1 450 m")
+function autoName(kind, pts, r){
+  const hs = pts.map(p => p[2]).filter(h => h != null);
+  if (hs.length) return kind === "hike" ? T(`Hike till ${uH(Math.max(...hs))}`, `Hike to ${uH(Math.max(...hs))}`) : T(`Line från ${uH(Math.max(...hs))}`, `Line from ${uH(Math.max(...hs))}`);
+  return `${kind === "hike" ? "Hike" : "Line"} ${r?.name || ""}`.trim();
+}
+function selectMine(n, fromList){
+  const i = mineItems[n]; if (!i || !poiMap) return;
+  mineItems.forEach(x => { if (x.line) x.line.setStyle({...x.base, opacity: x === i ? 1 : 0.35}); });
+  if (i.line){ i.line.setStyle({...i.base, weight: 8, opacity: 1}).bringToFront(); i.start?.bringToFront(); }
+  if (mineSel?.marker) mineSel.marker.getElement()?.classList.remove("sel");
+  if (i.marker) i.marker.getElement()?.classList.add("sel");
+  mineSel = i;
+  document.querySelectorAll("#minelist .poi.sel").forEach(el => el.classList.remove("sel"));
+  const row = $(`#minelist .poi[data-n="${n}"]`);
+  if (row){ row.classList.add("sel"); if (!fromList) row.scrollIntoView({block: "nearest", behavior: "smooth"}); }
+  if (fromList){
+    if (i.bounds) poiMap.flyToBounds(i.bounds.pad(0.2), {maxZoom: 15, duration: .6});
+    else poiMap.flyTo(i.marker.getLatLng(), Math.max(poiMap.getZoom(), 15), {duration: .6});
+    const box = $("#poimap").getBoundingClientRect();
+    if (box.top < 0 || box.bottom > innerHeight) $("#poimap").scrollIntoView({block: "center", behavior: "smooth"});
+  }
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#minelist .n button");
+  if (b) selectMine(+b.closest(".poi").dataset.n, true);
+});
+
 async function drawMine(r, fitTo = null){
   const box = $("#mypin"), draw = ++mineDraw;
   if (!box || drawing) return;   // not while a track is being drawn
@@ -3700,53 +3743,76 @@ async function drawMine(r, fitTo = null){
     try {
       const c = await sb();
       const [p, t] = await Promise.all([c.from("pins").select("id,lat,lon,user_id").eq("resort", r.id),
-                                        c.from("tracks").select("id,kind,shared,drawn,pts,user_id").eq("resort", r.id)]);
+                                        c.from("tracks").select("id,kind,shared,drawn,name,note,grade,pts,user_id").eq("resort", r.id)]);
       pins = p.data || []; tracks = t.data || [];
     } catch {}
   } else if (sbChecked) counts = await sharedCounts(r);
   if (draw !== mineDraw || curId() !== r.id || !$("#mypin") || drawing) return;   // the page moved on meanwhile
   if (mineLayer){ mineLayer.remove(); mineLayer = null; }
+  mineItems = []; mineSel = null;
   if (poiMap){
     mineLayer = L.layerGroup().addTo(poiMap);
     tracks.forEach(t => {
       const pts = cleanPts(t.pts), own = t.user_id === sbUser?.id, c = t.kind === "hike" ? HIKE_C : LINE_C;
       if (pts.length < 2) return;
+      const st = trackStats(pts), name = t.name || autoName(t.kind, pts, r), item = {kind: t.kind, name, own, c};
       const pop = document.createElement("div");
       pop.className = "pinpop";
-      pop.innerHTML = `<b>${kindName(t.kind, own)}</b><span>${t.drawn ? T("ritad", "drawn") + " · " : ""}${statText(trackStats(pts), t.kind)}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}</span>
+      pop.innerHTML = `<b>${esc(name)}</b><span>${t.kind === "hike" ? "Hike" : "Line"} · ${statText(st, t.kind)}${t.grade ? ` · ${gradeTag(t.grade)}` : ""}</span>${
+        t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("ritad", "drawn") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}</span>
         <a href="${gmapsDir(pts[0][0], pts[0][1])}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${
-        own ? `<button type="button" data-a="share">${t.shared ? T("Sluta dela", "Stop sharing") : T("Dela med medlemmar", "Share with members")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
+        own ? `<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
       if (own){
-        pop.querySelector('[data-a="share"]').onclick = async () => { await (await sb()).from("tracks").update({shared: !t.shared}).eq("id", t.id); drawMine(r); };
+        pop.querySelector('[data-a="edit"]').onclick = () => { poiMap.closePopup(); saveTrack({...t, pts, resort: r.id, edit: true}); };
         pop.querySelector('[data-a="del"]').onclick = async () => {
           if (!confirm(T("Ta bort spåret?", "Remove the track?"))) return;
           await (await sb()).from("tracks").delete().eq("id", t.id); drawMine(r);
         };
       }
-      L.polyline(pts.map(p => [p[0], p[1]]), {color: c, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: t.kind === "hike" ? "8 6" : null})
-        .addTo(mineLayer).bindPopup(pop);
+      const base = {color: c, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: t.kind === "hike" ? "8 6" : null};
+      const line = L.polyline(pts.map(p => [p[0], p[1]]), base).addTo(mineLayer).bindPopup(pop);
       // The start of a hike is its hiking point
-      if (t.kind === "hike") L.circleMarker([pts[0][0], pts[0][1]], {radius: 7, color: "#fff", weight: 2, fillColor: HIKE_C, fillOpacity: 1})
-        .addTo(mineLayer).bindPopup(pop);
+      const start = t.kind === "hike" ? L.circleMarker([pts[0][0], pts[0][1]], {radius: 7, color: "#fff", weight: 2, fillColor: HIKE_C, fillOpacity: 1}).addTo(mineLayer).bindPopup(pop) : null;
+      Object.assign(item, {line, start, base, bounds: line.getBounds(), sub: `${t.kind === "hike" ? "Hike" : "Line"} · ${statText(st, t.kind)}${t.grade ? ` · ${gradeTag(t.grade)}` : ""}`,
+        note: t.note || "", who: own ? T("din", "yours") + (t.shared ? "" : " · " + T("bara för dig", "only for you")) : T("från en medlem", "from a member"), dir: gmapsDir(pts[0][0], pts[0][1])});
+      const n = mineItems.push(item) - 1;
+      line.on("click", () => selectMine(n, false)); start?.on("click", () => selectMine(n, false));
     });
+    let pinNo = 0;
     pins.forEach(pin => {
-      const own = pin.user_id === sbUser?.id, pop = document.createElement("div");
+      const own = pin.user_id === sbUser?.id, pop = document.createElement("div"), name = own ? `${T("Din nål", "Your pin")} ${++pinNo}` : T("Nål från en medlem", "Pin from a member");
       pop.className = "pinpop";
-      pop.innerHTML = `<b>${own ? T("Din nål", "Your pin") : T("Nål från en medlem", "Pin from a member")}</b>${own ? `<span>${T("Håll in och dra nålen för att flytta den.", "Press and drag the pin to move it.")}</span>` : ""}<a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${own ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
+      pop.innerHTML = `<b>${name}</b>${own ? `<span>${T("Håll in och dra nålen för att flytta den.", "Press and drag the pin to move it.")}</span>` : ""}<a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${own ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
       if (own) pop.querySelector("button").onclick = async () => { await (await sb()).from("pins").delete().eq("id", pin.id); drawMine(r); };
       const m = L.marker([pin.lat, pin.lon], {icon: pinIcon(own ? "own" : "other"), zIndexOffset: own ? 1100 : 1000, draggable: own, autoPan: true})
         .addTo(mineLayer).bindPopup(pop, {offset: [0, -30]});
+      const item = {kind: "pin", name, own, c: own ? "#e11d48" : css("--snow"), marker: m, sub: T("Nål", "Pin"), note: "", who: own ? T("din", "yours") : T("från en medlem", "from a member"), dir: gmapsDir(pin.lat, pin.lon)};
+      const n = mineItems.push(item) - 1;
+      m.on("click", () => selectMine(n, false));
       // Your own pins can be dragged to where they should be; the new position is saved right away
       if (own) m.on("dragend", async () => {
         const ll = m.getLatLng(), lat = +ll.lat.toFixed(5), lon = +ll.lng.toFixed(5);
         const {error} = await (await sb()).from("pins").update({lat, lon}).eq("id", pin.id);
         if (error){ m.setLatLng([pin.lat, pin.lon]); const msg = $("#pinmsg"); if (msg) msg.textContent = T("Kunde inte flytta nålen: ", "Could not move the pin: ") + error.message; return; }
         pin.lat = lat; pin.lon = lon;
-        pop.querySelector("a").href = gmapsDir(lat, lon);
+        item.dir = pop.querySelector("a").href = gmapsDir(lat, lon);
+        const a = $(`#minelist .poi[data-n="${n}"] .d a`); if (a) a.href = item.dir;
       });
     });
     if (fitTo?.length) poiMap.fitBounds(L.latLngBounds(fitTo).pad(0.2), {maxZoom: 15});
     recDrawLive();
+  }
+  // The same things as rows above the parking list; a tap highlights them on the map
+  const list = $("#minelist");
+  if (list){
+    list.hidden = !mineItems.length;
+    list.innerHTML = mineItems.length ? `<div class="minehead">${T("Hikes, lines och nålar", "Hikes, lines and pins")}</div>` + mineItems.map((i, n) => `
+      <div class="poi mine ${i.kind}" data-n="${n}" style="--c:${i.c}">
+        <i></i>
+        <div style="min-width:0"><div class="n"><button type="button" title="${T("Visa på kartan", "Show on the map")}">${esc(i.name)}</button></div>
+          <div class="t">${i.sub} · ${i.who}</div>${i.note ? `<div class="t pnote">${esc(i.note)}</div>` : ""}</div>
+        <div class="d"><a href="${i.dir}" target="_blank" rel="noopener" aria-label="${esc(T(`Vägbeskrivning till ${i.name}`, `Directions to ${i.name}`))}">${T("Vägbeskrivning", "Directions")} ↗</a></div>
+      </div>`).join("") : "";
   }
   if (!sbUser){
     const n = counts || {pins: 0, hikes: 0, lines: 0}, parts = [];
@@ -3971,28 +4037,36 @@ async function withHeights(pts){
   return dense;
 }
 
-// ----- Saving a track: hike or line, shared or not -----
+// ----- Saving a track: hike or line, name, difficulty, comment, shared or not -----
+// The same dialog changes a saved track (t.edit): then only the details are updated, not the line itself.
 function saveTrack(t){
-  const pts = simplify(cleanPts(t.pts), 4).slice(0, 3000), r = RESORTS.find(x => x.id === t.resort);
+  const pts = t.edit ? t.pts : simplify(cleanPts(t.pts), 4).slice(0, 3000), r = RESORTS.find(x => x.id === t.resort);
   let dlg = $("#trackdlg");
   if (!dlg){ dlg = document.createElement("dialog"); dlg.id = "trackdlg"; dlg.className = "trackdlg"; document.body.appendChild(dlg); }
   const show = kind => statText(trackStats(pts), kind);
   dlg.innerHTML = `<form method="dialog">
-      <h3>${T("Spara spåret", "Save the track")}</h3>
+      <h3>${t.edit ? T("Ändra spåret", "Edit the track") : T("Spara spåret", "Save the track")}</h3>
       <p class="tdstat" id="tdstat">${esc(r?.name || "")} · ${show(t.kind)}</p>
       ${pts.length < 2 ? `<p>${T("Spåret har för få punkter för att sparas. GPS:en hann kanske inte hitta din position.", "The track has too few points to save. Maybe the GPS did not find your position in time.")}</p>
         <div class="tdbtns"><button type="button" id="tddrop">${T("Släng", "Discard")}</button></div>` : `
-      <fieldset class="tdkind"><legend>${T("Det här var", "This was")}</legend>
+      <fieldset class="tdkind"><legend>${T("Det här är", "This is")}</legend>
         <label><input type="radio" name="kind" value="hike"${t.kind === "hike" ? " checked" : ""}> ▲ ${T("en hike, vägen upp", "a hike, the way up")}</label>
         <label><input type="radio" name="kind" value="line"${t.kind === "line" ? " checked" : ""}> ▼ ${T("en line, åket ner", "a line, the run down")}</label>
       </fieldset>
-      <label class="tdshare"><input type="checkbox" id="tdshare" checked> ${T("Dela med andra medlemmar", "Share with other members")}</label>
-      <p class="mnote">${T("Bara linjen och höjden sparas, inga tider. Ett delat spår säger ingenting om dagens lavinläge, och andra som följer det bedömer själva.", "Only the line and the height are saved, no times. A shared track says nothing about today's avalanche conditions, and others who follow it judge for themselves.")}</p>
+      <label class="tdfield">${T("Namn", "Name")}<input type="text" id="tdname" maxlength="60" value="${esc(t.name || "")}" placeholder="${esc(autoName(t.kind, pts, r))}"></label>
+      <label class="tdfield">${T("Svårighetsgrad", "Difficulty")}<select id="tdgrade"><option value="">${T("Ingen vald", "Not set")}</option>${
+        GRADES.map((g, i) => g ? `<option value="${i}"${+t.grade === i ? " selected" : ""}>${T(g[0], g[1])}</option>` : "").join("")}</select></label>
+      <label class="tdfield">${T("Kommentar", "Comment")}<textarea id="tdnote" maxlength="500" rows="3" placeholder="${T("Till exempel brant parti vid toppen, bäst efter nysnö…", "For example steep part near the top, best after new snow…")}">${esc(t.note || "")}</textarea></label>
+      <label class="tdshare"><input type="checkbox" id="tdshare"${t.shared === false ? "" : " checked"}> ${T("Dela med andra medlemmar", "Share with other members")}</label>
+      <p class="mnote">${T("Bara linjen, höjden och det du skriver sparas, inga tider. Ett delat spår säger ingenting om dagens lavinläge, och andra som följer det bedömer själva.", "Only the line, the heights and what you write are saved, no times. A shared track says nothing about today's avalanche conditions, and others who follow it judge for themselves.")}</p>
       <p class="acctmsg" id="tdmsg" role="status"></p>
       <div class="tdbtns"><button type="button" id="tdsave" class="primary">${T("Spara", "Save")}</button><button type="button" id="tdlater">${t.fromRec ? T("Inte nu", "Not now") : T("Avbryt", "Cancel")}</button>${t.fromRec ? `<button type="button" id="tddrop">${T("Släng", "Discard")}</button>` : ""}</div>`}
     </form>`;
   const kindNow = () => dlg.querySelector('input[name="kind"]:checked')?.value || t.kind;
-  dlg.querySelectorAll('input[name="kind"]').forEach(i => i.onchange = () => { $("#tdstat").textContent = `${r?.name || ""} · ${show(kindNow())}`; });
+  dlg.querySelectorAll('input[name="kind"]').forEach(i => i.onchange = () => {
+    $("#tdstat").textContent = `${r?.name || ""} · ${show(kindNow())}`;
+    $("#tdname").placeholder = autoName(kindNow(), pts, r);
+  });
   const drop = $("#tddrop");
   if (drop) drop.onclick = () => { if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); } dlg.close(); };
   $("#tdlater")?.addEventListener("click", () => dlg.close());
@@ -4000,12 +4074,16 @@ function saveTrack(t){
   if (save) save.onclick = async () => {
     if (!sbUser){ $("#tdmsg").textContent = T("Logga in för att spara. Spåret väntar kvar i telefonen.", "Log in to save. The track waits on the phone."); return; }
     save.disabled = true; $("#tdmsg").textContent = T("Sparar…", "Saving…");
+    const kind = kindNow(), details = {kind, shared: $("#tdshare").checked, name: $("#tdname").value.trim().slice(0, 60) || autoName(kind, pts, r),
+      grade: +$("#tdgrade").value || null, note: $("#tdnote").value.trim().slice(0, 500) || null};
     try {
-      const {error} = await (await sb()).from("tracks").insert({resort: t.resort, kind: kindNow(), shared: $("#tdshare").checked, drawn: !!t.drawn, pts});
+      const c = await sb();
+      const {error} = t.edit ? await c.from("tracks").update(details).eq("id", t.id)
+                             : await c.from("tracks").insert({resort: t.resort, drawn: !!t.drawn, pts, ...details});
       if (error) throw error;
       if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); }
       dlg.close();
-      if (r && curId() === r.id) drawMine(r, pts.map(p => [p[0], p[1]]));
+      if (r && curId() === r.id) drawMine(r, t.edit ? null : pts.map(p => [p[0], p[1]]));
       else if (r) go(r.id);
     } catch (e) { save.disabled = false; $("#tdmsg").textContent = T("Kunde inte spara: ", "Could not save: ") + (e.message || T("ingen uppkoppling", "no connection")) + T(". Försök igen när du har täckning.", ". Try again when you have coverage."); }
   };
