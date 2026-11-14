@@ -1,0 +1,17 @@
+<!-- Supabase → Authentication → Emails → Templates → "Magic link or OTP".
+     Subject: Logga in på Yuki Report / Log in to Yuki Report
+     "Confirm sign up" (a member's very first login) uses the same layout with the subject
+     "Välkommen till Yuki Report / Welcome to Yuki Report", the first sentence "Välkommen som medlem! Tryck på knappen
+     för att logga in på Yuki Report." / "Welcome as a member! Tap the button to log in to Yuki Report." and the last
+     "…Har du inte bett om att bli medlem kan du strunta i mejlet." / "…If you did not ask to become a member, you can
+     ignore this e-mail." -->
+<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#14213a">
+  <p style="font-size:22px;font-weight:800;margin:0 0 16px">Yuki <span style="color:#2f6fd6">Report</span></p>
+  <p style="font-size:15px;margin:0 0 20px">Tryck på knappen för att logga in på Yuki Report.<br>
+    <span style="color:#5b6b82">Tap the button to log in to Yuki Report.</span></p>
+  <p style="margin:0 0 24px">
+    <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#2f6fd6;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Logga in / Log in</a>
+  </p>
+  <p style="font-size:13px;color:#5b6b82;margin:0">Länken fungerar en gång och går ut efter en timme. Har du inte bett om att logga in kan du strunta i mejlet.<br>
+    The link works once and expires after an hour. If you did not ask to log in, you can ignore this e-mail.</p>
+</div>
