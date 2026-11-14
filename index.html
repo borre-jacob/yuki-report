@@ -3458,7 +3458,7 @@ async function loadPlaces(r){
   // Only facilities within POI_MAX_KM of the resort (the place files are built that way; this also trims older
   // copies kept offline)
   return placeCache[r.id] = {lifts, pois: pois.filter(p => (p[7] == null || p[7] <= POI_MAX_KM) && keepPoi(r, p[0], p[5])).map(([type, name, jp, lat, lon, sub, hours, d, web, phone]) =>
-    ({type, name: name || subText(sub), named: !!name, jp, lat, lon, sub: subText(sub), hours, d, web: safeUrl(web), phone: phone || ""}))};
+    ({type, ...nameSub(name, subText(sub)), named: !!name, jp, lat, lon, hours, d, web: safeUrl(web), phone: phone || ""}))};
 }
 // ---------- Member accounts (Supabase) ----------
 // Logging in is optional: with an e-mail link (no password). Members see the start pins other members have shared
@@ -4112,7 +4112,13 @@ const SUB_EN = {"Camping": "Campsite", "Toalett": "Toilet", "Rastplats": "Rest a
   "Bastu": "Sauna", "Äventyrsbad": "Water park", "Parkering": "Parking", "Serviceområde (motorväg)": "Motorway services",
   "Badhus": "Public bath", "gratis": "free", "avgift": "paid", "parkering + toalett 24 h": "parking + toilet 24 h",
   "Gratis bad": "Free bath", "dygnet runt": "24 h", "Badhus / sento": "Public bath / sento", "ställplats": "motorhome site"};
-const subText = sub => !EN || !sub ? sub || "" : sub.split(" · ").map(t => SUB_EN[t] || t.replace(/ platser$/, " spaces")).join(" · ");
+// A place without a name is titled by the first part of its description ("Parkering"), the rest below it
+const nameSub = (name, sub) => {
+  if (name) return {name, sub};
+  const [head, ...rest] = sub.split(" · ");
+  return {name: head, sub: rest.join(" · ")};
+};
+const subText = sub => !EN || !sub ? sub || "" : sub.split(" · ").map(t => SUB_EN[t] || t.replace(/ platser$/, " spaces").replace(/^vid /, "near ")).join(" · ");
 const LIFT_NAMES = EN
   ? {chair_lift:"Chairlift", gondola:"Gondola", cable_car:"Cable car", mixed_lift:"Gondola + chairlift",
      drag_lift:"Drag lift", "t-bar":"T-bar", "j-bar":"J-bar", platter:"Platter lift", rope_tow:"Rope tow", magic_carpet:"Magic carpet"}
