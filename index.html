@@ -373,6 +373,7 @@ details.how .hint{margin-top:6px}
 .tkey{display:inline-flex;align-items:center;gap:5px;margin-right:6px;color:var(--ink)}
 .tkey i{display:inline-block;width:18px;height:0;border-top:3px solid var(--c);margin-left:4px}
 .tkey i.dash{border-top-style:dashed}
+.drawing{cursor:crosshair}
 .recbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:1500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   max-width:640px;margin:0 auto;padding:10px 12px;border-radius:14px;background:var(--surface);color:var(--ink);border:2px solid #15803d;box-shadow:0 6px 24px rgba(0,0,0,.3)}
 .recbar.line{border-color:#c026d3}
@@ -3661,13 +3662,13 @@ const cleanPts = pts => (Array.isArray(pts) ? pts : []).filter(p => Array.isArra
 
 async function drawMine(r, fitTo = null){
   const box = $("#mypin"), draw = ++mineDraw;
-  if (!box) return;
+  if (!box || drawing) return;   // not while a track is being drawn
   let pins = [], tracks = [], counts = null;
   if (sbUser){
     try {
       const c = await sb();
       const [p, t] = await Promise.all([c.from("pins").select("id,lat,lon,user_id").eq("resort", r.id),
-                                        c.from("tracks").select("id,kind,shared,pts,user_id").eq("resort", r.id)]);
+                                        c.from("tracks").select("id,kind,shared,drawn,pts,user_id").eq("resort", r.id)]);
       pins = p.data || []; tracks = t.data || [];
     } catch {}
   } else if (sbChecked) counts = await sharedCounts(r);
@@ -3680,7 +3681,7 @@ async function drawMine(r, fitTo = null){
       if (pts.length < 2) return;
       const pop = document.createElement("div");
       pop.className = "pinpop";
-      pop.innerHTML = `<b>${kindName(t.kind, own)}</b><span>${statText(trackStats(pts), t.kind)}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}</span>
+      pop.innerHTML = `<b>${kindName(t.kind, own)}</b><span>${t.drawn ? T("ritad", "drawn") + " · " : ""}${statText(trackStats(pts), t.kind)}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}</span>
         <a href="${gmapsDir(pts[0][0], pts[0][1])}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${
         own ? `<button type="button" data-a="share">${t.shared ? T("Sluta dela", "Stop sharing") : T("Dela med medlemmar", "Share with members")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
       if (own){
@@ -3724,6 +3725,7 @@ async function drawMine(r, fitTo = null){
       <button type="button" class="pinbtn" id="pinbtn">📍 ${T("Sätt nål", "Drop a pin")}</button>
       <button type="button" class="pinbtn hike" id="rechike"${busy ? " disabled" : ""}>▲ ${T("Spela in hike", "Record a hike")}</button>
       <button type="button" class="pinbtn line" id="recline"${busy ? " disabled" : ""}>▼ ${T("Spela in line", "Record a line")}</button>
+      <button type="button" class="pinbtn gpx" id="drawbtn"${busy ? " disabled" : ""}>✏️ ${T("Rita", "Draw")}</button>
       <label class="pinbtn gpx">⤒ ${T("Ladda upp GPX", "Upload GPX")}<input type="file" id="gpxfile" accept=".gpx,application/gpx+xml" hidden></label>
     </div>
     <p class="pinmsg" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
@@ -3731,6 +3733,7 @@ async function drawMine(r, fitTo = null){
       others ? T(`Andra medlemmars nålar och spår (${others}) visas på kartan. `, `Other members' pins and tracks (${others}) show on the map. `) : ""}${
       T("Medlemmarnas nålar och spår är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' pins and tracks are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
   $("#rechike").onclick = () => recStart("hike", r);
+  $("#drawbtn").onclick = () => drawStart(r);
   $("#recline").onclick = () => recStart("line", r);
   $("#gpxfile").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) gpxLoad(f, r); };
   $("#pinbtn").onclick = () => {
@@ -3847,6 +3850,81 @@ async function gpxLoad(file, r){
   } catch (e) { msg.textContent = T("Kunde inte läsa GPX-filen: ", "Could not read the GPX file: ") + e.message + "."; }
 }
 
+// ----- Drawing a hike or line by hand on the map -----
+// Tap the map to add points; heights along the line come from Open-Meteo's elevation service (the same terrain model
+// the forecasts use), so a drawn track also gets its climb or descent.
+let drawing = null;
+function drawStart(r){
+  if (!poiMap) return;
+  drawing = {r, pts: [], layer: L.layerGroup().addTo(poiMap)};
+  poiMap.doubleClickZoom.disable();
+  poiMap.getContainer().classList.add("drawing");
+  poiMap.on("click", drawClick);
+  $("#poimap").scrollIntoView({behavior: "smooth", block: "center"});
+  drawBar();
+}
+function drawClick(e){
+  if (!drawing) return;
+  drawing.pts.push([+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)]);
+  drawPaint(); drawBar();
+}
+function drawPaint(){
+  drawing.layer.clearLayers();
+  const ll = drawing.pts;
+  if (ll.length > 1) L.polyline(ll, {color: "#e11d48", weight: 4, dashArray: "2 6"}).addTo(drawing.layer);
+  ll.forEach((p, i) => L.circleMarker(p, {radius: i ? 4 : 6, color: "#fff", weight: 2, fillColor: "#e11d48", fillOpacity: 1, interactive: false}).addTo(drawing.layer));
+}
+function drawEnd(){
+  if (!drawing) return;
+  drawing.layer.remove();
+  if (poiMap){ poiMap.off("click", drawClick); poiMap.doubleClickZoom.enable(); poiMap.getContainer().classList.remove("drawing"); }
+  const r = drawing.r; drawing = null;
+  if (curId() === r.id) drawMine(r);
+}
+function drawBar(){
+  const box = $("#mypin"), n = drawing.pts.length;
+  box.innerHTML = `<div class="minebtns">
+      <button type="button" class="pinbtn" id="drawdone"${n < 2 ? " disabled" : ""}>✓ ${T("Klar", "Done")}</button>
+      <button type="button" class="pinbtn gpx" id="drawundo"${n ? "" : " disabled"}>↶ ${T("Ångra punkt", "Undo point")}</button>
+      <button type="button" class="pinbtn gpx" id="drawcancel">${T("Avbryt", "Cancel")}</button>
+    </div>
+    <p class="pinmsg" id="pinmsg" role="status">${n ? T(`${n} ${n === 1 ? "punkt" : "punkter"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Fortsätt trycka längs vägen, och tryck Klar när du är framme.`,
+        `${n} ${n === 1 ? "point" : "points"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Keep tapping along the way, and tap Done when you are there.`)
+      : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>`;
+  $("#drawundo").onclick = () => { drawing.pts.pop(); drawPaint(); drawBar(); };
+  $("#drawcancel").onclick = drawEnd;
+  $("#drawdone").onclick = async () => {
+    const {r, pts} = drawing;
+    $("#drawdone").disabled = true; $("#pinmsg").textContent = T("Hämtar höjder längs linjen…", "Getting heights along the line…");
+    const full = await withHeights(pts);
+    drawEnd();
+    const st = trackStats(full);
+    saveTrack({kind: st.ele && st.down > st.up ? "line" : "hike", resort: r.id, pts: full, drawn: true});
+  };
+}
+// Points every ~40 m along the drawn line, with heights from Open-Meteo (100 per call); without a connection the
+// track is saved without heights
+async function withHeights(pts){
+  const out = [];
+  for (let i = 0; i < pts.length; i++){
+    if (i){
+      const a = pts[i - 1], b = pts[i], n = Math.min(60, Math.max(1, Math.round(metres(a, b) / 40)));
+      for (let k = 1; k < n; k++) out.push([+(a[0] + (b[0] - a[0]) * k / n).toFixed(5), +(a[1] + (b[1] - a[1]) * k / n).toFixed(5), null]);
+    }
+    out.push([pts[i][0], pts[i][1], null]);
+  }
+  const dense = out.length > 600 ? out.filter((_, i) => i % Math.ceil(out.length / 600) === 0 || i === out.length - 1) : out;
+  try {
+    for (let i = 0; i < dense.length; i += 100){
+      const part = dense.slice(i, i + 100);
+      const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${part.map(p => p[0]).join(",")}&longitude=${part.map(p => p[1]).join(",")}`);
+      const {elevation} = await res.json();
+      part.forEach((p, k) => { if (isFinite(elevation?.[k])) p[2] = Math.round(elevation[k]); });
+    }
+  } catch {}
+  return dense;
+}
+
 // ----- Saving a track: hike or line, shared or not -----
 function saveTrack(t){
   const pts = simplify(cleanPts(t.pts), 4).slice(0, 3000), r = RESORTS.find(x => x.id === t.resort);
@@ -3877,7 +3955,7 @@ function saveTrack(t){
     if (!sbUser){ $("#tdmsg").textContent = T("Logga in för att spara. Spåret väntar kvar i telefonen.", "Log in to save. The track waits on the phone."); return; }
     save.disabled = true; $("#tdmsg").textContent = T("Sparar…", "Saving…");
     try {
-      const {error} = await (await sb()).from("tracks").insert({resort: t.resort, kind: kindNow(), shared: $("#tdshare").checked, pts});
+      const {error} = await (await sb()).from("tracks").insert({resort: t.resort, kind: kindNow(), shared: $("#tdshare").checked, drawn: !!t.drawn, pts});
       if (error) throw error;
       if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); }
       dlg.close();
@@ -4004,7 +4082,7 @@ function route(){
   document.title = rr ? T(`${rr.name}: snöprognos, puder och lavinläge | Yuki Report`, `${rr.name} snow forecast, powder and avalanche conditions | Yuki Report`)
     : T("Yuki Report – snörapport, puder och lavinprognos för skidåkare", "Yuki Report – snow forecast, powder and avalanche conditions for skiers");
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
-  if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = null; }
+  if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = null; drawing = null; }
   if (id) renderDetail(id); else renderOverview();
 }
 addEventListener("popstate", route);

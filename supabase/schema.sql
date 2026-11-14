@@ -73,6 +73,8 @@ create table if not exists public.tracks (
   pts     jsonb not null check (jsonb_typeof(pts) = 'array' and jsonb_array_length(pts) between 2 and 3000)
 );
 create index if not exists tracks_resort on public.tracks (resort);
+-- Drawn on the map by hand (true) rather than recorded with GPS or loaded from a GPX file
+alter table public.tracks add column if not exists drawn boolean not null default false;
 alter table public.tracks enable row level security;
 revoke all on public.tracks from anon, authenticated;
 grant select, insert, delete on public.tracks to authenticated;
