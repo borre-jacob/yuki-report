@@ -75,7 +75,7 @@ create table if not exists public.tracks (
   resort  text not null check (resort ~ '^[a-z0-9]{1,40}$'),
   kind    text not null check (kind in ('hike', 'line')),
   shared  boolean not null default true,
-  pts     jsonb not null check (jsonb_typeof(pts) = 'array' and jsonb_array_length(pts) between 2 and 3000)
+  pts     jsonb not null check (jsonb_typeof(pts) = 'array' and jsonb_array_length(pts) between 1 and 3000)
 );
 create index if not exists tracks_resort on public.tracks (resort);
 -- Drawn on the map by hand (true) rather than recorded with GPS or loaded from a GPX file
@@ -87,7 +87,15 @@ alter table public.tracks add column if not exists note  text check (char_length
 alter table public.tracks enable row level security;
 revoke all on public.tracks from anon, authenticated;
 grant select, insert, delete on public.tracks to authenticated;
-grant update (shared, kind, name, grade, note) on public.tracks to authenticated;
+grant update (shared, kind, name, grade, note, pts, drawn) on public.tracks to authenticated;
+-- A hike or line can be only its start pin (one point), with the rest drawn later
+alter table public.tracks drop constraint if exists tracks_pts_check;
+alter table public.tracks add constraint tracks_pts_check
+  check (jsonb_typeof(pts) = 'array' and jsonb_array_length(pts) between 1 and 3000);
+-- The pins from before hikes and lines had start pins become hike start pins
+insert into public.tracks (user_id, resort, kind, pts)
+  select user_id, resort, 'hike', jsonb_build_array(jsonb_build_array(lat, lon, null)) from public.pins;
+delete from public.pins;
 
 drop policy if exists "members see shared and own tracks" on public.tracks;
 create policy "members see shared and own tracks" on public.tracks for select to authenticated
@@ -115,7 +123,6 @@ create trigger tracks_limit before insert on public.tracks for each row execute 
 create or replace function public.shared_counts(r text) returns json
   language sql stable security definer set search_path = public as $$
   select json_build_object(
-    'pins',  (select count(*) from public.pins where resort = r),
     'hikes', (select count(*) from public.tracks where resort = r and shared and kind = 'hike'),
     'lines', (select count(*) from public.tracks where resort = r and shared and kind = 'line'))
 $$;

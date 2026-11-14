@@ -402,7 +402,9 @@ details.how .hint{margin-top:6px}
 .poi.mine.hike i{border-radius:2px;transform:rotate(45deg)}
 .poi.mine.line i{border-radius:2px}
 .sel .mepin{box-shadow:0 0 0 4px #ff2d6f,0 2px 6px rgba(0,0,0,.4)}
-.mepin.other{background:var(--snow)}
+.mepin.hike{background:#15803d}.mepin.line{background:#c026d3}
+.minechoice{display:flex;flex-wrap:wrap;gap:8px;padding:8px;border-radius:12px;border:1px dashed #15803d;margin-top:8px}
+.minechoice.line{border-color:#c026d3}
 .acct{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
 .acct h3{margin:0;font-size:16px}.acct p{margin:0;font-size:13.5px}
 .acctform{display:flex;gap:8px;flex-wrap:wrap}.acctform input{flex:1 1 200px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--surface);color:var(--ink)}
@@ -3551,7 +3553,7 @@ async function onAuthChange(){
       for (const k of Object.keys(localStorage).filter(k => k.startsWith("yr-pins-"))){
         const id = k.slice(8), pins = store.get(k) || [];
         if (RESORT_IDS.has(id) && pins.length){
-          const {error} = await c.from("pins").insert(pins.map(p => ({resort: id, lat: p.lat, lon: p.lon})));
+          const {error} = await c.from("tracks").insert(pins.map(p => ({resort: id, kind: "hike", pts: [[p.lat, p.lon, null]]})));
           if (error) continue;
         }
         localStorage.removeItem(k);
@@ -3710,6 +3712,7 @@ const gradeTag = g => GRADES[g] ? `<span class="grade" style="--g:${GRADES[g][2]
 // A name when the member gives none: from the heights when there are any ("Hike till 1 450 m", "Line från 1 450 m")
 function autoName(kind, pts, r){
   const hs = pts.map(p => p[2]).filter(h => h != null);
+  if (hs.length && pts.length === 1) return kind === "hike" ? T(`Hike från ${uH(hs[0])}`, `Hike from ${uH(hs[0])}`) : T(`Line från ${uH(hs[0])}`, `Line from ${uH(hs[0])}`);
   if (hs.length) return kind === "hike" ? T(`Hike till ${uH(Math.max(...hs))}`, `Hike to ${uH(Math.max(...hs))}`) : T(`Line från ${uH(Math.max(...hs))}`, `Line from ${uH(Math.max(...hs))}`);
   return `${kind === "hike" ? "Hike" : "Line"} ${r?.name || ""}`.trim();
 }
@@ -3738,13 +3741,11 @@ document.addEventListener("click", e => {
 async function drawMine(r, fitTo = null){
   const box = $("#mypin"), draw = ++mineDraw;
   if (!box || drawing) return;   // not while a track is being drawn
-  let pins = [], tracks = [], counts = null;
+  let tracks = [], counts = null;
   if (sbUser){
     try {
-      const c = await sb();
-      const [p, t] = await Promise.all([c.from("pins").select("id,lat,lon,user_id").eq("resort", r.id),
-                                        c.from("tracks").select("id,kind,shared,drawn,name,note,grade,pts,user_id").eq("resort", r.id)]);
-      pins = p.data || []; tracks = t.data || [];
+      const {data} = await (await sb()).from("tracks").select("id,kind,shared,drawn,name,note,grade,pts,user_id").eq("resort", r.id);
+      tracks = data || [];
     } catch {}
   } else if (sbChecked) counts = await sharedCounts(r);
   if (draw !== mineDraw || curId() !== r.id || !$("#mypin") || drawing) return;   // the page moved on meanwhile
@@ -3752,51 +3753,44 @@ async function drawMine(r, fitTo = null){
   mineItems = []; mineSel = null;
   if (poiMap){
     mineLayer = L.layerGroup().addTo(poiMap);
+    // Each hike or line has a start pin in its colour; a track that is more than a pin also has its line
     tracks.forEach(t => {
-      const pts = cleanPts(t.pts), own = t.user_id === sbUser?.id, c = t.kind === "hike" ? HIKE_C : LINE_C;
-      if (pts.length < 2) return;
-      const st = trackStats(pts), name = t.name || autoName(t.kind, pts, r), item = {kind: t.kind, name, own, c};
+      const pts = cleanPts(t.pts), own = t.user_id === sbUser?.id, c = t.kind === "hike" ? HIKE_C : LINE_C, onlyPin = pts.length === 1;
+      if (!pts.length) return;
+      const st = trackStats(pts), name = t.name || autoName(t.kind, pts, r), kindLabel = t.kind === "hike" ? "Hike" : "Line";
+      const sub = onlyPin ? `${kindLabel} · ${T("startnål", "start pin")}${pts[0][2] != null ? ` · ${uH(pts[0][2])}` : ""}` : `${kindLabel} · ${statText(st, t.kind)}`;
+      const item = {kind: t.kind, name, own, c, note: t.note || "", sub: sub + (t.grade ? ` · ${gradeTag(t.grade)}` : ""),
+        who: own ? T("din", "yours") + (t.shared ? "" : " · " + T("bara för dig", "only for you")) : T("från en medlem", "from a member"), dir: gmapsDir(pts[0][0], pts[0][1])};
       const pop = document.createElement("div");
       pop.className = "pinpop";
-      pop.innerHTML = `<b>${esc(name)}</b><span>${t.kind === "hike" ? "Hike" : "Line"} · ${statText(st, t.kind)}${t.grade ? ` · ${gradeTag(t.grade)}` : ""}</span>${
-        t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("ritad", "drawn") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}</span>
-        <a href="${gmapsDir(pts[0][0], pts[0][1])}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${
-        own ? `<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
+      pop.innerHTML = `<b>${esc(name)}</b><span>${item.sub}</span>${t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("ritad", "drawn") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}${own && onlyPin ? ` · ${T("håll in och dra för att flytta", "press and drag to move")}` : ""}</span>
+        <a href="${item.dir}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${
+        own ? `${onlyPin ? `<button type="button" data-a="draw">✏️ ${T("Rita spåret härifrån", "Draw the track from here")}</button>` : ""}<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
       if (own){
         pop.querySelector('[data-a="edit"]').onclick = () => { poiMap.closePopup(); saveTrack({...t, pts, resort: r.id, edit: true}); };
+        pop.querySelector('[data-a="draw"]')?.addEventListener("click", () => { poiMap.closePopup(); drawStart(r, {...t, pts}); });
         pop.querySelector('[data-a="del"]').onclick = async () => {
-          if (!confirm(T("Ta bort spåret?", "Remove the track?"))) return;
+          if (!confirm(onlyPin ? T("Ta bort nålen?", "Remove the pin?") : T("Ta bort spåret?", "Remove the track?"))) return;
           await (await sb()).from("tracks").delete().eq("id", t.id); drawMine(r);
         };
       }
-      const base = {color: c, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: t.kind === "hike" ? "8 6" : null};
-      const line = L.polyline(pts.map(p => [p[0], p[1]]), base).addTo(mineLayer).bindPopup(pop);
-      // The start of a hike is its hiking point
-      const start = t.kind === "hike" ? L.circleMarker([pts[0][0], pts[0][1]], {radius: 7, color: "#fff", weight: 2, fillColor: HIKE_C, fillOpacity: 1}).addTo(mineLayer).bindPopup(pop) : null;
-      Object.assign(item, {line, start, base, bounds: line.getBounds(), sub: `${t.kind === "hike" ? "Hike" : "Line"} · ${statText(st, t.kind)}${t.grade ? ` · ${gradeTag(t.grade)}` : ""}`,
-        note: t.note || "", who: own ? T("din", "yours") + (t.shared ? "" : " · " + T("bara för dig", "only for you")) : T("från en medlem", "from a member"), dir: gmapsDir(pts[0][0], pts[0][1])});
-      const n = mineItems.push(item) - 1;
-      line.on("click", () => selectMine(n, false)); start?.on("click", () => selectMine(n, false));
-    });
-    let pinNo = 0;
-    pins.forEach(pin => {
-      const own = pin.user_id === sbUser?.id, pop = document.createElement("div"), name = own ? `${T("Din nål", "Your pin")} ${++pinNo}` : T("Nål från en medlem", "Pin from a member");
-      pop.className = "pinpop";
-      pop.innerHTML = `<b>${name}</b>${own ? `<span>${T("Håll in och dra nålen för att flytta den.", "Press and drag the pin to move it.")}</span>` : ""}<a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${own ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
-      if (own) pop.querySelector("button").onclick = async () => { await (await sb()).from("pins").delete().eq("id", pin.id); drawMine(r); };
-      const m = L.marker([pin.lat, pin.lon], {icon: pinIcon(own ? "own" : "other"), zIndexOffset: own ? 1100 : 1000, draggable: own, autoPan: true})
+      let line = null, base = null;
+      if (!onlyPin){
+        base = {color: c, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: t.kind === "hike" ? "8 6" : null};
+        line = L.polyline(pts.map(p => [p[0], p[1]]), base).addTo(mineLayer).bindPopup(pop);
+      }
+      const marker = L.marker([pts[0][0], pts[0][1]], {icon: pinIcon(t.kind), zIndexOffset: own ? 1100 : 1000, draggable: own && onlyPin, autoPan: true})
         .addTo(mineLayer).bindPopup(pop, {offset: [0, -30]});
-      const item = {kind: "pin", name, own, c: own ? "#e11d48" : css("--snow"), marker: m, sub: T("Nål", "Pin"), note: "", who: own ? T("din", "yours") : T("från en medlem", "from a member"), dir: gmapsDir(pin.lat, pin.lon)};
+      Object.assign(item, {line, base, marker, bounds: line?.getBounds()});
       const n = mineItems.push(item) - 1;
-      m.on("click", () => selectMine(n, false));
-      // Your own pins can be dragged to where they should be; the new position is saved right away
-      if (own) m.on("dragend", async () => {
-        const ll = m.getLatLng(), lat = +ll.lat.toFixed(5), lon = +ll.lng.toFixed(5);
-        const {error} = await (await sb()).from("pins").update({lat, lon}).eq("id", pin.id);
-        if (error){ m.setLatLng([pin.lat, pin.lon]); const msg = $("#pinmsg"); if (msg) msg.textContent = T("Kunde inte flytta nålen: ", "Could not move the pin: ") + error.message; return; }
-        pin.lat = lat; pin.lon = lon;
-        item.dir = pop.querySelector("a").href = gmapsDir(lat, lon);
-        const a = $(`#minelist .poi[data-n="${n}"] .d a`); if (a) a.href = item.dir;
+      line?.on("click", () => selectMine(n, false)); marker.on("click", () => selectMine(n, false));
+      // A start pin of your own can be dragged to where it should be; the new position is saved right away
+      if (own && onlyPin) marker.on("dragend", async () => {
+        const ll = marker.getLatLng(), p = [+ll.lat.toFixed(5), +ll.lng.toFixed(5), null];
+        const [withH] = await withHeights([p]);
+        const {error} = await (await sb()).from("tracks").update({pts: [withH]}).eq("id", t.id);
+        if (error){ marker.setLatLng([pts[0][0], pts[0][1]]); const msg = $("#pinmsg"); if (msg) msg.textContent = T("Kunde inte flytta nålen: ", "Could not move the pin: ") + error.message; return; }
+        drawMine(r);
       });
     });
     if (fitTo?.length) poiMap.fitBounds(L.latLngBounds(fitTo).pad(0.2), {maxZoom: 15});
@@ -3806,7 +3800,7 @@ async function drawMine(r, fitTo = null){
   const list = $("#minelist");
   if (list){
     list.hidden = !mineItems.length;
-    list.innerHTML = mineItems.length ? `<div class="minehead">${T("Hikes, lines och nålar", "Hikes, lines and pins")}</div>` + mineItems.map((i, n) => `
+    list.innerHTML = mineItems.length ? `<div class="minehead">${T("Hikes och lines", "Hikes and lines")}</div>` + mineItems.map((i, n) => `
       <div class="poi mine ${i.kind}" data-n="${n}" style="--c:${i.c}">
         <i></i>
         <div style="min-width:0"><div class="n"><button type="button" title="${T("Visa på kartan", "Show on the map")}">${esc(i.name)}</button></div>
@@ -3815,41 +3809,47 @@ async function drawMine(r, fitTo = null){
       </div>`).join("") : "";
   }
   if (!sbUser){
-    const n = counts || {pins: 0, hikes: 0, lines: 0}, parts = [];
-    if (n.pins) parts.push(n.pins === 1 ? T("1 nål", "1 pin") : T(`${n.pins} nålar`, `${n.pins} pins`));
+    const n = counts || {hikes: 0, lines: 0}, parts = [];
     if (n.hikes) parts.push(n.hikes === 1 ? "1 hike" : `${n.hikes} hikes`);
     if (n.lines) parts.push(n.lines === 1 ? "1 line" : `${n.lines} lines`);
     box.innerHTML = `<button type="button" class="pinbtn" id="minejoin">${T("Logga in", "Log in")}</button><span class="pinmsg">${parts.length
-      ? T(`Medlemmarna har delat ${parts.join(", ").replace(/, ([^,]*)$/, " och $1")} här. Logga in för att se dem, och för att sätta egna nålar och spela in dina hikes och lines.`,
-          `Members have shared ${parts.join(", ").replace(/, ([^,]*)$/, " and $1")} here. Log in to see them, and to drop your own pins and record your hikes and lines.`)
-      : T("Som medlem sätter du nålar där du börjar en tur och spelar in dina hikes upp och lines ner med telefonens GPS.", "As a member you drop pins where you start a tour and record your hikes up and lines down with the phone's GPS.")}</span>`;
+      ? T(`Medlemmarna har delat ${parts.join(" och ")} här. Logga in för att se dem och lägga till dina egna.`,
+          `Members have shared ${parts.join(" and ")} here. Log in to see them and add your own.`)
+      : T("Som medlem sätter du ut var dina hikes börjar och var dina lines går, eller spelar in dem med telefonens GPS.", "As a member you mark where your hikes start and where your lines go, or record them with the phone's GPS.")}</span>`;
     $("#minejoin").onclick = () => askLogin("map");
     return;
   }
-  const busy = rec && !rec.done;
-  const ownT = tracks.filter(t => t.user_id === sbUser.id).length, others = pins.filter(p => p.user_id !== sbUser.id).length + tracks.filter(t => t.user_id !== sbUser.id).length;
+  const busy = rec && !rec.done, others = tracks.filter(t => t.user_id !== sbUser.id).length;
   box.innerHTML = `<div class="minebtns">
-      <button type="button" class="pinbtn" id="pinbtn">📍 ${T("Sätt nål", "Drop a pin")}</button>
-      <button type="button" class="pinbtn hike" id="rechike"${busy ? " disabled" : ""}>▲ ${T("Spela in hike", "Record a hike")}</button>
-      <button type="button" class="pinbtn line" id="recline"${busy ? " disabled" : ""}>▼ ${T("Spela in line", "Record a line")}</button>
+      <button type="button" class="pinbtn hike" id="addhike"${busy ? " disabled" : ""}>▲ Hike</button>
+      <button type="button" class="pinbtn line" id="addline"${busy ? " disabled" : ""}>▼ Line</button>
     </div>
+    <div class="minechoice" id="minechoice" hidden></div>
     <p class="pinmsg" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
-      tracks.length ? `<span class="tkey"><i style="--c:${HIKE_C}" class="dash"></i>hike <i style="--c:${LINE_C}"></i>line</span> ` : ""}${
-      others ? T(`Andra medlemmars nålar och spår (${others}) visas på kartan. `, `Other members' pins and tracks (${others}) show on the map. `) : ""}${
-      T("Rita ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Draw a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas nålar och spår är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' pins and tracks are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
-  $("#rechike").onclick = () => recStart("hike", r);
-  $("#recline").onclick = () => recStart("line", r);
-  $("#pinbtn").onclick = () => {
-    if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
-    $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
-    navigator.geolocation.getCurrentPosition(async pos => {
-      if (curId() !== r.id) return;
-      const pin = {lat: +pos.coords.latitude.toFixed(5), lon: +pos.coords.longitude.toFixed(5)};
-      const {error} = await (await sb()).from("pins").insert({resort: r.id, lat: pin.lat, lon: pin.lon});
-      if (error){ $("#pinmsg").textContent = T("Kunde inte spara nålen: ", "Could not save the pin: ") + error.message; return; }
-      drawMine(r, [[r.lat, r.lon], [pin.lat, pin.lon]]);
-    }, err => { $("#pinmsg").textContent = gpsError(err); }, {enableHighAccuracy: true, timeout: 20000, maximumAge: 60000});
+      others ? T(`Andra medlemmars hikes och lines (${others}) visas på kartan. `, `Other members' hikes and lines (${others}) show on the map. `) : ""}${
+      T("Rita ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Draw a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas hikes och lines är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' hikes and lines are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
+  // Hike or line: record it with GPS, or just put its start pin where you are (and draw the rest later)
+  const choose = kind => {
+    const ch = $("#minechoice"), what = kind === "hike" ? "hike" : "line";
+    if (!ch.hidden && ch.dataset.kind === kind){ ch.hidden = true; return; }
+    ch.dataset.kind = kind; ch.hidden = false; ch.className = "minechoice " + kind;
+    ch.innerHTML = `<button type="button" class="pinbtn ${kind}" id="chrec">● ${T(`Spela in ${what} med GPS`, `Record the ${what} with GPS`)}</button>
+      <button type="button" class="pinbtn ${kind}" id="chpin">📍 ${T("Sätt startnål här", "Put a start pin here")}</button>`;
+    $("#chrec").onclick = () => recStart(kind, r);
+    $("#chpin").onclick = () => {
+      if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
+      $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
+      navigator.geolocation.getCurrentPosition(async pos => {
+        if (curId() !== r.id) return;
+        const c = pos.coords, p = [+c.latitude.toFixed(5), +c.longitude.toFixed(5), c.altitude == null ? null : Math.round(c.altitude)];
+        const [withH] = p[2] == null ? await withHeights([p]) : [p];
+        $("#pinmsg").textContent = "";
+        saveTrack({kind, resort: r.id, pts: [withH], pin: true});
+      }, err => { $("#pinmsg").textContent = gpsError(err); }, {enableHighAccuracy: true, timeout: 20000, maximumAge: 60000});
+    };
   };
+  $("#addhike").onclick = () => choose("hike");
+  $("#addline").onclick = () => choose("line");
 }
 const gpsError = err => err.code === 1
   ? T("Appen fick inte använda din position. Tillåt platstjänster för webbläsaren och försök igen.", "The app was not allowed to use your position. Allow location for the browser and try again.")
@@ -3966,9 +3966,11 @@ async function gpxLoad(file, msg){
 // Tap the map to add points; heights along the line come from Open-Meteo's elevation service (the same terrain model
 // the forecasts use), so a drawn track also gets its climb or descent.
 let drawing = null;
-function drawStart(r){
+function drawStart(r, track = null){
   if (!poiMap) return;
-  drawing = {r, pts: [], layer: L.layerGroup().addTo(poiMap)};
+  // From a start pin: the drawing starts at the pin, and the track is saved onto it
+  drawing = {r, track, pts: track ? [[track.pts[0][0], track.pts[0][1]]] : [], layer: L.layerGroup().addTo(poiMap)};
+  if (track) drawPaint();
   poiMap.doubleClickZoom.disable();
   poiMap.getContainer().classList.add("drawing");
   poiMap.on("click", drawClick);
@@ -4003,12 +4005,21 @@ function drawBar(){
     <p class="pinmsg" id="pinmsg" role="status">${n ? T(`${n} ${n === 1 ? "punkt" : "punkter"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Fortsätt trycka längs vägen, och tryck Klar när du är framme.`,
         `${n} ${n === 1 ? "point" : "points"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Keep tapping along the way, and tap Done when you are there.`)
       : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>`;
-  $("#drawundo").onclick = () => { drawing.pts.pop(); drawPaint(); drawBar(); };
+  $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); drawPaint(); drawBar(); };
   $("#drawcancel").onclick = drawEnd;
   $("#drawdone").onclick = async () => {
-    const {r, pts} = drawing;
+    const {r, pts, track} = drawing;
     $("#drawdone").disabled = true; $("#pinmsg").textContent = T("Hämtar höjder längs linjen…", "Getting heights along the line…");
     const full = await withHeights(pts);
+    if (track){
+      const newPts = simplify(full, 4).slice(0, 3000), upd = {pts: newPts, drawn: true};
+      // A name the app gave the pin follows the new track ("Hike från 820 m" becomes "Hike till 1 450 m")
+      if (!track.name || track.name === autoName(track.kind, track.pts.slice(0, 1), r)) upd.name = autoName(track.kind, newPts, r);
+      const {error} = await (await sb()).from("tracks").update(upd).eq("id", track.id);
+      if (error){ $("#drawdone").disabled = false; $("#pinmsg").textContent = T("Kunde inte spara: ", "Could not save: ") + error.message; return; }
+      drawEnd();
+      return;
+    }
     drawEnd();
     const st = trackStats(full);
     saveTrack({kind: st.ele && st.down > st.up ? "line" : "hike", resort: r.id, pts: full, drawn: true});
@@ -4041,13 +4052,14 @@ async function withHeights(pts){
 // The same dialog changes a saved track (t.edit): then only the details are updated, not the line itself.
 function saveTrack(t){
   const pts = t.edit ? t.pts : simplify(cleanPts(t.pts), 4).slice(0, 3000), r = RESORTS.find(x => x.id === t.resort);
+  const isPin = pts.length === 1 && (t.pin || t.edit);
   let dlg = $("#trackdlg");
   if (!dlg){ dlg = document.createElement("dialog"); dlg.id = "trackdlg"; dlg.className = "trackdlg"; document.body.appendChild(dlg); }
-  const show = kind => statText(trackStats(pts), kind);
+  const show = kind => isPin ? `${kind === "hike" ? "Hike" : "Line"} · ${T("startnål", "start pin")}${pts[0][2] != null ? ` · ${uH(pts[0][2])}` : ""}` : statText(trackStats(pts), kind);
   dlg.innerHTML = `<form method="dialog">
-      <h3>${t.edit ? T("Ändra spåret", "Edit the track") : T("Spara spåret", "Save the track")}</h3>
+      <h3>${isPin ? (t.edit ? T("Ändra startnålen", "Edit the start pin") : T("Spara startnålen", "Save the start pin")) : t.edit ? T("Ändra spåret", "Edit the track") : T("Spara spåret", "Save the track")}</h3>
       <p class="tdstat" id="tdstat">${esc(r?.name || "")} · ${show(t.kind)}</p>
-      ${pts.length < 2 ? `<p>${T("Spåret har för få punkter för att sparas. GPS:en hann kanske inte hitta din position.", "The track has too few points to save. Maybe the GPS did not find your position in time.")}</p>
+      ${pts.length < (isPin ? 1 : 2) ? `<p>${T("Spåret har för få punkter för att sparas. GPS:en hann kanske inte hitta din position.", "The track has too few points to save. Maybe the GPS did not find your position in time.")}</p>
         <div class="tdbtns"><button type="button" id="tddrop">${T("Släng", "Discard")}</button></div>` : `
       <fieldset class="tdkind"><legend>${T("Det här är", "This is")}</legend>
         <label><input type="radio" name="kind" value="hike"${t.kind === "hike" ? " checked" : ""}> ▲ ${T("en hike, vägen upp", "a hike, the way up")}</label>
@@ -4056,7 +4068,7 @@ function saveTrack(t){
       <label class="tdfield">${T("Namn", "Name")}<input type="text" id="tdname" maxlength="60" value="${esc(t.name || "")}" placeholder="${esc(autoName(t.kind, pts, r))}"></label>
       <label class="tdfield">${T("Svårighetsgrad", "Difficulty")}<select id="tdgrade"><option value="">${T("Ingen vald", "Not set")}</option>${
         GRADES.map((g, i) => g ? `<option value="${i}"${+t.grade === i ? " selected" : ""}>${T(g[0], g[1])}</option>` : "").join("")}</select></label>
-      <label class="tdfield">${T("Kommentar", "Comment")}<textarea id="tdnote" maxlength="500" rows="3" placeholder="${T("Till exempel brant parti vid toppen, bäst efter nysnö…", "For example steep part near the top, best after new snow…")}">${esc(t.note || "")}</textarea></label>
+      <label class="tdfield">${T("Kommentar", "Comment")}<textarea id="tdnote" maxlength="500" rows="3" placeholder="${T("Till exempel: åk ner i ravinen och skrå sedan åt höger till vägen.", "For example: ski down the gully, then traverse right to the road.")}">${esc(t.note || "")}</textarea></label>
       <label class="tdshare"><input type="checkbox" id="tdshare"${t.shared === false ? "" : " checked"}> ${T("Dela med andra medlemmar", "Share with other members")}</label>
       <p class="mnote">${T("Bara linjen, höjden och det du skriver sparas, inga tider. Ett delat spår säger ingenting om dagens lavinläge, och andra som följer det bedömer själva.", "Only the line, the heights and what you write are saved, no times. A shared track says nothing about today's avalanche conditions, and others who follow it judge for themselves.")}</p>
       <p class="acctmsg" id="tdmsg" role="status"></p>
@@ -4083,7 +4095,7 @@ function saveTrack(t){
       if (error) throw error;
       if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); }
       dlg.close();
-      if (r && curId() === r.id) drawMine(r, t.edit ? null : pts.map(p => [p[0], p[1]]));
+      if (r && curId() === r.id) drawMine(r, t.edit ? null : isPin ? [[r.lat, r.lon], [pts[0][0], pts[0][1]]] : pts.map(p => [p[0], p[1]]));
       else if (r) go(r.id);
     } catch (e) { save.disabled = false; $("#tdmsg").textContent = T("Kunde inte spara: ", "Could not save: ") + (e.message || T("ingen uppkoppling", "no connection")) + T(". Försök igen när du har täckning.", ". Try again when you have coverage."); }
   };
