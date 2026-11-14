@@ -363,7 +363,34 @@ details.how .hint{margin-top:6px}
 .pinpop{display:flex;flex-direction:column;gap:6px;min-width:150px}
 .pinpop button{align-self:flex-start;border:0;background:none;padding:0;color:var(--lift);font-weight:600;cursor:pointer;text-decoration:underline}
 .pinmsg{font-size:12.5px;color:var(--muted);flex:1 1 220px}
-.pinjoin{flex:1 1 100%;text-align:left;border:1px dashed var(--snow);background:none;color:var(--snow-ink);border-radius:10px;padding:8px 12px;font:600 13px var(--body);cursor:pointer}
+.mypin .pinmsg{margin:0;flex:1 1 100%}
+.minebtns{display:flex;flex-wrap:wrap;gap:8px}
+.pinbtn:disabled{opacity:.5;cursor:default}
+.pinbtn.hike{border-color:#15803d;background:color-mix(in srgb,#15803d 12%,var(--surface))}
+.pinbtn.line{border-color:#c026d3;background:color-mix(in srgb,#c026d3 12%,var(--surface))}
+.pinbtn.gpx{border-color:var(--line);background:var(--surface)}
+.pinpop span{font-size:12.5px;color:var(--muted)}
+.tkey{display:inline-flex;align-items:center;gap:5px;margin-right:6px;color:var(--ink)}
+.tkey i{display:inline-block;width:18px;height:0;border-top:3px solid var(--c);margin-left:4px}
+.tkey i.dash{border-top-style:dashed}
+.recbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:1500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  max-width:640px;margin:0 auto;padding:10px 12px;border-radius:14px;background:var(--surface);color:var(--ink);border:2px solid #15803d;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.recbar.line{border-color:#c026d3}
+.rectxt{flex:1 1 220px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.rectxt b{margin-right:4px}.rectxt small{display:block;color:var(--muted);font-size:12px}
+.recdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#e11d48;margin-right:6px;animation:recblink 1.2s infinite}
+@keyframes recblink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.recdot{animation:none}}
+.recbtns{display:flex;gap:8px}
+.recbtns button,.tdbtns button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:600 13.5px var(--body);cursor:pointer}
+.recbtns button:first-child,.tdbtns .primary{background:var(--snow);border-color:var(--snow);color:#fff}
+.trackdlg{border:1px solid var(--line);border-radius:16px;padding:18px;width:min(420px,calc(100vw - 32px));background:var(--surface);color:var(--ink)}
+.trackdlg::backdrop{background:rgba(5,10,20,.45)}
+.trackdlg h3{margin:0 0 4px}.trackdlg p{margin:0 0 10px;font-size:13.5px}
+.tdstat{color:var(--muted);font-variant-numeric:tabular-nums}
+.tdkind{border:0;padding:0;margin:0 0 10px;display:flex;flex-direction:column;gap:6px}.tdkind legend{font-weight:600;font-size:13.5px;margin-bottom:4px}
+.tdkind label,.tdshare{display:flex;gap:8px;align-items:center;font-size:14px}.tdshare{margin:0 0 10px}
+.tdbtns{display:flex;gap:8px;flex-wrap:wrap}
 .mepin.other{background:var(--snow)}
 .acct{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
 .acct h3{margin:0;font-size:16px}.acct p{margin:0;font-size:13.5px}
@@ -1482,14 +1509,20 @@ function addOpenFreeMapNow(map){
   return layer;
 }
 
-// Favourite resorts, starred in the list or on the resort page. Kept only on this device (no account).
-const favs = new Set(store.get("yr-favs") || []);
+// Favourite resorts, starred in the list or on the resort page: for members, saved on the account so they follow
+// them between devices. "yr-favs" keeps a copy on the phone (no empty list while the account loads); favourites saved
+// there before accounts existed move to the account at the first login. Not logged in, the star asks to log in.
+const SB_SESSION = "sb-whdxwcmwslqhuzvjxbth-auth-token";
+let sbHadSession = false;
+try { sbHadSession = !!localStorage.getItem(SB_SESSION); } catch {}
+const favs = new Set(sbHadSession ? store.get("yr-favs") || [] : []);
+let showFavBtn = null;   // redraws the star on the open resort page
 const favCount = a => areaResorts(a).filter(r => favs.has(r.id)).length;
 function toggleFav(id){
+  if (!sbUser){ askLogin("fav"); return false; }
   if (favs.has(id)) favs.delete(id); else favs.add(id);
   store.set("yr-favs", [...favs]);
-  // Members: the change also goes to their account, so favourites follow them between devices
-  if (sbUser) sb().then(c => favs.has(id) ? c.from("favourites").upsert({resort: id}) : c.from("favourites").delete().eq("resort", id)).catch(() => {});
+  sb().then(c => favs.has(id) ? c.from("favourites").upsert({resort: id}) : c.from("favourites").delete().eq("resort", id)).catch(() => {});
   return favs.has(id);
 }
 const starBtn = r => `<button type="button" class="star" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="${T(`Favorit: ${esc(r.name)}`, `Favourite: ${esc(r.name)}`)}" title="${favs.has(r.id) ? T("Ta bort från favoriter", "Remove from favourites") : T("Lägg till som favorit", "Add to favourites")}">${favs.has(r.id) ? "★" : "☆"}</button>`;
@@ -1839,10 +1872,14 @@ function fillOverview(listOnly = false, keepView = false){
       </span>
     </button>${starBtn(r)}</div>`;
   }) || (state.inView && rows.length ? `<div class="msg">${T("Inga orter i kartans vy.", "No resorts in the map view.")}</div>` : state.region === "fav"
-    ? `<div class="msg">${T(`Inga favoriter i ${AREAS[state.area].name} ännu. Tryck på stjärnan ☆ vid en ort för att spara den här.`, `No favourites in ${AREAS[state.area].name} yet. Tap the star ☆ next to a resort to save it here.`)}
+    ? `<div class="msg">${!sbUser && sbChecked ? T("Favoriter finns för medlemmar: logga in, så följer de med dig mellan telefon och dator.", "Favourites are for members: log in, and they follow you between phone and computer.")
+        + `<button type="button" class="more" id="favlogin">${T("Logga in", "Log in")}</button>`
+        : T(`Inga favoriter i ${AREAS[state.area].name} ännu. Tryck på stjärnan ☆ vid en ort för att spara den här.`, `No favourites in ${AREAS[state.area].name} yet. Tap the star ☆ next to a resort to save it here.`)}
         <button type="button" class="more" id="favall">${T("Visa alla orter", "Show all resorts")}</button></div>`
     : `<div class="msg">${T("Inga orter i den här regionen.", "No resorts in this region.")}</div>`));
   wireList(list, () => fillOverview(true));
+  const favLogin = $("#favlogin");
+  if (favLogin) favLogin.onclick = () => askLogin("fav");
   const viewAll = $("#viewall");
   if (viewAll) viewAll.onclick = () => fitMap(rows.map(x => x.r)) || fillOverview(true);
   const favAll = $("#favall");
@@ -2052,8 +2089,8 @@ async function renderDetail(id){
       </div>
     </div>`;
   $("#back").onclick = () => go("");
-  const showFav = () => { const on = favs.has(r.id); $("#favbtn").setAttribute("aria-pressed", on);
-    $("#favbtn").innerHTML = on ? `<span class="s">★</span> ${T("Favorit", "Favourite")}` : `<span class="s">☆</span> ${T("Spara som favorit", "Save as favourite")}`; };
+  const showFav = showFavBtn = () => { const b = $("#favbtn"); if (!b) return; const on = favs.has(r.id); b.setAttribute("aria-pressed", on);
+    b.innerHTML = on ? `<span class="s">★</span> ${T("Favorit", "Favourite")}` : `<span class="s">☆</span> ${T("Spara som favorit", "Save as favourite")}`; };
   $("#favbtn").onclick = () => { toggleFav(r.id); showFav(); };
   showFav();
   FC_TABS.forEach(([k]) => $("#ft-" + k).onclick = () => { store.set("yr-fctab", k); showFcTab(k); });
@@ -2090,7 +2127,7 @@ async function renderDetail(id){
   io.observe(el);
   L.circleMarker([r.lat, r.lon], {radius:9, color:css("--snow"), weight:3, fillColor:css("--snow"), fillOpacity:.25})
     .addTo(poiMap).bindTooltip(r.name);
-  drawMyPin(r);
+  drawMine(r);
   // A touring area: the summit above, and the start where the tour begins
   if (isTour(r)) L.marker([r.slat, r.slon], {icon: L.divIcon({className: "", iconSize: [28, 28], html: `<div class="startpin">P</div>`}), zIndexOffset: 900})
     .addTo(poiMap).bindTooltip(`${T("Start", "Start")} ${uH(r.base)}`, {direction: "top"});
@@ -3413,7 +3450,6 @@ async function loadPlaces(r){
 // supabase/schema.sql. The publishable key is meant to be public; access is decided by the database's rules.
 const SB_URL = "https://whdxwcmwslqhuzvjxbth.supabase.co", SB_KEY = "sb_publishable_iRMa4aBLOjTGxfq7oxNSIg_w8D-cLq4";
 const SB_LIB = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
-const SB_SESSION = "sb-whdxwcmwslqhuzvjxbth-auth-token";
 let sbClient = null, sbLoad = null, sbUser = null, sbAuthError = "";
 function sb(){
   return sbLoad ||= new Promise((res, rej) => {
@@ -3434,8 +3470,6 @@ function sb(){
 }
 // A login link that failed (expired or already used) comes back with #error=…
 if (/[#&]error_description=/.test(location.hash)) sbAuthError = decodeURIComponent((location.hash.match(/error_description=([^&]*)/) || [])[1] || "").replace(/\+/g, " ");
-let sbHadSession = false;
-try { sbHadSession = !!localStorage.getItem(SB_SESSION); } catch {}
 // The login e-mail links straight to the page on yukireport.com with ?token_hash=…&type=… (the e-mail templates in
 // Supabase use {{ .RedirectTo }}), and the app confirms it here: a link to the sender's own domain looks far less
 // like phishing to spam filters than one to supabase.co.
@@ -3450,14 +3484,21 @@ if (sbHash){
   sb().then(c => c.auth.verifyOtp({token_hash: sbHash, type: sbType || "email"}))
     .then(({error}) => { if (error) sbAuthError = error.message; })
     .catch(() => { sbAuthError = "network"; })
-    .finally(() => { sbChecked = true; renderAcctBtn(); if (sbAuthError){ buildMenu(); renderAcct(); menu.showModal(); } });
+    .finally(() => { sbDone(); if (sbAuthError) askLogin(); });
 } else if (sbAccess){
   sb().then(c => c.auth.setSession({access_token: sbAccess, refresh_token: sbRefresh || ""}))
     .then(({error}) => { if (error) sbAuthError = error.message; })
     .catch(() => { sbAuthError = "network"; })
-    .finally(() => { sbChecked = true; renderAcctBtn(); });
-} else if (!sbChecked) sb().then(c => c.auth.getSession()).catch(() => {}).finally(() => { sbChecked = true; renderAcctBtn(); });
+    .finally(sbDone);
+} else if (!sbChecked) sb().then(c => c.auth.getSession()).catch(() => {}).finally(sbDone);
 setTimeout(renderAcctBtn);
+// The login check is done: a saved login that no longer works leaves no member things on show
+function sbDone(){
+  sbChecked = true;
+  renderAcctBtn();
+  if (!sbUser && favs.size){ favs.clear(); if (!curId()) fillOverview(true); else showFavBtn?.(); }
+  if (!sbUser){ recBar(); const r = RESORTS.find(x => x.id === curId()); if (r) drawMine(r); }
+}
 
 function renderAcctBtn(){
   const b = $("#acctbtn"), l = $("#loginbtn"), head = $("header.top");
@@ -3476,44 +3517,74 @@ async function onAuthChange(){
   renderAcct();
   renderAcctBtn();
   if (sbUser){
-    // Favourites: what is on this phone and what is on the account become one list, in both places
+    // Favourites: what is on this phone (also from before accounts existed) and what is on the account become one
+    // list, in both places
     try {
       const c = await sb(), {data} = await c.from("favourites").select("resort");
-      const server = new Set((data || []).map(x => x.resort)), up = [...favs].filter(id => !server.has(id));
+      const server = new Set((data || []).map(x => x.resort));
+      const local = new Set([...(store.get("yr-favs") || []), ...favs].filter(id => RESORT_IDS.has(id)));
+      const up = [...local].filter(id => !server.has(id));
       if (up.length) await c.from("favourites").upsert(up.map(resort => ({resort})));
-      let more = false;
-      server.forEach(id => { if (!favs.has(id) && RESORT_IDS.has(id)){ favs.add(id); more = true; } });
-      if (more){ store.set("yr-favs", [...favs]); if (!curId()) fillOverview(true); }
+      favs.clear();
+      [...local, ...server].forEach(id => RESORT_IDS.has(id) && favs.add(id));
+      store.set("yr-favs", [...favs]);
     } catch {}
+    // Pins put on the phone before accounts existed are shared now
+    try {
+      const c = await sb();
+      for (const k of Object.keys(localStorage).filter(k => k.startsWith("yr-pins-"))){
+        const id = k.slice(8), pins = store.get(k) || [];
+        if (RESORT_IDS.has(id) && pins.length){
+          const {error} = await c.from("pins").insert(pins.map(p => ({resort: id, lat: p.lat, lon: p.lon})));
+          if (error) continue;
+        }
+        localStorage.removeItem(k);
+      }
+    } catch {}
+  } else {
+    // Logged out: the favourites stay on the account, not on this phone
+    favs.clear();
+    store.set("yr-favs", []);
   }
+  if (!curId()) fillOverview(true);
+  recBar();
   const r = RESORTS.find(x => x.id === curId());
-  if (r) drawMyPin(r);
+  if (r){ drawMine(r); showFavBtn?.(); }
+}
+// Opens the menu at the login form, with a line on what logging in gives for what the visitor just tried
+let acctWhy = "";
+function askLogin(why = ""){
+  acctWhy = why;
+  buildMenu(); renderAcct(); menu.showModal(); $("#acctmail")?.focus();
 }
 function renderAcct(){
   const box = $("#acct");
   if (!box) return;
   if (sbUser){
     box.innerHTML = `<h3 id="acct-t">${T("Medlem", "Member")}</h3>
-      <p>${T("Inloggad som", "Logged in as")} <b>${esc(sbUser.email || "")}</b>. ${T("Du ser medlemmarnas startplatser på kartan, dina nålar delas med andra medlemmar och dina favoriter följer med mellan enheter.", "You see members' start pins on the map, your pins are shared with other members and your favourites follow you between devices.")}</p>
+      <p>${T("Inloggad som", "Logged in as")} <b>${esc(sbUser.email || "")}</b>. ${T("Du sparar favoriter, sätter nålar och spelar in hikes och lines, och ser det medlemmarna har delat på orternas infokartor.", "You save favourites, drop pins and record hikes and lines, and see what members have shared on the resorts' info maps.")}</p>
       <div class="acctbtns"><button type="button" id="acctout">${T("Logga ut", "Log out")}</button><button type="button" id="acctdel" class="danger">${T("Radera mitt konto", "Delete my account")}</button></div>
       <p class="acctmsg" id="acctmsg" role="status"></p>`;
     $("#acctout").onclick = async () => { await (await sb()).auth.signOut(); };
     $("#acctdel").onclick = async () => {
-      if (!confirm(T("Radera ditt konto? Dina delade nålar och sparade favoriter på kontot tas bort och kan inte återställas. Favoriterna i den här telefonen finns kvar.",
-                     "Delete your account? Your shared pins and the favourites saved on the account are removed and cannot be restored. The favourites on this phone stay."))) return;
+      if (!confirm(T("Radera ditt konto? Dina nålar, hikes, lines och favoriter tas bort och kan inte återställas.",
+                     "Delete your account? Your pins, hikes, lines and favourites are removed and cannot be restored."))) return;
       const c = await sb(), {error} = await c.rpc("delete_my_account");
       if (error){ $("#acctmsg").textContent = T("Kunde inte radera kontot: ", "Could not delete the account: ") + error.message; return; }
       await c.auth.signOut();
     };
     return;
   }
+  const why = {fav: T("Logga in för att spara favoriter.", "Log in to save favourites."),
+               map: T("Logga in för att sätta nålar och spela in hikes och lines.", "Log in to drop pins and record hikes and lines.")}[acctWhy] || "";
+  acctWhy = "";
   box.innerHTML = `<h3 id="acct-t">${T("Logga in", "Log in")}</h3>
-    <p>${T("Som medlem ser du var andra medlemmar har startat sina toppturer, delar dina egna startplatser och har dina favoriter på alla dina enheter. Gratis, utan lösenord.",
-           "As a member you see where other members started their tours, share your own start pins and have your favourites on all your devices. Free, no password.")}</p>
+    <p>${why ? `<b>${why}</b> ` : ""}${T("Som medlem sparar du favoriter på alla dina enheter, sätter nålar där du börjar en tur, spelar in dina hikes upp och lines ner med telefonens GPS och ser det andra medlemmar har delat. Gratis, utan lösenord.",
+           "As a member you keep favourites on all your devices, drop pins where you start a tour, record your hikes up and lines down with the phone's GPS and see what other members have shared. Free, no password.")}</p>
     <form class="acctform" id="acctform"><input type="email" id="acctmail" required autocomplete="email" placeholder="${T("din@epost.se", "you@example.com")}" aria-label="${T("E-postadress", "E-mail address")}">
       <button type="submit">${T("Skicka inloggningslänk", "Send login link")}</button></form>
     <p class="acctmsg" id="acctmsg" role="status">${sbAuthError ? esc(T("Inloggningslänken fungerade inte (den kan ha gått ut). Skicka en ny.", "The login link did not work (it may have expired). Send a new one.")) : ""}</p>
-    <p class="mnote">${T("Vi sparar bara din e-postadress, dina delade nålar och dina favoriter. Läs mer i", "We only keep your e-mail address, your shared pins and your favourites. More in")} <a href="integritet.html">${T("integritetspolicyn", "the privacy policy")}</a>.</p>`;
+    <p class="mnote">${T("Vi sparar bara din e-postadress, dina nålar, spår och favoriter, utan tider. Läs mer i", "We only keep your e-mail address, your pins, tracks and favourites, without times. More in")} <a href="integritet.html">${T("integritetspolicyn", "the privacy policy")}</a>.</p>`;
   $("#acctform").onsubmit = async e => {
     e.preventDefault();
     const msg = $("#acctmsg"), email = $("#acctmail").value.trim();
@@ -3525,82 +3596,302 @@ function renderAcct(){
     } catch { msg.textContent = T("Kunde inte nå inloggningstjänsten. Kontrollera uppkopplingen.", "Could not reach the login service. Check your connection."); }
   };
 }
-// How many pins members have shared for a resort (for everyone, without positions)
-async function sharedPinCount(r){
+// What members have shared for a resort, for everyone (only the numbers, no positions)
+async function sharedCounts(r){
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/rpc/pin_counts`, {method: "POST", headers: {apikey: SB_KEY, "Content-Type": "application/json"}, body: JSON.stringify({r: r.id})});
-    return res.ok ? +(await res.json()) || 0 : 0;
-  } catch { return 0; }
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/shared_counts`, {method: "POST", headers: {apikey: SB_KEY, "Content-Type": "application/json"}, body: JSON.stringify({r: r.id})});
+    const j = res.ok ? await res.json() : {};
+    return {pins: +j.pins || 0, hikes: +j.hikes || 0, lines: +j.lines || 0};
+  } catch { return {pins: 0, hikes: 0, lines: 0}; }
 }
 
-// ---------- Pins ----------
-// "Sätt nål här" puts a pin where you are (GPS, works without mobile coverage), e.g. where you start a tour; several
-// per resort are fine, and only the position is kept. Not logged in: the pin stays on the phone, and the map says how
-// many pins members have shared. Logged in: the pin is shared with the other members, and their pins show too.
-// Tap a pin for directions, or to remove your own.
-let myPinLayer = null, pinDraw = 0;
-const myPinsKey = r => "yr-pins-" + r.id;
-const myPins = r => store.get(myPinsKey(r)) || [];
+// ---------- Pins, hikes and lines (members) ----------
+// On the info map members can drop a pin where they are (e.g. where a tour starts), record a hike (the way up from a
+// start point) or a line (the way down) with the phone's GPS, or load either from a GPX file. Pins are shared with the
+// other members; a track is shared or kept to oneself, as the member chooses when saving it. Only positions and
+// heights are stored, no times. Visitors who are not logged in see how many of each members have shared.
+// A web app gets GPS only while it is open with the screen on, so recording asks the browser to keep the screen
+// awake (Screen Wake Lock), keeps the track on the phone as it goes, and carries on when the app is opened again.
+const HIKE_C = "#15803d", LINE_C = "#c026d3";
+let mineLayer = null, mineDraw = 0;
 const pinIcon = cls => L.divIcon({className: "", iconSize: [30, 38], iconAnchor: [15, 36], html: `<div class="mepin ${cls}" aria-hidden="true"></div>`});
-function pinPopup(title, pin, onRemove){
-  const pop = document.createElement("div");
-  pop.className = "pinpop";
-  pop.innerHTML = `<b>${title}</b><a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${onRemove ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
-  if (onRemove) pop.querySelector("button").onclick = onRemove;
-  return pop;
+const kindName = (k, own) => k === "hike" ? (own ? T("Din hike", "Your hike") : T("Hike från en medlem", "Hike from a member"))
+                                          : (own ? T("Din line", "Your line") : T("Line från en medlem", "Line from a member"));
+// Metres between two [lat, lon] points, and a track's length, climb and descent (5 m steps ignore GPS height noise)
+function metres(a, b){
+  const R = 6371000, la = a[0] * Math.PI / 180, lb = b[0] * Math.PI / 180;
+  const h = Math.sin((lb - la) / 2) ** 2 + Math.cos(la) * Math.cos(lb) * Math.sin((b[1] - a[1]) * Math.PI / 360) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
-async function drawMyPin(r, fitTo = null){
-  const box = $("#mypin"), mine = myPins(r), draw = ++pinDraw;
-  if (!box) return;
-  let shared = [], count = 0;
-  if (sbUser){
-    try { const {data} = await (await sb()).from("pins").select("id,lat,lon,user_id").eq("resort", r.id); shared = data || []; } catch {}
-  } else count = await sharedPinCount(r);
-  if (draw !== pinDraw || curId() !== r.id || !$("#mypin")) return;   // the page moved on meanwhile
-  if (myPinLayer){ myPinLayer.remove(); myPinLayer = null; }
-  if (poiMap){
-    myPinLayer = L.layerGroup().addTo(poiMap);
-    mine.forEach((pin, n) => L.marker([pin.lat, pin.lon], {icon: pinIcon("own"), zIndexOffset: 1100}).addTo(myPinLayer)
-      .bindPopup(pinPopup(`${T("Min nål", "My pin")} ${n + 1} <small>(${T("bara i telefonen", "on this phone only")})</small>`, pin,
-        () => { store.set(myPinsKey(r), myPins(r).filter((_, i) => i !== n)); drawMyPin(r); }), {offset: [0, -30]}));
-    shared.forEach(pin => {
-      const own = pin.user_id === sbUser?.id;
-      L.marker([pin.lat, pin.lon], {icon: pinIcon(own ? "own" : "other"), zIndexOffset: own ? 1100 : 1000}).addTo(myPinLayer)
-        .bindPopup(pinPopup(own ? T("Din delade nål", "Your shared pin") : T("Startplats från en medlem", "Start pin from a member"), pin,
-          own ? async () => { await (await sb()).from("pins").delete().eq("id", pin.id); drawMyPin(r); } : null), {offset: [0, -30]});
-    });
-    if (fitTo) poiMap.fitBounds(L.latLngBounds([[r.lat, r.lon], fitTo]).pad(0.3), {maxZoom: 15});
+function trackStats(pts){
+  let len = 0, up = 0, down = 0, ref = null;
+  pts.forEach((p, i) => {
+    if (i) len += metres(pts[i - 1], p);
+    if (p[2] == null) return;
+    if (ref == null) ref = p[2];
+    else if (p[2] - ref >= 5){ up += p[2] - ref; ref = p[2]; }
+    else if (ref - p[2] >= 5){ down += ref - p[2]; ref = p[2]; }
+  });
+  return {len, up: Math.round(up), down: Math.round(down), ele: pts.some(p => p[2] != null)};
+}
+const kmText = m => FT ? `${fmt(m / 1609.34, 1)} mi` : `${fmt(m / 1000, 1).replace(".", EN ? "." : ",")} km`;
+const statText = (st, kind) => [kmText(st.len), st.ele ? (kind === "line" ? `↓ ${uH(st.down)}` : `↑ ${uH(st.up)}`) : ""].filter(Boolean).join(" · ");
+// Douglas–Peucker in metres: keeps the shape of a track with far fewer points
+function simplify(pts, tol = 4){
+  if (pts.length < 3) return pts;
+  const k = Math.cos(pts[0][0] * Math.PI / 180), xy = pts.map(p => [p[1] * 111320 * k, p[0] * 110540]);
+  const keep = new Uint8Array(pts.length), stack = [[0, pts.length - 1]];
+  keep[0] = keep[pts.length - 1] = 1;
+  while (stack.length){
+    const [a, b] = stack.pop(), [ax, ay] = xy[a], [bx, by] = xy[b], dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+    let max = 0, at = -1;
+    for (let i = a + 1; i < b; i++){
+      let d = len ? Math.abs(dy * (xy[i][0] - ax) - dx * (xy[i][1] - ay)) / len : Math.hypot(xy[i][0] - ax, xy[i][1] - ay);
+      // Heights count too, so climbs and drops along a straight stretch are kept
+      if (pts[i][2] != null && pts[a][2] != null && pts[b][2] != null) d = Math.max(d, Math.abs(pts[i][2] - (pts[a][2] + (pts[b][2] - pts[a][2]) * (i - a) / (b - a))));
+      if (d > max){ max = d; at = i; }
+    }
+    if (max > tol){ keep[at] = 1; stack.push([a, at], [at, b]); }
   }
-  const others = shared.filter(p => p.user_id !== sbUser?.id).length;
-  const info = sbUser
-    ? T(`Dina nålar delas med andra medlemmar.${others ? ` ${others === 1 ? "En startplats" : others + " startplatser"} från andra medlemmar visas i blått.` : ""} Delade nålar är medlemmarnas egna markeringar, inga rekommendationer: bedöm alltid lavinläget själv.`,
-        `Your pins are shared with other members.${others ? ` ${others === 1 ? "One start pin" : others + " start pins"} from other members show in blue.` : ""} Shared pins are members' own marks, not recommendations: always judge the avalanche conditions yourself.`)
-    : (mine.length ? T(`${mine.length === 1 ? "En nål sparad" : mine.length + " nålar sparade"} i din telefon. Tryck på en nål för vägbeskrivning eller för att ta bort den.`,
-                       `${mine.length === 1 ? "One pin" : mine.length + " pins"} saved on your phone. Tap a pin for directions or to remove it.`)
-                   : T("Markera till exempel var du börjar en topptur. Nålarna sparas bara i din telefon.", "Mark for example where you start a tour. Pins are kept only on your phone."));
-  box.innerHTML = `<button type="button" class="pinbtn" id="pinbtn">📍 ${T("Sätt nål här", "Drop a pin here")}</button><span class="pinmsg" id="pinmsg" role="status">${info}</span>${
-    !sbUser && count ? `<button type="button" class="pinjoin" id="pinjoin">${T(`${count === 1 ? "1 startplats delad" : count + " startplatser delade"} av medlemmar – logga in för att se dem`,
-                                                                               `${count === 1 ? "1 start pin shared" : count + " start pins shared"} by members – log in to see them`)}</button>` : ""}`;
-  const join = $("#pinjoin");
-  if (join) join.onclick = () => { buildMenu(); renderAcct(); menu.showModal(); $("#acctmail")?.focus(); };
+  return pts.filter((_, i) => keep[i]);
+}
+// A stored track as clean numbers (the map only draws what is a valid position)
+const cleanPts = pts => (Array.isArray(pts) ? pts : []).filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]) && Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180)
+  .map(p => [+p[0], +p[1], isFinite(p[2]) && p[2] !== null ? Math.round(p[2]) : null]);
+
+async function drawMine(r, fitTo = null){
+  const box = $("#mypin"), draw = ++mineDraw;
+  if (!box) return;
+  let pins = [], tracks = [], counts = null;
+  if (sbUser){
+    try {
+      const c = await sb();
+      const [p, t] = await Promise.all([c.from("pins").select("id,lat,lon,user_id").eq("resort", r.id),
+                                        c.from("tracks").select("id,kind,shared,pts,user_id").eq("resort", r.id)]);
+      pins = p.data || []; tracks = t.data || [];
+    } catch {}
+  } else if (sbChecked) counts = await sharedCounts(r);
+  if (draw !== mineDraw || curId() !== r.id || !$("#mypin")) return;   // the page moved on meanwhile
+  if (mineLayer){ mineLayer.remove(); mineLayer = null; }
+  if (poiMap){
+    mineLayer = L.layerGroup().addTo(poiMap);
+    tracks.forEach(t => {
+      const pts = cleanPts(t.pts), own = t.user_id === sbUser?.id, c = t.kind === "hike" ? HIKE_C : LINE_C;
+      if (pts.length < 2) return;
+      const pop = document.createElement("div");
+      pop.className = "pinpop";
+      pop.innerHTML = `<b>${kindName(t.kind, own)}</b><span>${statText(trackStats(pts), t.kind)}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}</span>
+        <a href="${gmapsDir(pts[0][0], pts[0][1])}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${
+        own ? `<button type="button" data-a="share">${t.shared ? T("Sluta dela", "Stop sharing") : T("Dela med medlemmar", "Share with members")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
+      if (own){
+        pop.querySelector('[data-a="share"]').onclick = async () => { await (await sb()).from("tracks").update({shared: !t.shared}).eq("id", t.id); drawMine(r); };
+        pop.querySelector('[data-a="del"]').onclick = async () => {
+          if (!confirm(T("Ta bort spåret?", "Remove the track?"))) return;
+          await (await sb()).from("tracks").delete().eq("id", t.id); drawMine(r);
+        };
+      }
+      L.polyline(pts.map(p => [p[0], p[1]]), {color: c, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: t.kind === "hike" ? "8 6" : null})
+        .addTo(mineLayer).bindPopup(pop);
+      // The start of a hike is its hiking point
+      if (t.kind === "hike") L.circleMarker([pts[0][0], pts[0][1]], {radius: 7, color: "#fff", weight: 2, fillColor: HIKE_C, fillOpacity: 1})
+        .addTo(mineLayer).bindPopup(pop);
+    });
+    pins.forEach(pin => {
+      const own = pin.user_id === sbUser?.id, pop = document.createElement("div");
+      pop.className = "pinpop";
+      pop.innerHTML = `<b>${own ? T("Din nål", "Your pin") : T("Nål från en medlem", "Pin from a member")}</b><a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${own ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
+      if (own) pop.querySelector("button").onclick = async () => { await (await sb()).from("pins").delete().eq("id", pin.id); drawMine(r); };
+      L.marker([pin.lat, pin.lon], {icon: pinIcon(own ? "own" : "other"), zIndexOffset: own ? 1100 : 1000}).addTo(mineLayer).bindPopup(pop, {offset: [0, -30]});
+    });
+    if (fitTo?.length) poiMap.fitBounds(L.latLngBounds(fitTo).pad(0.2), {maxZoom: 15});
+    recDrawLive();
+  }
+  if (!sbUser){
+    const n = counts || {pins: 0, hikes: 0, lines: 0}, parts = [];
+    if (n.pins) parts.push(n.pins === 1 ? T("1 nål", "1 pin") : T(`${n.pins} nålar`, `${n.pins} pins`));
+    if (n.hikes) parts.push(n.hikes === 1 ? "1 hike" : `${n.hikes} hikes`);
+    if (n.lines) parts.push(n.lines === 1 ? "1 line" : `${n.lines} lines`);
+    box.innerHTML = `<button type="button" class="pinbtn" id="minejoin">${T("Logga in", "Log in")}</button><span class="pinmsg">${parts.length
+      ? T(`Medlemmarna har delat ${parts.join(", ").replace(/, ([^,]*)$/, " och $1")} här. Logga in för att se dem, och för att sätta egna nålar och spela in dina hikes och lines.`,
+          `Members have shared ${parts.join(", ").replace(/, ([^,]*)$/, " and $1")} here. Log in to see them, and to drop your own pins and record your hikes and lines.`)
+      : T("Som medlem sätter du nålar där du börjar en tur och spelar in dina hikes upp och lines ner med telefonens GPS.", "As a member you drop pins where you start a tour and record your hikes up and lines down with the phone's GPS.")}</span>`;
+    $("#minejoin").onclick = () => askLogin("map");
+    return;
+  }
+  const busy = rec && !rec.done;
+  const ownT = tracks.filter(t => t.user_id === sbUser.id).length, others = pins.filter(p => p.user_id !== sbUser.id).length + tracks.filter(t => t.user_id !== sbUser.id).length;
+  box.innerHTML = `<div class="minebtns">
+      <button type="button" class="pinbtn" id="pinbtn">📍 ${T("Sätt nål", "Drop a pin")}</button>
+      <button type="button" class="pinbtn hike" id="rechike"${busy ? " disabled" : ""}>▲ ${T("Spela in hike", "Record a hike")}</button>
+      <button type="button" class="pinbtn line" id="recline"${busy ? " disabled" : ""}>▼ ${T("Spela in line", "Record a line")}</button>
+      <label class="pinbtn gpx">⤒ ${T("Ladda upp GPX", "Upload GPX")}<input type="file" id="gpxfile" accept=".gpx,application/gpx+xml" hidden></label>
+    </div>
+    <p class="pinmsg" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
+      tracks.length ? `<span class="tkey"><i style="--c:${HIKE_C}" class="dash"></i>hike <i style="--c:${LINE_C}"></i>line</span> ` : ""}${
+      others ? T(`Andra medlemmars nålar och spår (${others}) visas på kartan. `, `Other members' pins and tracks (${others}) show on the map. `) : ""}${
+      T("Medlemmarnas nålar och spår är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' pins and tracks are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
+  $("#rechike").onclick = () => recStart("hike", r);
+  $("#recline").onclick = () => recStart("line", r);
+  $("#gpxfile").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) gpxLoad(f, r); };
   $("#pinbtn").onclick = () => {
     if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
     $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
     navigator.geolocation.getCurrentPosition(async pos => {
       if (curId() !== r.id) return;
       const pin = {lat: +pos.coords.latitude.toFixed(5), lon: +pos.coords.longitude.toFixed(5)};
-      if (sbUser){
-        const {error} = await (await sb()).from("pins").insert({resort: r.id, lat: pin.lat, lon: pin.lon});
-        if (error){ $("#pinmsg").textContent = T("Kunde inte spara nålen: ", "Could not save the pin: ") + error.message; return; }
-      } else store.set(myPinsKey(r), [...myPins(r), pin]);
-      drawMyPin(r, [pin.lat, pin.lon]);
-    }, err => {
-      $("#pinmsg").textContent = err.code === 1
-        ? T("Appen fick inte använda din position. Tillåt platstjänster för webbläsaren och försök igen.", "The app was not allowed to use your position. Allow location for the browser and try again.")
-        : T("Kunde inte hämta din position. Försök igen under bar himmel.", "Could not get your position. Try again under open sky.");
-    }, {enableHighAccuracy: true, timeout: 20000, maximumAge: 60000});
+      const {error} = await (await sb()).from("pins").insert({resort: r.id, lat: pin.lat, lon: pin.lon});
+      if (error){ $("#pinmsg").textContent = T("Kunde inte spara nålen: ", "Could not save the pin: ") + error.message; return; }
+      drawMine(r, [[r.lat, r.lon], [pin.lat, pin.lon]]);
+    }, err => { $("#pinmsg").textContent = gpsError(err); }, {enableHighAccuracy: true, timeout: 20000, maximumAge: 60000});
   };
 }
+const gpsError = err => err.code === 1
+  ? T("Appen fick inte använda din position. Tillåt platstjänster för webbläsaren och försök igen.", "The app was not allowed to use your position. Allow location for the browser and try again.")
+  : T("Kunde inte hämta din position. Försök igen under bar himmel.", "Could not get your position. Try again under open sky.");
+
+// ----- Recording -----
+// The recording lives in "yr-rec" ({kind, resort, pts, t0, done}) so it survives the app being closed or reloaded.
+let rec = store.get("yr-rec"), recWatch = null, recLock = null, recTick = null, recLive = null, recMsg = "";
+const recSave = () => store.set("yr-rec", rec);
+function recStart(kind, r){
+  if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
+  rec = {kind, resort: r.id, pts: [], t0: Date.now()};
+  recSave(); recRun(); drawMine(r);
+}
+function recRun(){
+  if (!rec || rec.done) return recBar();
+  if (recWatch == null) recWatch = navigator.geolocation.watchPosition(recPos, err => {
+    if (err.code === 1){ recMsg = gpsError(err); recStopWatch(); }
+    else recMsg = T("Söker GPS…", "Looking for GPS…");
+    recBar();
+  }, {enableHighAccuracy: true, maximumAge: 0, timeout: 30000});
+  recWake();
+  recTick ||= setInterval(recBar, 15000);
+  recBar();
+}
+function recPos(pos){
+  if (!rec || rec.done) return;
+  const c = pos.coords;
+  if (c.accuracy > 40){ recMsg = T(`Väntar på bättre GPS (±${Math.round(c.accuracy)} m)…`, `Waiting for better GPS (±${Math.round(c.accuracy)} m)…`); return recBar(); }
+  recMsg = "";
+  const p = [+c.latitude.toFixed(5), +c.longitude.toFixed(5), c.altitude == null ? null : Math.round(c.altitude)], last = rec.pts[rec.pts.length - 1];
+  if (last && metres(last, p) < Math.max(5, c.accuracy / 2)) return recBar();
+  rec.pts.push(p);
+  if (rec.pts.length > 4000) rec.pts = simplify(rec.pts, 3);
+  recSave(); recBar(); recDrawLive();
+}
+function recStopWatch(){
+  if (recWatch != null) navigator.geolocation.clearWatch(recWatch);
+  recWatch = null;
+  clearInterval(recTick); recTick = null;
+  recLock?.release().catch(() => {}); recLock = null;
+}
+async function recWake(){
+  try {
+    if (rec && !rec.done && "wakeLock" in navigator && !recLock && document.visibilityState === "visible"){
+      recLock = await navigator.wakeLock.request("screen");
+      recLock.addEventListener("release", () => { recLock = null; });
+    }
+  } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") recWake(); });
+function recDrawLive(){
+  if (recLive){ recLive.remove(); recLive = null; }
+  if (!rec || !poiMap || curId() !== rec.resort || rec.pts.length < 1) return;
+  recLive = L.layerGroup().addTo(poiMap);
+  const c = rec.kind === "hike" ? HIKE_C : LINE_C, ll = rec.pts.map(p => [p[0], p[1]]);
+  if (ll.length > 1) L.polyline(ll, {color: c, weight: 5, opacity: 0.9}).addTo(recLive);
+  L.circleMarker(ll[ll.length - 1], {radius: 7, color: "#fff", weight: 3, fillColor: c, fillOpacity: 1}).addTo(recLive);
+}
+// The bar at the bottom of the screen while recording (on every page), or while a finished track waits to be saved
+function recBar(){
+  let bar = $("#recbar");
+  if (!rec || !sbChecked){ bar?.remove(); return; }
+  if (!bar){ bar = document.createElement("div"); bar.id = "recbar"; bar.className = "recbar"; bar.setAttribute("role", "status"); document.body.appendChild(bar); }
+  const r = RESORTS.find(x => x.id === rec.resort), st = trackStats(rec.pts), min = Math.round((Date.now() - rec.t0) / 60000);
+  const what = rec.kind === "hike" ? "hike" : "line";
+  bar.classList.toggle("line", rec.kind === "line");
+  bar.innerHTML = rec.done
+    ? `<span class="rectxt"><b>${T(`Din ${what} väntar på att sparas`, `Your ${what} is waiting to be saved`)}</b> ${esc(r?.name || "")} · ${statText(st, rec.kind)}</span>
+       <span class="recbtns"><button type="button" id="recsave">${T("Spara", "Save")}</button><button type="button" id="recdrop">${T("Släng", "Discard")}</button></span>`
+    : `<span class="rectxt"><b><i class="recdot"></i>${T(`Spelar in ${what}`, `Recording a ${what}`)}</b> ${esc(r?.name || "")} · ${statText(st, rec.kind)} · ${min} min${
+        recMsg ? `<small>${recMsg}</small>` : `<small>${"wakeLock" in navigator ? T("Ha appen öppen, skärmen hålls tänd.", "Keep the app open, the screen stays on.") : T("Ha appen öppen och skärmen tänd.", "Keep the app open and the screen on.")}</small>`}</span>
+       <span class="recbtns"><button type="button" id="recend">${T("Avsluta", "Finish")}</button><button type="button" id="recdrop">${T("Avbryt", "Cancel")}</button></span>`;
+  const end = $("#recend"), save = $("#recsave");
+  if (end) end.onclick = () => { recStopWatch(); rec.done = true; recSave(); recBar(); saveTrack({kind: rec.kind, resort: rec.resort, pts: rec.pts, fromRec: true}); };
+  if (save) save.onclick = () => saveTrack({kind: rec.kind, resort: rec.resort, pts: rec.pts, fromRec: true});
+  $("#recdrop").onclick = () => {
+    if (rec.pts.length > 2 && !confirm(T("Släng inspelningen?", "Discard the recording?"))) return;
+    recStopWatch(); const id = rec.resort; rec = null; recSave(); recBar(); recDrawLive();
+    const cur = RESORTS.find(x => x.id === curId());
+    if (cur && cur.id === id) drawMine(cur);
+  };
+}
+
+// ----- GPX files (from a watch, Strava and the like) -----
+async function gpxLoad(file, r){
+  const msg = $("#pinmsg");
+  try {
+    if (file.size > 15e6) throw new Error(T("filen är för stor", "the file is too big"));
+    const doc = new DOMParser().parseFromString(await file.text(), "application/xml");
+    let nodes = [...doc.getElementsByTagName("trkpt")];
+    if (!nodes.length) nodes = [...doc.getElementsByTagName("rtept")];
+    const pts = nodes.map(n => { const e = n.getElementsByTagName("ele")[0];
+      return [+(+n.getAttribute("lat")).toFixed(5), +(+n.getAttribute("lon")).toFixed(5), e ? Math.round(+e.textContent) : null]; });
+    const clean = cleanPts(pts);
+    if (clean.length < 2) throw new Error(T("hittade inget spår i filen", "found no track in the file"));
+    const near = Math.min(...clean.filter((_, i) => i % 10 === 0).map(p => Math.min(metres(p, [r.lat, r.lon]), isTour(r) ? metres(p, [r.slat, r.slon]) : Infinity)));
+    if (near > 15000) throw new Error(T(`spåret ligger ${Math.round(near / 1000)} km från ${r.name}`, `the track is ${Math.round(near / 1000)} km from ${r.name}`));
+    const st = trackStats(clean);
+    saveTrack({kind: st.ele && st.down > st.up ? "line" : "hike", resort: r.id, pts: clean});
+  } catch (e) { msg.textContent = T("Kunde inte läsa GPX-filen: ", "Could not read the GPX file: ") + e.message + "."; }
+}
+
+// ----- Saving a track: hike or line, shared or not -----
+function saveTrack(t){
+  const pts = simplify(cleanPts(t.pts), 4).slice(0, 3000), r = RESORTS.find(x => x.id === t.resort);
+  let dlg = $("#trackdlg");
+  if (!dlg){ dlg = document.createElement("dialog"); dlg.id = "trackdlg"; dlg.className = "trackdlg"; document.body.appendChild(dlg); }
+  const show = kind => statText(trackStats(pts), kind);
+  dlg.innerHTML = `<form method="dialog">
+      <h3>${T("Spara spåret", "Save the track")}</h3>
+      <p class="tdstat" id="tdstat">${esc(r?.name || "")} · ${show(t.kind)}</p>
+      ${pts.length < 2 ? `<p>${T("Spåret har för få punkter för att sparas. GPS:en hann kanske inte hitta din position.", "The track has too few points to save. Maybe the GPS did not find your position in time.")}</p>
+        <div class="tdbtns"><button type="button" id="tddrop">${T("Släng", "Discard")}</button></div>` : `
+      <fieldset class="tdkind"><legend>${T("Det här var", "This was")}</legend>
+        <label><input type="radio" name="kind" value="hike"${t.kind === "hike" ? " checked" : ""}> ▲ ${T("en hike, vägen upp", "a hike, the way up")}</label>
+        <label><input type="radio" name="kind" value="line"${t.kind === "line" ? " checked" : ""}> ▼ ${T("en line, åket ner", "a line, the run down")}</label>
+      </fieldset>
+      <label class="tdshare"><input type="checkbox" id="tdshare" checked> ${T("Dela med andra medlemmar", "Share with other members")}</label>
+      <p class="mnote">${T("Bara linjen och höjden sparas, inga tider. Ett delat spår säger ingenting om dagens lavinläge, och andra som följer det bedömer själva.", "Only the line and the height are saved, no times. A shared track says nothing about today's avalanche conditions, and others who follow it judge for themselves.")}</p>
+      <p class="acctmsg" id="tdmsg" role="status"></p>
+      <div class="tdbtns"><button type="button" id="tdsave" class="primary">${T("Spara", "Save")}</button><button type="button" id="tdlater">${t.fromRec ? T("Inte nu", "Not now") : T("Avbryt", "Cancel")}</button>${t.fromRec ? `<button type="button" id="tddrop">${T("Släng", "Discard")}</button>` : ""}</div>`}
+    </form>`;
+  const kindNow = () => dlg.querySelector('input[name="kind"]:checked')?.value || t.kind;
+  dlg.querySelectorAll('input[name="kind"]').forEach(i => i.onchange = () => { $("#tdstat").textContent = `${r?.name || ""} · ${show(kindNow())}`; });
+  const drop = $("#tddrop");
+  if (drop) drop.onclick = () => { if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); } dlg.close(); };
+  $("#tdlater")?.addEventListener("click", () => dlg.close());
+  const save = $("#tdsave");
+  if (save) save.onclick = async () => {
+    if (!sbUser){ $("#tdmsg").textContent = T("Logga in för att spara. Spåret väntar kvar i telefonen.", "Log in to save. The track waits on the phone."); return; }
+    save.disabled = true; $("#tdmsg").textContent = T("Sparar…", "Saving…");
+    try {
+      const {error} = await (await sb()).from("tracks").insert({resort: t.resort, kind: kindNow(), shared: $("#tdshare").checked, pts});
+      if (error) throw error;
+      if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); }
+      dlg.close();
+      if (r && curId() === r.id) drawMine(r, pts.map(p => [p[0], p[1]]));
+      else if (r) go(r.id);
+    } catch (e) { save.disabled = false; $("#tdmsg").textContent = T("Kunde inte spara: ", "Could not save: ") + (e.message || T("ingen uppkoppling", "no connection")) + T(". Försök igen när du har täckning.", ". Try again when you have coverage."); }
+  };
+  if (!dlg.open) dlg.showModal();
+}
+// A recording that was running when the app closed carries on
+setTimeout(() => {
+  if (rec && (!RESORT_IDS.has(rec.resort) || !Array.isArray(rec.pts))){ rec = null; recSave(); }
+  if (rec && !rec.done) recRun(); else recBar();
+});
 
 // Facility descriptions in the place files are Swedish ("Parkering · gratis · 50 platser"); translated word by word
 const SUB_EN = {"Camping": "Campsite", "Toalett": "Toilet", "Rastplats": "Rest area", "Husbilsplats": "Motorhome site",
@@ -3713,7 +4004,7 @@ function route(){
   document.title = rr ? T(`${rr.name}: snöprognos, puder och lavinläge | Yuki Report`, `${rr.name} snow forecast, powder and avalanche conditions | Yuki Report`)
     : T("Yuki Report – snörapport, puder och lavinprognos för skidåkare", "Yuki Report – snow forecast, powder and avalanche conditions for skiers");
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
-  if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; }
+  if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = null; }
   if (id) renderDetail(id); else renderOverview();
 }
 addEventListener("popstate", route);

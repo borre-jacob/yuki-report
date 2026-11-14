@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Integritetspolicy för Yuki Report: utan konto sparas inga personuppgifter, med medlemskonto bara e-post, delade nålar och favoriter.">
+<meta name="description" content="Integritetspolicy för Yuki Report: utan konto sparas inga personuppgifter, med medlemskonto bara e-post, nålar, spår och favoriter.">
 <title>Integritet – Yuki Report</title>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="fonts/fonts.css">
@@ -43,38 +43,42 @@ a{color:var(--snow)}
   <p class="muted">Gäller från 14 november 2026</p>
 
   <p class="lead"><b>Utan konto samlar Yuki Report inte in några personuppgifter.</b> Appen har inga kakor, ingen
-    spårning och inga annonser. Loggar du in som medlem sparas bara din e-postadress, dina delade nålar och dina
-    favoriter, se <a href="#medlem">Medlemskonto</a> nedan. Den frågar bara efter din position om du själv trycker på <i>Sätt nål här</i>,
-    och positionen sparas då bara i din telefon. Vi räknar besök anonymt, utan kakor, för att
+    spårning och inga annonser. Loggar du in som medlem sparas bara din e-postadress, dina nålar, dina spår och dina
+    favoriter, se <a href="#medlem">Medlemskonto</a> nedan. Appen frågar bara efter din position när du som medlem själv
+    trycker på <i>Sätt nål</i> eller spelar in en hike eller line. Vi räknar besök anonymt, utan kakor, för att
     se hur appen används.</p>
 
   <h2>Det som sparas i din egen enhet</h2>
   <p>För att appen ska gå snabbt och fungera offline sparar den några saker i webbläsarens lokala lagring på din
     telefon eller dator. Inget av det skickas till oss.</p>
   <ul>
-    <li>Dina val: språk, ljust eller mörkt läge, enheter, favoritorter, vilket område och vilken region du tittade på senast och visningsläge.</li>
+    <li>Dina val: språk, ljust eller mörkt läge, enheter, vilket område och vilken region du tittade på senast och visningsläge.</li>
     <li>Senast hämtade snöprognos och tidpunkten den hämtades.</li>
     <li>Kartbitar, liftar och platser för de orter du öppnat eller sparat offline.</li>
     <li>Om du själv lagt in en Google Maps-nyckel: nyckeln.</li>
-    <li>Nålar du har satt på kartan för en ort: bara koordinaterna, ingen tid. De skickas aldrig någonstans, och du tar
-      bort en nål genom att trycka på den och välja <i>Ta bort</i>.</li>
+    <li>Som medlem: en kopia av dina favoriter, och en hike eller line medan du spelar in den, så att inget försvinner
+      om appen stängs. Inspelningen tas bort från telefonen när du har sparat eller slängt den.</li>
   </ul>
   <p>Du tar bort allt genom att rensa webbplatsdata för sidan i webbläsarens inställningar, eller genom att ta bort
     appen från hemskärmen.</p>
 
   <h2 id="medlem">Medlemskonto</h2>
   <p>Att logga in är frivilligt. Du loggar in med en länk som skickas till din e-post, utan lösenord. Som medlem
-    delar du dina nålar med andra medlemmar, ser deras och har dina favoriter på alla dina enheter.</p>
+    sparar du favoriter på alla dina enheter, sätter nålar, spelar in hikes (vägen upp) och lines (åket ner) med
+    telefonens GPS eller laddar upp dem som GPX-filer, och ser det andra medlemmar har delat.</p>
   <ul>
-    <li><b>Det som sparas:</b> din e-postadress, dina delade nålar (bara position och ort, ingen tid) och dina
-      favoritorter.</li>
-    <li><b>Vem som ser det:</b> andra inloggade medlemmar ser de delade nålarna, men inte vem som har satt dem eller
-      din e-postadress. Din e-postadress används bara för att logga in.</li>
+    <li><b>Det som sparas:</b> din e-postadress, dina nålar (bara position och ort), dina hikes och lines (bara
+      linjen och höjden, inga tider eller datum) och dina favoritorter.</li>
+    <li><b>Vem som ser det:</b> andra inloggade medlemmar ser dina nålar och de spår du har valt att dela, men inte
+      vem som har gjort dem eller din e-postadress. Spår du inte delar ser bara du. Din e-postadress används bara för
+      att logga in.</li>
+    <li><b>Din position:</b> appen läser GPS:en bara när du sätter en nål eller medan du spelar in, och bara medan
+      appen är öppen.</li>
     <li><b>Var det lagras:</b> hos <a href="https://supabase.com/privacy" rel="noopener">Supabase</a> i EU.
       Inloggningsmejlen skickas av <a href="https://resend.com/legal/privacy-policy" rel="noopener">Resend</a> från EU.</li>
     <li><b>Varför:</b> för att kunna ge dig medlemsfunktionerna som du har valt att använda.</li>
-    <li><b>Ta bort:</b> med <i>Radera mitt konto</i> i menyn tas kontot, dina delade nålar och dina sparade favoriter
-      bort direkt och går inte att återställa. Du kan också ta bort enskilda nålar när som helst.</li>
+    <li><b>Ta bort:</b> med <i>Radera mitt konto</i> i menyn tas kontot, dina nålar, spår och favoriter bort direkt
+      och går inte att återställa. Du kan också ta bort enskilda nålar och spår, eller sluta dela ett spår, när som helst.</li>
     <li>När du är inloggad sparar webbläsaren en inloggningsnyckel i den lokala lagringen, så att du förblir inloggad.
       Den tas bort när du loggar ut.</li>
   </ul>
@@ -93,8 +97,8 @@ a{color:var(--snow)}
     Varje tjänst har sin egen integritetspolicy.</p>
   <ul>
     <li><a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub Pages</a>: lagrar själva appen och snöprognoserna.</li>
-    <li><a href="https://supabase.com/privacy" rel="noopener">Supabase</a>: inloggning för medlemmar, delade nålar och
-      favoriter, och antalet delade nålar för en ort (det frågas även när du inte är inloggad, utan några uppgifter om dig).</li>
+    <li><a href="https://supabase.com/privacy" rel="noopener">Supabase</a>: inloggning för medlemmar, nålar, spår och
+      favoriter, och antalet delade nålar och spår för en ort (det frågas även när du inte är inloggad, utan några uppgifter om dig).</li>
     <li><a href="https://open-meteo.com/en/terms" rel="noopener">Open-Meteo</a>: väderprognoserna, framför allt när du öppnar en ort.</li>
     <li><a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a>: kartan.</li>
     <li>Lavinprognoser: <a href="https://www.varsom.no/" rel="noopener">Varsom (NVE)</a> för Norge och
@@ -122,12 +126,13 @@ a{color:var(--snow)}
 
   <h2 lang="en" id="en">In English</h2>
   <p lang="en">Without an account Yuki Report collects no personal data: no cookies, tracking or ads. If you log in as a
-    member (optional, with an e-mail link and no password), we keep only your e-mail address, your shared pins (position
-    and resort, no time) and your favourites, stored by Supabase in the EU; login e-mails are sent by Resend from the EU.
-    Other members see shared pins but not who set them. <i>Delete my account</i> in the menu removes everything at once. It asks for your position only
-    when you tap <i>Drop a pin here</i>, and then keeps it only on your phone. Visits are counted
+    member (optional, with an e-mail link and no password), we keep only your e-mail address, your pins (position
+    and resort), your hikes and lines (the line and heights, no times or dates) and your favourites, stored by Supabase in
+    the EU; login e-mails are sent by Resend from the EU. Other members see your pins and the tracks you choose to share,
+    but not who made them. <i>Delete my account</i> in the menu removes everything at once. The app reads your position
+    only when you as a member drop a pin or record a hike or line, and only while the app is open. Visits are counted
     anonymously with <a href="https://www.cloudflare.com/web-analytics/" rel="noopener">Cloudflare Web Analytics</a>, which uses no
-    cookies or browser storage and does not recognise you between visits; we only see totals such as visits per day and country. Settings (such as language, theme, units and favourite resorts) and
+    cookies or browser storage and does not recognise you between visits; we only see totals such as visits per day and country. Settings (such as language, theme and units) and
     downloaded forecasts and maps are stored only on your device, and you can remove them by clearing the site data.
     The app loads data directly from the services listed above (GitHub Pages, Cloudflare, Open-Meteo, OpenFreeMap, Varsom,
     avalanche.report, Windy for webcam pictures, cdnjs, jsDelivr, unpkg, and Google Maps only if you add your own key), which see your IP address
