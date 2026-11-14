@@ -14,7 +14,7 @@
    - Cloudflare Web Analytics (static.cloudflareinsights.com) and Windy's webcam images and players are never cached:
      other hosts go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v16";
+const VERSION = "v17";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";

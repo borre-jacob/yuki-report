@@ -2059,7 +2059,7 @@ async function renderDetail(id){
         </div>
       </div>
       <nav class="jumps" aria-label="${T("Hoppa till", "Jump to")}">
-        <a href="#stats">${T("Prognos", "Forecast")}</a><a href="#aval">${T("Lavin", "Avalanche")}</a><a href="#cams" hidden>${T("Kameror", "Webcams")}</a><a href="#karta">${T("Infokarta", "Info map")}</a>
+        <a href="#stats">${T("Prognos", "Forecast")}</a><a href="#aval">${T("Lavin", "Avalanche")}</a><a href="#cams" hidden>${T("Kameror", "Webcams")}</a><a href="#karta">${T("Karta", "Map")}</a>
       </nav>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="fc" id="fc" hidden>
@@ -3575,7 +3575,7 @@ function renderAcct(){
   if (!box) return;
   if (sbUser){
     box.innerHTML = `<h3 id="acct-t">${T("Medlem", "Member")}</h3>
-      <p>${T("Inloggad som", "Logged in as")} <b>${esc(sbUser.email || "")}</b>. ${T("Du sparar favoriter, sätter nålar och spelar in hikes och lines, och ser det medlemmarna har delat på orternas infokartor.", "You save favourites, drop pins and record hikes and lines, and see what members have shared on the resorts' info maps.")}</p>
+      <p>${T("Inloggad som", "Logged in as")} <b>${esc(sbUser.email || "")}</b>. ${T("Du sparar favoriter, sätter nålar och spelar in hikes och lines, och ser det medlemmarna har delat på orternas kartor.", "You save favourites, drop pins and record hikes and lines, and see what members have shared on the resorts' info maps.")}</p>
       <div class="accttools">
         <h4>${T("Hikes och lines", "Hikes and lines")}</h4>
         <label class="acctres">${T("Ort", "Resort")} <select id="acctres">${resortOptions()}</select></label>
@@ -3732,9 +3732,18 @@ async function drawMine(r, fitTo = null){
     pins.forEach(pin => {
       const own = pin.user_id === sbUser?.id, pop = document.createElement("div");
       pop.className = "pinpop";
-      pop.innerHTML = `<b>${own ? T("Din nål", "Your pin") : T("Nål från en medlem", "Pin from a member")}</b><a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${own ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
+      pop.innerHTML = `<b>${own ? T("Din nål", "Your pin") : T("Nål från en medlem", "Pin from a member")}</b>${own ? `<span>${T("Håll in och dra nålen för att flytta den.", "Press and drag the pin to move it.")}</span>` : ""}<a href="${gmapsDir(pin.lat, pin.lon)}" target="_blank" rel="noopener">${T("Vägbeskrivning dit", "Directions there")} ↗</a>${own ? `<button type="button">${T("Ta bort", "Remove")}</button>` : ""}`;
       if (own) pop.querySelector("button").onclick = async () => { await (await sb()).from("pins").delete().eq("id", pin.id); drawMine(r); };
-      L.marker([pin.lat, pin.lon], {icon: pinIcon(own ? "own" : "other"), zIndexOffset: own ? 1100 : 1000}).addTo(mineLayer).bindPopup(pop, {offset: [0, -30]});
+      const m = L.marker([pin.lat, pin.lon], {icon: pinIcon(own ? "own" : "other"), zIndexOffset: own ? 1100 : 1000, draggable: own, autoPan: true})
+        .addTo(mineLayer).bindPopup(pop, {offset: [0, -30]});
+      // Your own pins can be dragged to where they should be; the new position is saved right away
+      if (own) m.on("dragend", async () => {
+        const ll = m.getLatLng(), lat = +ll.lat.toFixed(5), lon = +ll.lng.toFixed(5);
+        const {error} = await (await sb()).from("pins").update({lat, lon}).eq("id", pin.id);
+        if (error){ m.setLatLng([pin.lat, pin.lon]); const msg = $("#pinmsg"); if (msg) msg.textContent = T("Kunde inte flytta nålen: ", "Could not move the pin: ") + error.message; return; }
+        pin.lat = lat; pin.lon = lon;
+        pop.querySelector("a").href = gmapsDir(lat, lon);
+      });
     });
     if (fitTo?.length) poiMap.fitBounds(L.latLngBounds(fitTo).pad(0.2), {maxZoom: 15});
     recDrawLive();

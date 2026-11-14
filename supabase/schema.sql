@@ -37,6 +37,11 @@ drop policy if exists "members add own pins" on public.pins;
 create policy "members add own pins" on public.pins for insert to authenticated with check (user_id = auth.uid());
 drop policy if exists "members remove own pins" on public.pins;
 create policy "members remove own pins" on public.pins for delete to authenticated using (user_id = auth.uid());
+-- Members can move their own pins (only the position)
+grant update (lat, lon) on public.pins to authenticated;
+drop policy if exists "members move own pins" on public.pins;
+create policy "members move own pins" on public.pins for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 drop policy if exists "own favourites" on public.favourites;
 create policy "own favourites" on public.favourites for all to authenticated
