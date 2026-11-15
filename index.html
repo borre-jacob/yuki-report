@@ -407,6 +407,7 @@ details.how .hint{margin-top:6px}
 .minechoice.line{border-color:#c026d3}
 .acct{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
 .acct h3{margin:0;font-size:16px}.acct p{margin:0;font-size:13.5px}
+.linkbtn{all:unset;cursor:pointer;color:var(--snow);text-decoration:underline;margin-left:4px}
 .acctform{display:flex;gap:8px;flex-wrap:wrap}.acctform input{flex:1 1 200px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--surface);color:var(--ink)}
 .acctform button,.acctbtns button{border:1px solid var(--snow);background:var(--snow);color:#fff;border-radius:999px;padding:8px 14px;font:600 13.5px var(--body);cursor:pointer}
 .acctbtns{display:flex;gap:8px;flex-wrap:wrap}.acctbtns button{background:var(--surface);color:var(--ink);border-color:var(--line)}
@@ -3542,7 +3543,7 @@ async function loadPlaces(r){
     ({type, ...nameSub(name, subText(sub)), named: !!name, jp, lat, lon, hours, d, web: safeUrl(web), phone: phone || ""}))};
 }
 // ---------- Member accounts (Supabase) ----------
-// Logging in is optional: with an e-mail link (no password). Members see the start pins other members have shared
+// Logging in is optional: with a code or a link from an e-mail (no password). Members see the start pins other members have shared
 // and share their own, and their favourites follow them between devices. Visitors who are not logged in keep their
 // pins on the phone and only see how many pins members have shared. The Supabase library loads only when needed
 // (a saved login, a login link in the address, or the account section in the menu). Tables and rules:
@@ -3613,6 +3614,7 @@ function renderAcctBtn(){
   b.onclick = l.onclick = open;
 }
 async function onAuthChange(){
+  if (sbUser && otpMail) setOtpMail(null);
   renderAcct();
   renderAcctBtn();
   if (sbUser){
@@ -3664,6 +3666,12 @@ function askLogin(why = ""){
   acctWhy = why;
   buildMenu(); renderAcct(); menu.showModal(); $("#acctmail")?.focus();
 }
+// Logging in with the code from the e-mail keeps the session in the app it was typed in. A link opens the browser,
+// and on an iPhone a web app on the home screen has its own storage, so a link login never reached it.
+// The address waits here for an hour (yr-otp), so the code field is still there after switching to the mail app.
+let otpMail = null;
+{ const o = store.get("yr-otp"); if (o && Date.now() - o.at < 60 * 60e3) otpMail = o.email; }
+function setOtpMail(email){ otpMail = email; store.set("yr-otp", email ? {email, at: Date.now()} : null); }
 function renderAcct(){
   const box = $("#acct");
   if (!box) return;
@@ -3708,18 +3716,38 @@ function renderAcct(){
   box.innerHTML = `<h3 id="acct-t">${T("Logga in", "Log in")}</h3>
     <p>${why ? `<b>${why}</b> ` : ""}${T("Som medlem sparar du favoriter på alla dina enheter, sätter nålar där du börjar en tur, spelar in dina hikes upp och lines ner med telefonens GPS och ser det andra medlemmar har delat. Gratis, utan lösenord.",
            "As a member you keep favourites on all your devices, drop pins where you start a tour, record your hikes up and lines down with the phone's GPS and see what other members have shared. Free, no password.")}</p>
-    <form class="acctform" id="acctform"><input type="email" id="acctmail" required autocomplete="email" placeholder="${T("din@epost.se", "you@example.com")}" aria-label="${T("E-postadress", "E-mail address")}">
-      <button type="submit">${T("Skicka inloggningslänk", "Send login link")}</button></form>
+    ${otpMail ? `<form class="acctform" id="otpform"><input type="text" id="otpcode" required inputmode="numeric" autocomplete="one-time-code" maxlength="12"
+        placeholder="${T("Koden i mejlet", "The code in the e-mail")}" aria-label="${T("Inloggningskod", "Login code")}">
+      <button type="submit">${T("Logga in", "Log in")}</button></form>
+    <p class="mnote">${T(`Vi har mejlat en kod till ${esc(otpMail)}. Skriv in den här, så loggas du in i just den här appen och förblir inloggad. Länken i mejlet fungerar också.`,
+      `We have e-mailed a code to ${esc(otpMail)}. Type it here to log in to this app and stay logged in. The link in the e-mail works too.`)}
+      <button type="button" class="linkbtn" id="otpback">${T("Annan e-post eller ny kod", "Other e-mail or a new code")}</button></p>`
+    : `<form class="acctform" id="acctform"><input type="email" id="acctmail" required autocomplete="email" placeholder="${T("din@epost.se", "you@example.com")}" aria-label="${T("E-postadress", "E-mail address")}">
+      <button type="submit">${T("Skicka inloggningskod", "Send login code")}</button></form>`}
     <p class="acctmsg" id="acctmsg" role="status">${sbAuthError ? esc(T("Inloggningslänken fungerade inte (den kan ha gått ut). Skicka en ny.", "The login link did not work (it may have expired). Send a new one.")) : ""}</p>
     <p class="mnote">${T("Vi sparar bara din e-postadress, dina nålar, spår och favoriter, utan tider. Läs mer i", "We only keep your e-mail address, your pins, tracks and favourites, without times. More in")} <a href="integritet.html">${T("integritetspolicyn", "the privacy policy")}</a>.</p>`;
+  if (otpMail){
+    $("#otpback").onclick = () => { setOtpMail(null); renderAcct(); $("#acctmail")?.focus(); };
+    $("#otpform").onsubmit = async e => {
+      e.preventDefault();
+      const msg = $("#acctmsg"), token = $("#otpcode").value.replace(/\D/g, "");
+      msg.textContent = T("Loggar in…", "Logging in…");
+      try {
+        const {error} = await (await sb()).auth.verifyOtp({email: otpMail, token, type: "email"});
+        if (error){ msg.textContent = T("Koden stämde inte eller har gått ut. Försök igen eller skicka en ny.", "The code was wrong or has expired. Try again or send a new one."); return; }
+        setOtpMail(null);   // onAuthChange redraws the menu as logged in
+      } catch { msg.textContent = T("Kunde inte nå inloggningstjänsten. Kontrollera uppkopplingen.", "Could not reach the login service. Check your connection."); }
+    };
+    return;
+  }
   $("#acctform").onsubmit = async e => {
     e.preventDefault();
     const msg = $("#acctmsg"), email = $("#acctmail").value.trim();
     msg.textContent = T("Skickar…", "Sending…");
     try {
       const {error} = await (await sb()).auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname}});
-      msg.textContent = error ? T("Kunde inte skicka: ", "Could not send: ") + error.message
-        : T(`Kolla din e-post (${email}) och tryck på länken för att logga in.`, `Check your e-mail (${email}) and tap the link to log in.`);
+      if (error){ msg.textContent = T("Kunde inte skicka: ", "Could not send: ") + error.message; return; }
+      setOtpMail(email); renderAcct(); $("#otpcode")?.focus();
     } catch { msg.textContent = T("Kunde inte nå inloggningstjänsten. Kontrollera uppkopplingen.", "Could not reach the login service. Check your connection."); }
   };
 }
