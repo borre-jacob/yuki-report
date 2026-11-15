@@ -602,6 +602,9 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .tourcard button.primary{background:var(--snow);border-color:var(--snow);color:#fff;font-weight:700}
 @media (prefers-reduced-motion:reduce){.tourhole{transition:none}}
 .tourbtn{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;align-self:flex-start}
+.mapswitch{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.mapswitch button{font:600 12.5px var(--body);border:0;background:none;color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
+.mapswitch button[aria-pressed="true"]{background:var(--snow);color:#fff}
 </style>
 <!-- Cloudflare Web Analytics: anonymous visit counts without cookies or local storage (see integritet.html).
      Loaded only on the real site, so local testing is not counted. "spa" counts page changes inside the app. -->
@@ -1554,8 +1557,31 @@ function addOpenFreeMap(map, topo, wantTopo){
   mapLib("maplibre").then(() => {
     if (!mapAlive(map)) return;
     const plain = addOpenFreeMapNow(map, !wantTopo);
-    if (topo) L.control.layers({[TOPO_NAME]: topo, [T("Karta", "Map")]: plain}, null, {position: "topright"}).addTo(map);
+    if (topo) mapSwitch(map, topo, plain, wantTopo);
   }).catch(() => { if (topo && !wantTopo) topo.addTo(map); });
+}
+// Two buttons on the map, Topografisk | Karta, instead of Leaflet's layer menu behind an icon
+function mapSwitch(map, topo, plain, onTopo){
+  const ctl = L.control({position: "topright"});
+  ctl.onAdd = () => {
+    const box = L.DomUtil.create("div", "mapswitch");
+    box.setAttribute("role", "group"); box.setAttribute("aria-label", T("Kartsort", "Map type"));
+    const show = top => {
+      box.innerHTML = `<button type="button" data-t="1" aria-pressed="${top}">${T("Topo", "Topo")}</button><button type="button" data-t="0" aria-pressed="${!top}">${T("Karta", "Map")}</button>`;
+    };
+    show(onTopo);
+    L.DomEvent.disableClickPropagation(box);
+    box.onclick = e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const top = b.dataset.t === "1";
+      if (top === map.hasLayer(topo)) return;
+      if (top){ map.removeLayer(plain); topo.addTo(map); } else { map.removeLayer(topo); plain.addTo(map); }
+      store.set("yr-basemap", top ? "topo" : "map");
+      show(top);
+    };
+    return box;
+  };
+  ctl.addTo(map);
 }
 function addOpenFreeMapNow(map, show = true){
   const layer = L.maplibreGL({style: "https://tiles.openfreemap.org/styles/liberty",
