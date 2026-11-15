@@ -606,6 +606,10 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .mapswitch{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .mapswitch button{font:600 12.5px var(--body);border:0;background:none;color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
 .mapswitch button[aria-pressed="true"]{background:var(--snow);color:#fff}
+.maptools a{font-size:17px;line-height:30px;text-decoration:none;color:#14213a;cursor:pointer}
+.maptools a.on{color:#2f6fd6;font-weight:700}
+.poimapbox.big{position:fixed;inset:0;z-index:1500;height:auto;border-radius:0;border:0}
+html.bigmap,html.bigmap body{overflow:hidden}
 </style>
 <!-- Cloudflare Web Analytics: anonymous visit counts without cookies or local storage (see integritet.html).
      Loaded only on the real site, so local testing is not counted. "spa" counts page changes inside the app. -->
@@ -2210,6 +2214,7 @@ async function renderDetail(id){
 
   // Start zoomed on the ski area when we know where its lifts are, otherwise on the resort point
   poiMap = L.map("poimap");
+  mapTools(poiMap, $(".poimapbox"));
   let liftPts = [];
   const startView = () => liftPts.length
     ? poiMap.fitBounds(L.latLngBounds(liftPts).pad(0.1), {maxZoom: 14, animate: false})
@@ -4334,6 +4339,7 @@ function route(){
     : T("Yuki Report – snörapport, puder och lavinprognos för skidåkare", "Yuki Report – snow forecast, powder and avalanche conditions for skiers");
   tourEnd();
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
+  bigMap(false); myPos(false);
   if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = null; drawing = null; }
   if (id) renderDetail(id); else renderOverview();
 }
@@ -4431,6 +4437,71 @@ function showTheme(){
 }
 darkMq.addEventListener("change", () => { showTheme(); if (!document.documentElement.dataset.theme) route(); });
 showTheme();
+
+// ---------- Big map and my position (the resort map) ----------
+// ⤢ opens the map over the whole screen (a fixed box rather than the Fullscreen API, which iPhones lack for
+// anything but video); ◎ shows where the phone is, following it until pressed again. The position stays on the phone.
+let bigBox = null, posWatch = null, posLayer = null, posFirst = false;
+function mapTools(map, box){
+  const ctl = L.control({position: "topleft"});
+  ctl.onAdd = () => {
+    const bar = L.DomUtil.create("div", "leaflet-bar maptools");
+    bar.innerHTML = `<a href="#" role="button" id="mt-big" title="${T("Stor karta", "Big map")}" aria-label="${T("Stor karta", "Big map")}" aria-pressed="false">⤢</a>
+      <a href="#" role="button" id="mt-pos" title="${T("Min position", "My position")}" aria-label="${T("Min position", "My position")}" aria-pressed="false">◎</a>`;
+    L.DomEvent.disableClickPropagation(bar);
+    bar.onclick = e => {
+      const a = e.target.closest("a"); if (!a) return;
+      e.preventDefault();
+      if (a.id === "mt-big") bigMap(!bigBox, box, map); else myPos(posWatch == null, map);
+    };
+    return bar;
+  };
+  ctl.addTo(map);
+}
+function bigMap(on, box, map){
+  if (!on){
+    if (!bigBox) return;
+    bigBox.classList.remove("big"); document.documentElement.classList.remove("bigmap");
+    const b = $("#mt-big"); if (b){ b.textContent = "⤢"; b.setAttribute("aria-pressed", "false"); b.title = T("Stor karta", "Big map"); }
+    removeEventListener("keydown", bigKey);
+    bigBox = null;
+    if (poiMap) setTimeout(() => poiMap.invalidateSize(), 50);
+    return;
+  }
+  bigBox = box; box.classList.add("big"); document.documentElement.classList.add("bigmap");
+  const b = $("#mt-big"); b.textContent = "✕"; b.setAttribute("aria-pressed", "true"); b.title = T("Stäng stor karta", "Close big map");
+  addEventListener("keydown", bigKey);
+  setTimeout(() => map.invalidateSize(), 50);
+}
+const bigKey = e => { if (e.key === "Escape") bigMap(false); };
+function myPos(on, map){
+  const b = $("#mt-pos");
+  if (!on){
+    if (posWatch != null) navigator.geolocation.clearWatch(posWatch);
+    posWatch = null; posLayer?.remove(); posLayer = null;
+    b?.setAttribute("aria-pressed", "false"); b?.classList.remove("on");
+    return;
+  }
+  if (!navigator.geolocation){ alert(T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position.")); return; }
+  b.setAttribute("aria-pressed", "true"); b.classList.add("on");
+  posFirst = true;
+  posWatch = navigator.geolocation.watchPosition(p => {
+    if (!poiMap) return;
+    const ll = [p.coords.latitude, p.coords.longitude], acc = Math.min(p.coords.accuracy || 0, 2000);
+    if (!posLayer){
+      posLayer = L.layerGroup([
+        L.circle(ll, {radius: acc, color: "#2f6fd6", weight: 1, fillColor: "#2f6fd6", fillOpacity: .12, interactive: false}),
+        L.circleMarker(ll, {radius: 7, color: "#fff", weight: 2.5, fillColor: "#2f6fd6", fillOpacity: 1}).bindTooltip(T("Du är här", "You are here"))]).addTo(poiMap);
+    } else {
+      const [c, m] = posLayer.getLayers(); c.setLatLng(ll).setRadius(acc); m.setLatLng(ll);
+    }
+    if (posFirst){ posFirst = false; poiMap.setView(ll, Math.max(poiMap.getZoom(), 14)); }
+  }, err => {
+    myPos(false);
+    alert(err.code === 1 ? T("Appen fick inte använda din position. Tillåt platstjänster för sidan i telefonens inställningar.", "The app was not allowed to use your position. Allow location for the site in the phone's settings.")
+      : T("Kunde inte hitta din position just nu.", "Could not find your position right now."));
+  }, {enableHighAccuracy: true, maximumAge: 10000, timeout: 30000});
+}
 
 // ---------- Tour ----------
 // A short guided tour: on the start page it explains areas, sorting, search, list, map and menu; on a resort page the
