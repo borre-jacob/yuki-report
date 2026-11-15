@@ -3716,7 +3716,7 @@ function renderAcct(){
   box.innerHTML = `<h3 id="acct-t">${T("Logga in", "Log in")}</h3>
     <p>${why ? `<b>${why}</b> ` : ""}${T("Som medlem sparar du favoriter på alla dina enheter, sätter nålar där du börjar en tur, spelar in dina hikes upp och lines ner med telefonens GPS och ser det andra medlemmar har delat. Gratis, utan lösenord.",
            "As a member you keep favourites on all your devices, drop pins where you start a tour, record your hikes up and lines down with the phone's GPS and see what other members have shared. Free, no password.")}</p>
-    ${otpMail ? `<form class="acctform" id="otpform"><input type="text" id="otpcode" required inputmode="numeric" autocomplete="one-time-code" maxlength="12"
+    ${otpMail ? `<form class="acctform" id="otpform"><input type="text" id="otpcode" required inputmode="numeric" autocomplete="one-time-code" maxlength="40"
         placeholder="${T("Koden i mejlet", "The code in the e-mail")}" aria-label="${T("Inloggningskod", "Login code")}">
       <button type="submit">${T("Logga in", "Log in")}</button></form>
     <p class="mnote">${T(`Vi har mejlat en kod till ${esc(otpMail)}. Skriv in den här, så loggas du in i just den här appen och förblir inloggad. Länken i mejlet fungerar också.`,

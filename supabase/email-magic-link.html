@@ -6,12 +6,15 @@
      "…Har du inte bett om att bli medlem kan du strunta i mejlet." / "…If you did not ask to become a member, you can
      ignore this e-mail."
      The code ({{ .Token }}) is typed in the app, so the login lands in the app it was typed in (on an iPhone a web app
-     on the home screen has its own storage, separate from Safari). The button still logs in the browser it opens. -->
+     on the home screen has its own storage, separate from Safari). The button still logs in the browser it opens.
+     The code has 8 digits (Authentication → Sign In / Providers → Email → Email OTP length). It is written digit by digit
+     with an invisible space (&#8203;) between them, because phones otherwise take the 8 digits for a phone number and
+     will not copy them as text; the app drops everything but the digits when the code is pasted. -->
 <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#14213a">
   <p style="font-size:22px;font-weight:800;margin:0 0 16px;line-height:39px"><img src="https://yukireport.com/icons/logo-mail.png" width="40" height="39" alt="" style="vertical-align:-9px;margin-right:10px;border:0">Yuki <span style="color:#2f6fd6">Report</span></p>
   <p style="font-size:15px;margin:0 0 12px">Skriv in koden i appen för att logga in.<br>
     <span style="color:#5b6b82">Type the code in the app to log in.</span></p>
-  <p style="font:700 30px/1.2 ui-monospace,Menlo,monospace;letter-spacing:6px;margin:0 0 20px;color:#14213a">{{ .Token }}</p>
+  <p style="font:700 30px/1.2 ui-monospace,Menlo,monospace;letter-spacing:6px;margin:0 0 20px;color:#14213a">{{ slice .Token 0 1 }}&#8203;{{ slice .Token 1 2 }}&#8203;{{ slice .Token 2 3 }}&#8203;{{ slice .Token 3 4 }}&#8203;{{ slice .Token 4 5 }}&#8203;{{ slice .Token 5 6 }}&#8203;{{ slice .Token 6 7 }}&#8203;{{ slice .Token 7 8 }}</p>
   <p style="font-size:13px;color:#5b6b82;margin:0 0 10px">Eller logga in i webbläsaren med knappen. / Or log in in the browser with the button.</p>
   <p style="margin:0 0 24px">
     <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;background:#2f6fd6;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Logga in / Log in</a>
