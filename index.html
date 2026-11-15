@@ -1525,7 +1525,12 @@ function topoLayer(r){
     : r.country === "Norge" ? ["https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png", '© <a href="https://www.kartverket.no/" target="_blank" rel="noopener">Kartverket</a>', 18]
     : r.country === "Schweiz" ? ["https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg", '© <a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">swisstopo</a>', 18]
     : ["https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, SRTM · <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC BY-SA)', 17];
-  return L.tileLayer(url, {attribution, maxNativeZoom, maxZoom: 19, subdomains: "abc"});
+  const layer = L.tileLayer(url, {attribution, maxNativeZoom, maxZoom: 19, subdomains: "abc"});
+  if (r.country !== "Schweiz") return layer;
+  // swisstopo's zoomed-out tiles are its small-scale maps with very large lettering, so OpenTopoMap below zoom 13
+  layer.options.minZoom = 13;
+  return L.layerGroup([layer, L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {maxZoom: 12.99, subdomains: "abc",
+    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, SRTM · <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC BY-SA)'})]);
 }
 const TOPO_NAME = T("Topografisk", "Topographic");
 function addBasemap(map, r){
