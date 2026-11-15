@@ -677,7 +677,7 @@ if (location.hostname === "yukireport.com"){
       (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), modelldata beräknad för backens mellanhöjd.
       Orter, liftar, onsen och parkering: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-bidragsgivare</a>
       (<a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>).
-      Kartstil: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>.
+      Kartstil: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>. Topografisk karta: <a href="https://www.kartverket.no/" target="_blank" rel="noopener">Kartverket</a>, <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI</a>, <a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">swisstopo</a> och <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a>.
       Lavinprognoser: Japan Avalanche Network, Varsom (NVE), Naturvårdsverket och de europeiska lavinvarningstjänsterna i
       <a href="https://www.avalanches.org/" target="_blank" rel="noopener">EAWS</a>.
       Koordinater för orterna är ungefärliga.</p>
@@ -692,7 +692,7 @@ if (location.hostname === "yukireport.com"){
       (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), model data for the middle height of the slopes.
       Resorts, lifts, onsen and parking: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
       (<a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>).
-      Map style: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>.
+      Map style: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>. Topographic map: <a href="https://www.kartverket.no/" target="_blank" rel="noopener">Kartverket</a>, <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI</a>, <a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">swisstopo</a> and <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a>.
       Avalanche bulletins: Japan Avalanche Network, Varsom (NVE), the Swedish Environmental Protection Agency and the European avalanche warning services in
       <a href="https://www.avalanches.org/" target="_blank" rel="noopener">EAWS</a>.
       Resort coordinates are approximate.</p>
@@ -1516,26 +1516,54 @@ function mapLib(name){
   })().catch(e => { delete libLoads[name]; throw e; });
 }
 const mapAlive = map => !!map._container?.isConnected && !map._yrGone;
-function addBasemap(map){
+// A resort's map (r given) also gets a topographic map with contour lines, the national one where it is free to
+// use (Kartverket in Norway, GSI in Japan, swisstopo in Switzerland), OpenTopoMap elsewhere. It is the default
+// there; the choice between it and the plain map is remembered (yr-basemap).
+function topoLayer(r){
+  const [url, attribution, maxNativeZoom] =
+    r.area === "japan" ? ["https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png", '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>', 18]
+    : r.country === "Norge" ? ["https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png", '© <a href="https://www.kartverket.no/" target="_blank" rel="noopener">Kartverket</a>', 18]
+    : r.country === "Schweiz" ? ["https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg", '© <a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">swisstopo</a>', 18]
+    : ["https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, SRTM · <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC BY-SA)', 17];
+  return L.tileLayer(url, {attribution, maxNativeZoom, maxZoom: 19, subdomains: "abc"});
+}
+const TOPO_NAME = T("Topografisk", "Topographic");
+function addBasemap(map, r){
   map.once("unload", () => { map._yrGone = true; });
+  const topo = r && topoLayer(r), wantTopo = topo && store.get("yr-basemap") !== "map";
+  if (topo) map.on("baselayerchange", e => store.set("yr-basemap", e.layer === topo ? "topo" : "map"));
   if (googleOk){
     mapLib("google").then(() => {
       if (!mapAlive(map)) return;
-      const road = L.gridLayer.googleMutant({type:"roadmap"}).addTo(map);
-      L.control.layers({[T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
+      const road = L.gridLayer.googleMutant({type:"roadmap"});
+      (wantTopo ? topo : road).addTo(map);
+      L.control.layers({...(topo ? {[TOPO_NAME]: topo} : {}), [T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
         [T("Satellit", "Satellite")]: L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
-    }).catch(() => addOpenFreeMap(map));
+    }).catch(() => addOpenFreeMap(map, topo, wantTopo));
     return;
   }
-  addOpenFreeMap(map);
+  addOpenFreeMap(map, topo, wantTopo);
 }
-function addOpenFreeMap(map){
-  mapLib("maplibre").then(() => { if (mapAlive(map)) addOpenFreeMapNow(map); }).catch(() => {});
+function addOpenFreeMap(map, topo, wantTopo){
+  if (wantTopo) topo.addTo(map);
+  mapLib("maplibre").then(() => {
+    if (!mapAlive(map)) return;
+    const plain = addOpenFreeMapNow(map, !wantTopo);
+    if (topo) L.control.layers({[TOPO_NAME]: topo, [T("Karta", "Map")]: plain}, null, {position: "topright"}).addTo(map);
+  }).catch(() => { if (topo && !wantTopo) topo.addTo(map); });
 }
-function addOpenFreeMapNow(map){
+function addOpenFreeMapNow(map, show = true){
   const layer = L.maplibreGL({style: "https://tiles.openfreemap.org/styles/liberty",
-    attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+    attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
+  // The map library only exists once the layer is on the map, so the English place names are set up then
+  layer.on("add", () => englishNames(layer));
+  if (show) layer.addTo(map);
+  return layer;
+}
+function englishNames(layer){
   const gl = layer.getMaplibreMap();
+  if (!gl || gl._yrNames) return layer;
+  gl._yrNames = true;
   gl.on("styledata", () => {
     for (const l of gl.getStyle().layers){
       if (l.type === "symbol" && gl.getLayoutProperty(l.id, "text-field") != null){
@@ -2163,7 +2191,7 @@ async function renderDetail(id){
   const settle = () => { if (!touched && poiMap){ poiMap.invalidateSize(); startView(); } };
   [300, 1000, 2500].forEach(t => setTimeout(settle, t));
   // The base map (and its libraries) only once the map is near the screen; it sits far down the page
-  const bm = poiMap, io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ io.disconnect(); if (mapAlive(bm)) addBasemap(bm); } }, {rootMargin: "400px"});
+  const bm = poiMap, io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ io.disconnect(); if (mapAlive(bm)) addBasemap(bm, r); } }, {rootMargin: "400px"});
   io.observe(el);
   L.circleMarker([r.lat, r.lon], {radius:9, color:css("--snow"), weight:3, fillColor:css("--snow"), fillOpacity:.25})
     .addTo(poiMap).bindTooltip(r.name);
