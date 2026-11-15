@@ -585,6 +585,23 @@ footer .copy{color:var(--ink);font-weight:600}
 html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .dirbtn.cam{border-color:var(--line);color:var(--ink);font-weight:500}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Guided tour for new visitors: the step's element is lit up, the rest dimmed, with a card explaining it */
+.tourveil{position:fixed;inset:0;z-index:2000}
+.tourhole{position:fixed;z-index:2001;border-radius:12px;pointer-events:none;box-shadow:0 0 0 9999px rgba(8,14,28,.7);
+  outline:2px solid var(--snow);outline-offset:2px;transition:all .25s ease}
+.tourhole.none{display:none}
+.tourveil.dim{background:rgba(8,14,28,.7)}
+.tourcard{position:fixed;z-index:2002;left:50%;transform:translateX(-50%);width:min(380px,calc(100vw - 32px));
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.tourcard h3{margin:0 0 6px;font-size:17px}
+.tourcard p{margin:0 0 12px;font-size:14px;line-height:1.45}
+.tourcard .tnav{display:flex;align-items:center;gap:8px}
+.tourcard .tcount{font-size:12px;color:var(--muted);margin-right:auto}
+.tourcard button{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
+.tourcard button.primary{background:var(--snow);border-color:var(--snow);color:#fff;font-weight:700}
+@media (prefers-reduced-motion:reduce){.tourhole{transition:none}}
+.tourbtn{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;align-self:flex-start}
 </style>
 <!-- Cloudflare Web Analytics: anonymous visit counts without cookies or local storage (see integritet.html).
      Loaded only on the real site, so local testing is not counted. "spa" counts page changes inside the app. -->
@@ -626,6 +643,7 @@ if (location.hostname === "yukireport.com"){
       </div>
       <section class="acct" id="acct" aria-labelledby="acct-t"></section>
       <form id="menuopts" class="opts"></form>
+      <button type="button" id="tourbtn" class="tourbtn"><span class="t-sv">Visa rundturen</span><span class="t-en">Take the tour</span></button>
       <p class="mnote"><span class="t-sv">Valen sparas bara på den här enheten.</span><span class="t-en">Your choices are saved on this device only.</span></p>
       <details class="gset" id="gset">
         <summary><span class="t-sv">Kartinställning:</span><span class="t-en">Map setting:</span> <span id="gstatus">OpenFreeMap</span></summary>
@@ -1422,6 +1440,8 @@ const store = {
   get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 };
+// A first visit: nothing saved from before (the tour then offers itself on the start page and the first resort)
+const TOUR_NEW = store.get("yr-tour") == null && store.get("yr-overview") == null;
 const fmt = (v, d=0) => { if (v == null || isNaN(v)) return "–"; const x = Number(v).toFixed(d); return /^-0(\.0+)?$/.test(x) ? x.slice(1) : x; };
 // ---------- Units ----------
 // All data stays metric (cm, mm, °C, m/s, m). These format a value in the units chosen in the settings menu.
@@ -1725,6 +1745,7 @@ function renderOverview(){
     fillOverview(true);
   });
   fillOverview();
+  tourAuto("start");
 }
 // ---------- Search / region field ----------
 // Empty: the region choices for the area, as the old dropdown. Typing: matching resorts in every area (opens the
@@ -2111,6 +2132,7 @@ async function renderDetail(id){
     b.innerHTML = on ? `<span class="s">★</span> ${T("Favorit", "Favourite")}` : `<span class="s">☆</span> ${T("Spara som favorit", "Save as favourite")}`; };
   $("#favbtn").onclick = () => { toggleFav(r.id); showFav(); };
   showFav();
+  tourAuto("resort");
   FC_TABS.forEach(([k]) => $("#ft-" + k).onclick = () => { store.set("yr-fctab", k); showFcTab(k); });
   showFcTab(FC_TABS.some(([k]) => k === store.get("yr-fctab")) ? store.get("yr-fctab") : "days");
   $("#chip-lift").onclick = e => {
@@ -4223,6 +4245,7 @@ function route(){
   // The same titles as the pages built by tools/build_site.py
   document.title = rr ? T(`${rr.name}: snöprognos, puder och lavinläge | Yuki Report`, `${rr.name} snow forecast, powder and avalanche conditions | Yuki Report`)
     : T("Yuki Report – snörapport, puder och lavinprognos för skidåkare", "Yuki Report – snow forecast, powder and avalanche conditions for skiers");
+  tourEnd();
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
   if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = null; drawing = null; }
   if (id) renderDetail(id); else renderOverview();
@@ -4321,6 +4344,109 @@ function showTheme(){
 }
 darkMq.addEventListener("change", () => { showTheme(); if (!document.documentElement.dataset.theme) route(); });
 showTheme();
+
+// ---------- Tour ----------
+// A short guided tour: on the start page it explains areas, sorting, search, list, map and menu; on a resort page the
+// forecast, avalanche panel, map and the members' tools. New visitors are offered it once per page (yr-tour remembers
+// what was shown); anyone can take it again from the menu. Steps whose element is missing or hidden are skipped.
+const TOURS = {
+  start: () => [
+    {t: T("Välkommen till Yuki Report", "Welcome to Yuki Report"),
+     p: T("Snöprognos, lavinläge och kartor för skidorter i Japan, Skandinavien och Alperna. Vill du ha en snabb rundtur?",
+          "Snow forecasts, avalanche conditions and maps for ski resorts in Japan, Scandinavia and the Alps. Want a quick tour?"), first: true},
+    {el: ".seg.area", t: T("Välj område", "Choose an area"), p: T("Byt mellan Japan, Skandinavien och Alperna.", "Switch between Japan, Scandinavia and the Alps.")},
+    {el: "#m-past", up: true, t: T("Fallen snö eller prognos", "Fallen snow or forecast"),
+     p: T("Sortera orterna på snön som fallit de senaste 3 dygnen, eller på den som väntas de kommande 3.",
+          "Sort the resorts by the snow that fell in the last 3 days, or by what is expected in the next 3.")},
+    {el: "#qbox", t: T("Sök", "Search"), p: T("Skriv namnet på en ort, eller tryck för att välja en region.", "Type a resort's name, or tap to pick a region.")},
+    {el: "#list", t: T("Orterna", "The resorts"),
+     p: T("Mest snö överst. Staplarna visar 3 dygn bakåt och 7 framåt, och den färgade rutan är dagens lavinfara. Tryck på en ort för prognos, lavinläge och karta.",
+          "Most snow first. The bars show 3 days back and 7 ahead, and the coloured box is today's avalanche danger. Tap a resort for its forecast, avalanche conditions and map.")},
+    {el: ".mapbox", t: T("Kartan", "The map"),
+     p: T("Samma orter på kartan. Zooma eller dra, så visar listan bara orterna du ser.", "The same resorts on the map. Zoom or pan, and the list shows only the resorts you can see.")},
+    {el: "#menubtn", t: T("Menyn", "The menu"),
+     p: T("Språk, enheter, mörkt läge och inloggning. Som medlem sparar du favoriter och delar hikes och lines med andra. Rundturen finns också här.",
+          "Language, units, dark mode and logging in. As a member you keep favourites and share hikes and lines with others. The tour is here too.")},
+  ],
+  resort: () => [
+    {el: ".jumps", t: T("Ortens sida", "The resort page"), p: T("Hoppa direkt till prognosen, lavinläget, kamerorna eller kartan.", "Jump straight to the forecast, avalanche conditions, webcams or map.")},
+    {el: "#stats", t: T("Prognosen", "The forecast"),
+     p: T("Snö, vind och temperatur dag för dag. Under den kan du visa prognosen som dagkort, tabell eller timme för timme.",
+          "Snow, wind and temperature day by day. Below it you can show the forecast as day cards, a table or hour by hour.")},
+    {el: "#aval", t: T("Lavinläget", "Avalanche conditions"),
+     p: T("Den officiella lavinprognosen där den finns, och vad vädret säger om snötäcket.", "The official avalanche forecast where there is one, and what the weather says about the snowpack.")},
+    {el: "#cams", t: T("Kameror", "Webcams"), p: T("Webbkameror vid orten.", "Webcams at the resort.")},
+    {el: "#karta", t: T("Kartan", "The map"),
+     p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning.",
+          "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions.")},
+    {el: "#mypin", t: T("Hikes och lines", "Hikes and lines"),
+     p: T("Medlemmar spelar in eller sätter ut hikes (vägen upp) och lines (åket ner) och delar dem med varandra.",
+          "Members record or pin hikes (the way up) and lines (the way down) and share them with each other.")},
+    {el: "#favbtn", t: T("Favorit", "Favourite"), p: T("Spara orten bland dina favoriter (för medlemmar).", "Keep the resort among your favourites (for members).")},
+  ],
+};
+let tour = null;
+function tourAuto(which){
+  const seen = store.get("yr-tour") || {};
+  if (!TOUR_NEW || seen[which] || (which === "resort" && !seen.start)) return;
+  store.set("yr-tour", {...seen, [which]: 1});
+  setTimeout(() => { if ((which === "resort") === !!curId()) tourStart(which); }, which === "resort" ? 1800 : 900);
+}
+function tourStart(which){
+  tourEnd();
+  const steps = TOURS[which]().filter(s => !s.el || (document.querySelector(s.el) && !document.querySelector(s.el).closest("[hidden]")));
+  const veil = Object.assign(document.createElement("div"), {className: "tourveil"});
+  const hole = Object.assign(document.createElement("div"), {className: "tourhole"});
+  const card = Object.assign(document.createElement("div"), {className: "tourcard"});
+  card.setAttribute("role", "dialog"); card.setAttribute("aria-modal", "true"); card.setAttribute("aria-labelledby", "tour-t");
+  document.body.append(veil, hole, card);
+  tour = {steps, i: 0, veil, hole, card, which};
+  const place = () => {
+    if (!tour) return;
+    const s = tour.steps[tour.i], el = s.el && document.querySelector(s.el);
+    hole.classList.toggle("none", !el); veil.classList.toggle("dim", !el);
+    if (!el){ card.style.top = "50%"; card.style.bottom = ""; card.style.transform = "translate(-50%,-50%)"; return; }
+    const b = el.getBoundingClientRect(), pad = 6, vh = innerHeight;
+    Object.assign(hole.style, {left: b.left - pad + "px", top: Math.max(4, b.top - pad) + "px", width: b.width + 2 * pad + "px",
+      height: Math.min(b.bottom + pad, vh - 4) - Math.max(4, b.top - pad) + "px"});
+    // The card goes where there is more room: below the element or above it (at the bottom for a tall element)
+    card.style.transform = "translateX(-50%)";
+    if (b.height > vh * .5){ card.style.bottom = "12px"; card.style.top = ""; }
+    else if (vh - b.bottom >= b.top){ card.style.top = Math.min(b.bottom + 14, vh - card.offsetHeight - 12) + "px"; card.style.bottom = ""; }
+    else { card.style.bottom = Math.min(vh - b.top + 14, vh - card.offsetHeight - 12) + "px"; card.style.top = ""; }
+  };
+  const show = () => {
+    const s = tour.steps[tour.i], n = tour.steps.length, last = tour.i === n - 1;
+    const counted = tour.steps.filter(x => !x.first).length, k = tour.steps.slice(0, tour.i + 1).filter(x => !x.first).length;
+    card.innerHTML = `<h3 id="tour-t">${esc(s.t)}</h3><p>${esc(s.p)}</p><div class="tnav">
+      <span class="tcount">${s.first ? "" : `${k} / ${counted}`}</span>
+      ${s.first ? `<button type="button" data-t="end">${T("Nej tack", "No thanks")}</button>`
+        : `<button type="button" data-t="end">${last ? T("Stäng", "Close") : T("Hoppa över", "Skip")}</button>${tour.i ? `<button type="button" data-t="back">${T("Tillbaka", "Back")}</button>` : ""}`}
+      <button type="button" class="primary" data-t="next">${s.first ? T("Visa mig", "Show me") : last ? T("Klar", "Done") : T("Nästa", "Next")}</button></div>`;
+    const el = s.el && document.querySelector(s.el);
+    if (el) el.scrollIntoView({block: el.offsetHeight > innerHeight * .5 ? "start" : "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+    place(); setTimeout(place, 450);
+    card.querySelector(".primary").focus({preventScroll: true});
+  };
+  card.onclick = e => {
+    const a = e.target.closest("[data-t]")?.dataset.t;
+    if (a === "end") return tourEnd();
+    if (a === "back"){ tour.i--; return show(); }
+    if (a === "next"){ if (tour.i === tour.steps.length - 1) return tourEnd(); tour.i++; show(); }
+  };
+  tour.onkey = e => { if (e.key === "Escape") tourEnd(); };
+  tour.onmove = () => requestAnimationFrame(place);
+  addEventListener("keydown", tour.onkey);
+  addEventListener("scroll", tour.onmove, {passive: true});
+  addEventListener("resize", tour.onmove);
+  show();
+}
+function tourEnd(){
+  if (!tour) return;
+  removeEventListener("keydown", tour.onkey); removeEventListener("scroll", tour.onmove); removeEventListener("resize", tour.onmove);
+  tour.veil.remove(); tour.hole.remove(); tour.card.remove(); tour = null;
+}
+$("#tourbtn").onclick = () => { $("#menu").close(); tourStart(curId() ? "resort" : "start"); };
 
 // ---------- Settings menu ----------
 // Language and units reload the page (every number is formatted when drawn); the theme changes at once.
