@@ -3199,7 +3199,7 @@ function modelBar(g, v){
   const ok = modelsAgree(g), top = Math.max(g.max, v) * 1.15, pct = x => (x / top * 100).toFixed(1);
   return `<div class="mbar ${ok ? "ok" : "warn"}">
     <div class="mtrack"><i style="left:${pct(g.min)}%;width:${Math.max(1.5, pct(g.max) - pct(g.min))}%"></i><b style="left:${pct(v)}%"></b></div>
-    <span>${ok ? `✓ ${T("Säker prognos", "Confident forecast")}` : `± ${T("Osäker prognos", "Uncertain forecast")}`}: ${T("modellerna", "the models")} ${uSnowN(g.min)}–${uSnow(g.max)}</span></div>`;
+    <span>${ok ? `✓ ${T("Säker prognos", "Confident forecast")}` : `± ${T("Osäker prognos", "Uncertain forecast")}`}: ${T("kan bli", "could be")} ${uSnowN(g.min)}–${uSnow(g.max)}</span></div>`;
 }
 
 // ---------- Resort forecast: a summary on top, then the tabs Days / Table / Heights ----------
@@ -3344,7 +3344,7 @@ function drawForecast(){
     </div>
     <div class="flg"><span>${T(`cm vid toppen (${uH(r.top)})`, `cm at the top (${uH(r.top)})`).replace("cm", SNOW_U)}</span><span><i class="lg-past"></i>${T("fallit", "fallen")}</span><span><i class="lg-fut"></i>${T("väntas", "expected")}</span>${
       days10.some(d => d >= today && dayRain(d) >= 1) ? `<span><i class="rainfill"></i>${T("regn i dalen", "rain at the base")}</span>` : ""}${
-      days10.some(d => d >= today && dayRange(d)?.max >= 1) ? `<span><i class="lg-rng"></i>${T("modellernas spann", "model spread")}</span>` : ""}</div>
+      days10.some(d => d >= today && dayRange(d)?.max >= 1) ? `<span><i class="lg-rng"></i>${T("kan bli", "could be")}</span>` : ""}</div>
     <details class="how"><summary>${T("Så räknar vi", "How it is worked out")}</summary><p class="hint">${T(`Spannet kommer från ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. Snödjupet är uppmätt vid en station i backen när det finns en (högst 3 km från en lift och mellan dalen och toppen), annars vädermodellens uppskattning vid toppen. Puderdag visas bara när det väntas minst ${uSnow(POWDER_CM)} nysnö som puder och snötäcket är minst ${uSnow(BASE_OK_CM)}. Snötypen räknas från temperaturen medan snön faller: torrt puder vid ${uTemp(-7)} eller kallare, puder upp till ${uTemp(-3)}, annars tung snö, och blöt snö vid plusgrader eller regn. Puder kräver minst ${uSnow(POWDER_CM)}, mindre kall snö heter torr nysnö.`,
       `The spread comes from ${listAnd((MODELS[r.area] || MODELS.alps).map(m => MODEL_NAME[m]))}. The snow depth is measured at a station on the slopes when there is one (at most 3 km from a lift, between the base and the top), otherwise it is the weather model's estimate at the top. Powder day only shows with at least ${uSnow(POWDER_CM)} of new powder on a snowpack of at least ${uSnow(BASE_OK_CM)}. The snow type comes from the temperature while it falls: dry powder at ${uTemp(-7)} or colder, powder up to ${uTemp(-3)}, heavy snow above that, and wet snow above freezing or with rain. Powder needs at least ${uSnow(POWDER_CM)}; less cold snow is dry new snow.`)}</p></details>
   </section>`;
