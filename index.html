@@ -256,7 +256,6 @@ details.how .hint{margin-top:6px}
 .mdays .v,.mdays .rv{position:absolute;left:-4px;right:-4px;text-align:center;z-index:2;line-height:1.1}
 .mdays .v{font:600 10.5px var(--mono)}
 .mdays .rv{font:600 9px var(--mono);color:color-mix(in srgb,var(--future) 70%,var(--muted))}
-.mdays .rv.in{color:#fff;opacity:.9}
 .mlab{text-align:center;font:500 10px var(--mono);color:var(--muted)}
 .mlab b{color:var(--ink)}
 .sum .hint{font-size:12px;color:var(--muted);margin:0}
@@ -3330,16 +3329,15 @@ function drawForecast(){
     <div>
       <div class="mdays" style="--n:${days10.length}">${days10.map(d => { const i = top.daily.time.indexOf(d), v = top.daily.snowfall_sum[i] || 0, past = d < today, rn = !past && dayRain(d) >= 1;
         const g = !past ? dayRange(d) : null, whisk = g && g.max >= 1;
-        // The forecast's number sits on its bar. Small purple numbers mark where the dashed box ends: its top
-        // above the box when the models reach higher than the bar, its bottom inside the bar when they go lower
-        const barH = Math.max(2, v / dmax * 70), boxTop = whisk ? g.max / dmax * 70 : 0, boxLow = whisk ? g.min / dmax * 70 : 0;
-        const hiMark = whisk && g.max >= v + 0.5, loMark = whisk && g.min <= v - 0.5 && barH - boxLow >= 12;
+        // The forecast's number sits on its bar, and a small purple number above the dashed box says how much it
+        // could be when the models reach higher than the bar (the low end is only in the "could be" text)
+        const barH = Math.max(2, v / dmax * 70), boxTop = whisk ? g.max / dmax * 70 : 0;
+        const hiMark = whisk && g.max >= v + 0.5;
         const hiAt = Math.max(boxTop, barH + (v >= 0.5 ? 13 : 0));
-        return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${whisk ? ` (${T("modellerna", "models")} ${rangeTxt(g)})` : ""}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${barH}px"></div>${whisk
+        return `<div class="col" title="${dayLabel(d)}: ${uSnow(v, 1)}${whisk ? ` (${T("kan bli", "could be")} ${rangeTxt(g)})` : ""}${rn ? T(", regn i dalen", ", rain at the base") : ""}"><div class="bar ${past ? "past" : ""} ${rn ? "rainfill" : ""}" style="height:${barH}px"></div>${whisk
           ? `<i class="rng" style="bottom:${g.min / dmax * 70}px;height:${Math.max(3, (g.max - g.min) / dmax * 70)}px"></i>` : ""}${
           v >= 0.5 ? `<span class="v" style="bottom:${barH + 2}px">${uSnowN(v, 0)}</span>` : ""}${
-          hiMark ? `<span class="rv" style="bottom:${hiAt + 2}px">${uSnowN(g.max, 0)}</span>` : ""}${
-          loMark ? `<span class="rv in" style="bottom:${Math.max(1, boxLow + 1)}px">${uSnowN(g.min, 0)}</span>` : ""}</div>`; }).join("")}</div>
+          hiMark ? `<span class="rv" style="bottom:${hiAt + 2}px">${uSnowN(g.max, 0)}</span>` : ""}</div>`; }).join("")}</div>
       <div class="mlab" style="--n:${days10.length}">${days10.map(d => `<span>${d === today ? `<b>${T("idag", "today")}</b>` : WD[wdOf(d)]}</span>`).join("")}</div>
     </div>
     <div class="flg"><span>${T(`cm vid toppen (${uH(r.top)})`, `cm at the top (${uH(r.top)})`).replace("cm", SNOW_U)}</span><span><i class="lg-past"></i>${T("fallit", "fallen")}</span><span><i class="lg-fut"></i>${T("väntas", "expected")}</span>${
