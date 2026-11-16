@@ -3296,17 +3296,17 @@ function drawForecast(){
     : bestV >= POWDER_CM ? ["good", T(`Mycket nysnö ${rel(bestD)}`, `Lots of new snow ${rel(bestD)}`)]
     : bestV >= 3 ? ["some", T(`Lite nysnö ${rel(bestD)}`, `A little new snow ${rel(bestD)}`)]
     : ["calm", T("Ingen nysnö att tala om den närmaste veckan", "No new snow to speak of in the coming week")];
-  const unsure = range72 && range72.max >= 2 && !modelsAgree(range72);
+  // At most two sentences: the lead, then either a short caution about a thin snowpack or when the snow comes
+  // hardest. Rain, snow at the base, wind and the models' spread are in the chips and the bar below.
+  const ca = meas ? "" : T("ca ", "about ");
+  const leadThin = bestV >= POWDER_CM && fluffy(bestD) && !powderOn(bestD, bestV);   // the lead already says the snowpack is thin
   const sentence = [lead,
-    unsure ? T(`Vädermodellerna är oense: mellan ${uSnowN(range72.min)} och ${uSnow(range72.max)} de kommande 3 dygnen, så räkna med att det kan bli både mindre och mer.`,
-      `The weather models disagree: between ${uSnowN(range72.min)} and ${uSnow(range72.max)} over the next 3 days, so it could be less or more.`) : "",
-    peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : "",
-    rainDays.length ? `${T("Regn i dalen", "Rain at the base")} ${rainDays.map(rel).join(T(" och ", " and "))}.`
-      : baseSnow72 >= 2 ? T("Snö ända ner till dalen.", "Snow all the way down to the base.") : "",
-    thinNow ? (depthCm < 1 ? (meas ? T("Det ligger ingen snö i backen ännu. Kolla att orten har öppnat.", "There is no snow on the slopes yet. Check that the resort has opened.")
-        : T("Vädermodellen har ingen snö vid toppen ännu. Kolla att orten har öppnat.", "The weather model has no snow at the top yet. Check that the resort has opened."))
-      : isTour(r) ? T(`Med bara ${meas ? "" : "ca "}${uSnow(depthCm)} snö är det för tunt för topptur, med stenar och buskar under snön.`, `With only ${meas ? "" : "about "}${uSnow(depthCm)} of snow it is too thin for touring, with rocks and bushes under the snow.`)
-      : T(`Med bara ${meas ? "" : "ca "}${uSnow(depthCm)} snö går det sällan att åka utanför pisterna. Kolla att orten har öppnat.`, `With only ${meas ? "" : "about "}${uSnow(depthCm)} of snow you can rarely ski off-piste. Check that the resort has opened.`)) : ""].filter(Boolean).join(" ");
+    thinNow ? (depthCm < 1 ? (meas ? T("Ingen snö i backen ännu, kolla att orten har öppnat.", "No snow on the slopes yet, check that the resort has opened.")
+        : T("Vädermodellen har ingen snö vid toppen ännu, kolla att orten har öppnat.", "The weather model has no snow at the top yet, check that the resort has opened."))
+      : leadThin ? T(`Just nu ligger bara ${ca}${uSnow(depthCm)} vid toppen.`, `Right now there is only ${ca}${uSnow(depthCm)} at the top.`)
+      : isTour(r) ? T(`Bara ${ca}${uSnow(depthCm)} snö, för tunt för topptur ännu.`, `Only ${ca}${uSnow(depthCm)} of snow, too thin for touring yet.`)
+      : T(`Bara ${ca}${uSnow(depthCm)} snö, för tunt för offpist ännu.`, `Only ${ca}${uSnow(depthCm)} of snow, too thin for off-piste yet.`))
+    : peak >= 3 ? `${cap(T("intensivast", "heaviest"))} ${partOf(peakAt)}.` : ""].filter(Boolean).join(" ");
   const chips = [
     bestV >= 3 && bq.kind ? `<span class="schip sq-${snowqKey(bq)}">❄ ${snowqText(bq)} ${rel(bestD)}</span>` : "",
     thinNow && dom[0] !== "thin" ? `<span class="schip warn">${T("Tunt snötäcke", "Thin snowpack")}</span>` : "",
