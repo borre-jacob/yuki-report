@@ -611,6 +611,8 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .maptools a.on{color:#2f6fd6;font-weight:700}
 .poimapbox.big{position:fixed;inset:0;z-index:1500;height:auto;border-radius:0;border:0}
 html.bigmap,html.bigmap body{overflow:hidden}
+.poimapbox.big{display:flex;flex-direction:column}.poimapbox.big #poimap{flex:1;height:auto;min-height:0}
+.poimapbox.big>.mypin{flex:none;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);max-height:42vh;overflow:auto}
 </style>
 <!-- Cloudflare Web Analytics: anonymous visit counts without cookies or local storage (see integritet.html).
      Loaded only on the real site, so local testing is not counted. "spa" counts page changes inside the app. -->
@@ -3801,30 +3803,6 @@ function trackStats(pts){
 }
 const kmText = m => FT ? `${fmt(m / 1609.34, 1)} mi` : `${fmt(m / 1000, 1).replace(".", EN ? "." : ",")} km`;
 const statText = (st, kind) => [kmText(st.len), st.ele ? (kind === "line" ? `↓ ${uH(st.down)}` : `↑ ${uH(st.up)}` + (st.down >= 20 ? ` ↓ ${uH(st.down)}` : "")) : ""].filter(Boolean).join(" · ");
-// The parts of a ski tour that go up and those that go down, from the heights: a turn counts once the height has
-// moved 15 m the other way (GPS heights jitter). [[from, to, 1 = up | -1 = down], …] as indexes into pts, or null
-// when the track has no heights or never climbs or drops 15 m.
-function upDown(pts){
-  const idx = pts.map((p, i) => p[2] == null ? -1 : i).filter(i => i >= 0), H = i => pts[i][2], TURN = 15;
-  if (idx.length < 2) return null;
-  let trend = 0, first = 0, cand = idx[0], lo = idx[0], hi = idx[0];
-  const turns = [0];
-  for (const i of idx.slice(1)){
-    const h = H(i);
-    if (!trend){
-      if (h > H(hi)) hi = i;
-      if (h < H(lo)) lo = i;
-      if (H(hi) - H(lo) >= TURN){ trend = first = hi > lo ? 1 : -1; cand = i; }
-    } else if (trend === 1){
-      if (h >= H(cand)) cand = i; else if (H(cand) - h >= TURN){ turns.push(cand); trend = -1; cand = i; }
-    } else {
-      if (h <= H(cand)) cand = i; else if (h - H(cand) >= TURN){ turns.push(cand); trend = 1; cand = i; }
-    }
-  }
-  if (!trend) return null;
-  turns.push(pts.length - 1);
-  return turns.slice(1).map((to, k) => [turns[k], to, k % 2 ? -first : first]).filter(([a, b]) => b > a);
-}
 // Douglas–Peucker in metres: keeps the shape of a track with far fewer points
 function simplify(pts, tol = 4){
   if (pts.length < 3) return pts;
@@ -3896,8 +3874,8 @@ async function drawMine(r, fitTo = null){
   mineItems = []; mineSel = null;
   if (poiMap){
     mineLayer = L.layerGroup().addTo(poiMap);
-    // Each ski tour or line has a start pin in its colour; a track that is more than a pin also has its line. A ski
-    // tour with heights is drawn in pieces: the way up dashed green, the way down purple like a line
+    // Each ski tour or line has a start pin in its colour; a track that is more than a pin also has its line (a ski
+    // tour dashed green the whole way, a line purple)
     tracks.forEach(t => {
       const pts = cleanPts(t.pts), own = t.user_id === sbUser?.id, c = t.kind === "hike" ? HIKE_C : LINE_C, onlyPin = pts.length === 1;
       if (!pts.length) return;
@@ -3920,12 +3898,8 @@ async function drawMine(r, fitTo = null){
       }
       const segs = [];
       if (!onlyPin){
-        const style = up => ({color: up ? HIKE_C : LINE_C, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: up ? "8 6" : null});
-        const parts = t.kind === "hike" ? upDown(pts) || [[0, pts.length - 1, 1]] : [[0, pts.length - 1, -1]];
-        parts.forEach(([a, b, d]) => {
-          const base = style(d > 0), pl = L.polyline(pts.slice(a, b + 1).map(p => [p[0], p[1]]), base).addTo(mineLayer).bindPopup(pop);
-          segs.push({pl, base});
-        });
+        const base = {color: c, weight: own ? 4.5 : 3.5, opacity: own ? 0.95 : 0.8, dashArray: t.kind === "hike" ? "8 6" : null};
+        segs.push({pl: L.polyline(pts.map(p => [p[0], p[1]]), base).addTo(mineLayer).bindPopup(pop), base});
       }
       const line = segs.length ? L.featureGroup(segs.map(s => s.pl)) : null;
       const marker = L.marker([pts[0][0], pts[0][1]], {icon: pinIcon(t.kind), zIndexOffset: own ? 1100 : 1000, draggable: own && onlyPin, autoPan: true})
@@ -3950,7 +3924,7 @@ async function drawMine(r, fitTo = null){
   if (list){
     list.hidden = !mineItems.length;
     list.innerHTML = mineItems.length ? `<div class="minehead">${T("Toppturer och offpistlines", "Ski tours and off-piste lines")}
-      <span class="tkey">${T("upp", "up")}<i class="dash" style="--c:${HIKE_C}"></i></span><span class="tkey">${T("ner", "down")}<i style="--c:${LINE_C}"></i></span></div>` + mineItems.map((i, n) => `
+      <span class="tkey">${T("topptur", "ski tour")}<i class="dash" style="--c:${HIKE_C}"></i></span><span class="tkey">${T("offpistline", "off-piste line")}<i style="--c:${LINE_C}"></i></span></div>` + mineItems.map((i, n) => `
       <div class="poi mine ${i.kind}" data-n="${n}" style="--c:${i.c}">
         <i></i>
         <div style="min-width:0"><div class="n"><button type="button" title="${T("Visa på kartan", "Show on the map")}">${esc(i.name)}</button></div>
@@ -3984,8 +3958,10 @@ async function drawMine(r, fitTo = null){
     if (!ch.hidden && ch.dataset.kind === kind){ ch.hidden = true; return; }
     ch.dataset.kind = kind; ch.hidden = false; ch.className = "minechoice " + kind;
     ch.innerHTML = `<button type="button" class="pinbtn ${kind}" id="chrec">● ${T(`Spela in ${what} med GPS`, `Record the ${what} with GPS`)}</button>
-      <button type="button" class="pinbtn ${kind}" id="chpin">📍 ${T("Sätt startnål här", "Put a start pin here")}</button>`;
+      <button type="button" class="pinbtn ${kind}" id="chpin">📍 ${T("Sätt startnål här", "Put a start pin here")}</button>
+      <button type="button" class="pinbtn ${kind}" id="chdraw">✏️ ${T("Rita på kartan", "Draw on the map")}</button>`;
     $("#chrec").onclick = () => recStart(kind, r);
+    $("#chdraw").onclick = () => drawStart(r, null, kind);
     $("#chpin").onclick = () => {
       if (!navigator.geolocation){ $("#pinmsg").textContent = T("Den här webbläsaren kan inte ge din position.", "This browser cannot give your position."); return; }
       $("#pinmsg").textContent = T("Hämtar din position…", "Getting your position…");
@@ -4116,15 +4092,15 @@ async function gpxLoad(file, msg){
 // Tap the map to add points; heights along the line come from Open-Meteo's elevation service (the same terrain model
 // the forecasts use), so a drawn track also gets its climb or descent.
 let drawing = null;
-function drawStart(r, track = null){
+function drawStart(r, track = null, kind = null){
   if (!poiMap) return;
   // From a start pin: the drawing starts at the pin, and the track is saved onto it
-  drawing = {r, track, pts: track ? [[track.pts[0][0], track.pts[0][1]]] : [], layer: L.layerGroup().addTo(poiMap)};
+  drawing = {r, track, kind, pts: track ? [[track.pts[0][0], track.pts[0][1]]] : [], layer: L.layerGroup().addTo(poiMap)};
   if (track) drawPaint();
   poiMap.doubleClickZoom.disable();
   poiMap.getContainer().classList.add("drawing");
   poiMap.on("click", drawClick);
-  $("#poimap").scrollIntoView({behavior: "smooth", block: "center"});
+  if (!bigBox) $("#poimap").scrollIntoView({behavior: "smooth", block: "center"});
   drawBar();
 }
 function drawClick(e){
@@ -4158,7 +4134,7 @@ function drawBar(){
   $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); drawPaint(); drawBar(); };
   $("#drawcancel").onclick = drawEnd;
   $("#drawdone").onclick = async () => {
-    const {r, pts, track} = drawing;
+    const {r, pts, track, kind} = drawing;
     $("#drawdone").disabled = true; $("#pinmsg").textContent = T("Hämtar höjder längs linjen…", "Getting heights along the line…");
     const full = await withHeights(pts);
     if (track){
@@ -4172,7 +4148,7 @@ function drawBar(){
     }
     drawEnd();
     const st = trackStats(full);
-    saveTrack({kind: st.ele && st.up < 50 && st.down > st.up ? "line" : "hike", resort: r.id, pts: full, drawn: true});
+    saveTrack({kind: kind || (st.ele && st.up < 50 && st.down > st.up ? "line" : "hike"), resort: r.id, pts: full, drawn: true});
   };
 }
 // Points every ~40 m along the drawn line, with heights from Open-Meteo (100 per call); without a connection the
@@ -4477,7 +4453,7 @@ showTheme();
 // ---------- Big map and my position (the resort map) ----------
 // ⤢ opens the map over the whole screen (a fixed box rather than the Fullscreen API, which iPhones lack for
 // anything but video); ◎ shows where the phone is, following it until pressed again. The position stays on the phone.
-let bigBox = null, posWatch = null, posLayer = null, posFirst = false;
+let bigBox = null, bigHome = null, posWatch = null, posLayer = null, posFirst = false;
 function mapTools(map, box){
   const ctl = L.control({position: "topleft"});
   ctl.onAdd = () => {
@@ -4498,6 +4474,10 @@ function bigMap(on, box, map){
   if (!on){
     if (!bigBox) return;
     bigBox.classList.remove("big"); document.documentElement.classList.remove("bigmap");
+    // The buttons for ski tours and lines go back under the map
+    const mp = bigBox.querySelector("#mypin");
+    if (mp && bigHome?.[0]?.isConnected) bigHome[0].insertBefore(mp, bigHome[1]?.parentNode === bigHome[0] ? bigHome[1] : null);
+    bigHome = null;
     const b = $("#mt-big"); if (b){ b.textContent = "⤢"; b.setAttribute("aria-pressed", "false"); b.title = T("Stor karta", "Big map"); }
     removeEventListener("keydown", bigKey);
     bigBox = null;
@@ -4505,6 +4485,8 @@ function bigMap(on, box, map){
     return;
   }
   bigBox = box; box.classList.add("big"); document.documentElement.classList.add("bigmap");
+  const mp = $("#mypin");
+  if (mp){ bigHome = [mp.parentNode, mp.nextSibling]; box.appendChild(mp); }
   const b = $("#mt-big"); b.textContent = "✕"; b.setAttribute("aria-pressed", "true"); b.title = T("Stäng stor karta", "Close big map");
   addEventListener("keydown", bigKey);
   setTimeout(() => map.invalidateSize(), 50);
@@ -4574,8 +4556,8 @@ const TOURS = {
      p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning.",
           "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions.")},
     {el: "#mypin", t: T("Toppturer och offpistlines", "Ski tours and off-piste lines"),
-     p: T("Medlemmar spelar in eller sätter ut toppturer (upp grön streckad, ner lila) och offpistlines från liftarna, och delar dem med varandra.",
-          "Members record or pin ski tours (up dashed green, down purple) and off-piste lines from the lifts, and share them with each other.")},
+     p: T("Medlemmar spelar in eller sätter ut toppturer (grön streckad) och offpistlines från liftarna (lila), och delar dem med varandra.",
+          "Members record or pin ski tours (dashed green) and off-piste lines from the lifts (purple), and share them with each other.")},
     {el: "#favbtn", t: T("Favorit", "Favourite"), p: T("Spara orten bland dina favoriter (för medlemmar).", "Keep the resort among your favourites (for members).")},
   ],
 };
