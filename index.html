@@ -3031,15 +3031,15 @@ const compass = deg => COMPASS[dirIdx(deg)];
 const WX = {SNOW: 15, SNOW_NONE: 25, GUST: 15, SNOW_NEXT: 20, GUST_NEXT: 18};  // cm, cm in 3 days, m/s
 function wxStats(F, a, b){
   const H = F.top.hourly, M = F.mid.hourly;
-  let x = 0, y = 0, gust = 0, tMin = Infinity, tMax = -Infinity;
+  let x = 0, y = 0, gust = 0, wind = 0, tMin = Infinity, tMax = -Infinity;
   for (let i = Math.max(0, a); i < Math.min(H.time.length, b); i++){
     const w = H.wind_speed_10m[i] || 0, d = H.wind_direction_10m?.[i];
     if (w >= 4 && d != null){ x += w * Math.sin(d * Math.PI / 180); y += w * Math.cos(d * Math.PI / 180); }
-    gust = Math.max(gust, H.wind_gusts_10m?.[i] || 0);
+    gust = Math.max(gust, H.wind_gusts_10m?.[i] || 0); wind = Math.max(wind, w);
     const t = H.temperature_2m[i];
     if (t != null){ tMin = Math.min(tMin, t); tMax = Math.max(tMax, t); }
   }
-  return {snow: sumRange(H.snowfall, a, b), rainTop: sumRange(H.rain || [], a, b), rainMid: sumRange(M.rain || [], a, b), gust, tMin, tMax,
+  return {snow: sumRange(H.snowfall, a, b), rainTop: sumRange(H.rain || [], a, b), rainMid: sumRange(M.rain || [], a, b), gust, wind, tMin, tMax,
     from: x || y ? (Math.atan2(x, y) * 180 / Math.PI + 360) % 360 : null};
 }
 function avalWeather(F, B){
@@ -3114,7 +3114,7 @@ function avalWeather(F, B){
   const row = (k, v, hi) => `<div class="wrow"><span>${k}</span><span${hi ? ' class="hi"' : ""}>${v}</span></div>`;
   const col = (label, w, hiSnow, hiWind) => `<div class="wcol"><span class="label">${label}</span>
     ${row(T("Nysnö", "New snow"), uSnow(w.snow), hiSnow)}
-    ${row(T("Vind", "Wind"), `${w.from != null ? EXPO[dirIdx(w.from)] + ", " : ""}${T("byar", "gusts")} ${uWind(w.gust)}`, hiWind)}
+    ${row(T("Vind", "Wind"), `${w.from != null ? EXPO[dirIdx(w.from)] + ", " : ""}${uWind(w.wind)} (${T("byar", "gusts")} ${uWindN(w.gust)})`, hiWind)}
     ${row(T("Temperatur", "Temperature"), isFinite(w.tMin) ? `${uTempN(w.tMin)} ${T("till", "to")} ${uTemp(w.tMax)}` : "–", w.tMax > 2)}
     ${row(T("Regn", "Rain"), w.rainTop >= 0.5 ? `${uRain(w.rainTop)} ${T("vid toppen", "at the top")}` : w.rainMid >= 0.5 ? `${uRain(w.rainMid)} ${T("på mellanhöjd", "mid-mountain")}` : T("nej", "none"), w.rainTop >= 1)}</div>`;
   const note = [lee != null && T(`Snödrevet hamnar på läsidor mot ${EXPO[lee]}.`, `Drifting snow ends up on lee slopes facing ${EXPO[lee]}.`),
