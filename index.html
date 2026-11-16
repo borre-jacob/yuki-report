@@ -3114,7 +3114,7 @@ function avalWeather(F, B){
   const row = (k, v, hi) => `<div class="wrow"><span>${k}</span><span${hi ? ' class="hi"' : ""}>${v}</span></div>`;
   const col = (label, w, hiSnow, hiWind) => `<div class="wcol"><span class="label">${label}</span>
     ${row(T("Nysnö", "New snow"), uSnow(w.snow), hiSnow)}
-    ${row(T("Vind", "Wind"), `${w.from != null ? EXPO[dirIdx(w.from)] + ", " : ""}${uWind(w.wind)} (${T("byar", "gusts")} ${uWindN(w.gust)})`, hiWind)}
+    ${row(T("Vind", "Wind"), `${w.from != null ? EXPO[dirIdx(w.from)] + ", " : ""}${uWindN(w.wind)} (${uWindN(w.gust)}) ${WIND_U}`, hiWind)}
     ${row(T("Temperatur", "Temperature"), isFinite(w.tMin) ? `${uTempN(w.tMin)} ${T("till", "to")} ${uTemp(w.tMax)}` : "–", w.tMax > 2)}
     ${row(T("Regn", "Rain"), w.rainTop >= 0.5 ? `${uRain(w.rainTop)} ${T("vid toppen", "at the top")}` : w.rainMid >= 0.5 ? `${uRain(w.rainMid)} ${T("på mellanhöjd", "mid-mountain")}` : T("nej", "none"), w.rainTop >= 1)}</div>`;
   const note = [lee != null && T(`Snödrevet hamnar på läsidor mot ${EXPO[lee]}.`, `Drifting snow ends up on lee slopes facing ${EXPO[lee]}.`),
