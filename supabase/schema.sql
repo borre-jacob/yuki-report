@@ -122,8 +122,9 @@ create trigger tracks_limit before insert on public.tracks for each row execute 
 -- Hikes became ski tours (toppturer) and lines off-piste lines: names the app gave by itself follow along
 update public.tracks set name = regexp_replace(name, '^Hike (till|från) ', 'Topptur \1 ') where name ~ '^Hike (till|från) [0-9]';
 update public.tracks set name = regexp_replace(name, '^Hike (to|from) ', 'Ski tour \1 ') where name ~ '^Hike (to|from) [0-9]';
-update public.tracks set name = regexp_replace(name, '^Line från ', 'Offpistline från ') where name ~ '^Line från [0-9]';
 update public.tracks set name = regexp_replace(name, '^Line from ', 'Off-piste line from ') where name ~ '^Line from [0-9]';
+-- "Offpistline" is not a word people use: off-piste lines are "offpiståk" in Swedish
+update public.tracks set name = regexp_replace(name, '^(Line|Offpistline) från ', 'Offpiståk från ') where name ~ '^(Line|Offpistline) från [0-9]';
 
 -- What members have shared for a resort, for everyone (also not logged in): only the numbers
 create or replace function public.shared_counts(r text) returns json
