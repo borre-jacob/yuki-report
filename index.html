@@ -9,8 +9,8 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="theme-color" content="#f3f6f9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#071d38" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#040d1a" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Yuki Report">
@@ -2030,10 +2030,15 @@ function renderHighlights(rows, key){
   let lv = 0, lvName = "";
   rows.forEach(x => { const v = Number(state.avalLv[x.r.id]) || 0; if (v > lv) { lv = v; lvName = x.r.name; } });
   const label = state.mode === "past" ? T("Mest ny snö, 3 dygn", "Most new snow, 3 days") : T("Mest snö kommande 3 dygn", "Most snow next 3 days");
+  // Where there is no avalanche forecast (Japan, or not yet loaded), the third card shows the other period's best resort
+  const otherKey = key === "past72" ? "next72" : "past72";
+  const alt = rows.reduce((b, x) => (x.o[otherKey] || 0) > (b.o[otherKey] || 0) ? x : b, rows[0]);
+  const otherLabel = state.mode === "past" ? T("Mest snö kommande 3 dygn", "Most snow next 3 days") : T("Mest ny snö, 3 dygn", "Most new snow, 3 days");
   el.innerHTML = `
     <div><small>${label}</small><b>${uSnowN(top.o[key])}<u>${SNOW_U}</u></b><span>${esc(top.r.name)}</span></div>
     <div><small>${T("Orter med snö", "Resorts with snow")}</small><b>${withSnow}<u>${T(`av ${rows.length}`, `of ${rows.length}`)}</u></b><span>${esc(AREAS[state.area].name)}</span></div>
-    <div><small>${T("Högsta lavinnivå idag", "Highest avalanche level today")}</small><b>${lv || "–"}</b><span>${lv ? esc(lvName) : T("ingen prognos ännu", "no forecast yet")}</span></div>`;
+    ${lv ? `<div><small>${T("Högsta lavinnivå idag", "Highest avalanche level today")}</small><b>${lv}</b><span>${esc(lvName)}</span></div>`
+          : `<div><small>${otherLabel}</small><b>${uSnowN(alt.o[otherKey])}<u>${SNOW_U}</u></b><span>${esc(alt.r.name)}</span></div>`}`;
 }
 // The sky behind the top of the page is as tall as the top block (hero or resort name) plus its ridge
 function fitSky(){
@@ -2042,6 +2047,8 @@ function fitSky(){
   document.body.style.setProperty("--skyh", Math.round(a.getBoundingClientRect().bottom + window.scrollY + 6) + "px");
 }
 window.addEventListener("resize", fitSky);
+// Banners (offline, new version) appear after the page is drawn and push the top block down: measure again then
+if (window.ResizeObserver) { let raf = 0; new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(fitSky); }).observe(document.body); }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSky);
 // keepView: redraw without moving the map (used when the avalanche levels arrive)
 function fillOverview(listOnly = false, keepView = false){
@@ -2165,7 +2172,7 @@ function snowIcon(v, maxVal, extra = "", cls = "", lv = 0){
 const RAMP_CM = [0, 5, 15, 30, 50];
 const SNOW_RAMP = {
   past: ["#dbe8fb", "#9cc0f5", "#4f8ee8", "#1f5fc4", "#0b2f73"],
-  fut:  ["#ece6fb", "#c6b5f3", "#9a7ce4", "#6a43c9", "#35177e"],
+  fut:  ["#e8f1fc", "#b9d4f6", "#79a9ec", "#3f7ad9", "#1b4a9c"],
 };
 function rampColor(ramp, v){
   const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
@@ -2183,7 +2190,7 @@ function drawRampLegend(ramp){
   rampLegend = L.control({position: "bottomleft"});
   rampLegend.onAdd = () => {
     const d = L.DomUtil.create("div", "ramp");
-    d.innerHTML = `<span class="ramp-t">${state.mode === "past" ? T("Fallit, 3 dygn", "Fallen, 3 days") : T("Prognos, 3 dygn", "Forecast, 3 days")}</span>
+    d.innerHTML = `<span class="ramp-t">${state.mode === "past" ? T("Ny snö, 3 dygn", "New snow, 3 days") : T("Kommande, 3 dygn", "Next 3 days")}</span>
       <span class="ramp-bar" style="background:linear-gradient(90deg,${ramp.join(",")})"></span>
       <span class="ramp-l">${RAMP_CM.map((c, i) => `<span>${IN ? Math.round(c / 2.54) : c}${i === RAMP_CM.length-1 ? "+ " + SNOW_U : ""}</span>`).join("")}</span>`;
     return d;
@@ -4561,7 +4568,7 @@ function setForecastAt(at){
 const darkMq = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => (document.documentElement.dataset.theme || (darkMq.matches ? "dark" : "light")) === "dark";
 function showTheme(){
-  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = isDark() ? "#0b1220" : "#f3f6f9");
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = isDark() ? "#040d1a" : "#071d38");
 }
 darkMq.addEventListener("change", () => { showTheme(); if (!document.documentElement.dataset.theme) route(); });
 showTheme();
@@ -4647,7 +4654,7 @@ const TOURS = {
      p: T("Snöprognos, lavinläge och kartor för skidorter i Japan, Skandinavien och Alperna. Vill du ha en snabb rundtur?",
           "Snow forecasts, avalanche conditions and maps for ski resorts in Japan, Scandinavia and the Alps. Want a quick tour?"), first: true},
     {el: ".seg.area", t: T("Välj område", "Choose an area"), p: T("Byt mellan Japan, Skandinavien och Alperna.", "Switch between Japan, Scandinavia and the Alps.")},
-    {el: "#m-past", up: true, t: T("Fallen snö eller prognos", "Fallen snow or forecast"),
+    {el: "#m-past", up: true, t: T("Ny snö eller prognos", "New snow or forecast"),
      p: T("Sortera orterna på snön som fallit de senaste 3 dygnen, eller på den som väntas de kommande 3.",
           "Sort the resorts by the snow that fell in the last 3 days, or by what is expected in the next 3.")},
     {el: "#qbox", t: T("Sök", "Search"), p: T("Skriv namnet på en ort, eller tryck för att välja en region.", "Type a resort's name, or tap to pick a region.")},
