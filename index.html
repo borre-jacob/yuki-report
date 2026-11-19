@@ -75,7 +75,7 @@ a{color:var(--snow-ink)}
 
 header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .brand h1{font-size:28px;font-weight:900;letter-spacing:.01em;line-height:1.05}
-.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;color:inherit;text-decoration:none;cursor:pointer}
 .brand .logo{width:46px;height:45px;flex:none}
 .brandtxt{display:flex;flex-direction:column;min-width:0}
 .logo .ink-s{stroke:var(--ink)} .logo .ink-f{fill:var(--ink)}
@@ -710,18 +710,18 @@ if (location.hostname === "yukireport.com"){
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <a class="brand" id="brand" href="/">
       <svg class="logo" viewBox="0 0 900 870" aria-hidden="true">
     <path d="M40 110 V820 H805" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="miter"/>
     <path d="M40 575 L148 428 L215 480 L330 275 L408 365 L525 45 L615 335 L685 280 L860 585" fill="none" class="ink-s" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M472 210 L525 45 L585 215 L560 232 L520 275 L480 230 Z M300 355 L330 275 L370 330 L355 345 L322 405 L295 380 Z M660 300 L685 280 L715 320 L712 368 L692 385 L668 330 Z" class="ink-f"/>
       </svg>
       <div class="brandtxt">
-        <h1>Yuki <span>Report</span></h1>
+        <h1 aria-label="Yuki Report">Yuki<span>Report</span></h1>
         <p class="t-sv">Snö- &amp; lavinprognos</p>
         <p class="t-en">Snow &amp; avalanche forecast</p>
       </div>
-    </div>
+    </a>
     <div class="status">
       <div class="updated" id="updated"></div>
       <button type="button" id="loginbtn" class="loginbtn" hidden></button>
@@ -4784,6 +4784,11 @@ const menu = $("#menu");
 $("#menubtn").setAttribute("aria-label", T("Inställningar", "Settings"));
 $("#menuclose").setAttribute("aria-label", T("Stäng", "Close"));
 $("#menubtn").onclick = () => { buildMenu(); renderAcct(); menu.showModal(); };
+// The logo leads back to the start page (a plain link without scripts, and for open-in-new-tab)
+$("#brand").addEventListener("click", e => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+  e.preventDefault(); go(""); window.scrollTo(0, 0);
+});
 $("#menuclose").onclick = () => menu.close();
 menu.addEventListener("click", e => { if (e.target === menu) menu.close(); });   // a tap on the dimmed backdrop
 
