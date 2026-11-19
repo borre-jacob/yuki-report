@@ -632,8 +632,9 @@ header.top .acctbtn{border-width:1px;font-weight:700}
 .brand h1{font-weight:700;letter-spacing:-.015em}
 
 /* Startsida: rubrik, sök och områdesval i himlen */
-.hero{display:flex;flex-direction:column;gap:16px;align-items:flex-start;padding:28px 0 74px;color:#fff}
+.hero{display:flex;flex-direction:column;gap:16px;align-items:flex-start;padding:28px 0 96px;color:#fff}
 .hero-h{font:700 44px/1.06 var(--display);letter-spacing:-.025em;max-width:15ch;color:#fff}
+@media (max-width:760px){.hero-h{font-size:34px}}
 .hero .qbox{width:100%;max-width:520px;flex:none}
 .hero .qlist{color:var(--ink);text-align:left}
 .hero .qbox input{font-size:16px;padding:15px 38px 15px 46px;border-radius:14px;border:0;box-shadow:0 10px 30px rgba(3,16,36,.3);background:#fff;color:#0d1b2e}
@@ -643,17 +644,6 @@ header.top .acctbtn{border-width:1px;font-weight:700}
 .seg.area{background:none;border:0;padding:0;gap:8px;display:flex;flex-wrap:wrap}
 .seg.area button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.34);color:#fff;border-radius:999px;padding:8px 16px;font-size:14px;font-weight:500}
 .seg.area button[aria-pressed="true"]{background:#fff;color:#071d38;border-color:#fff;font-weight:600}
-
-/* Överblickskort */
-.hl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:-62px;position:relative;z-index:2}
-.hl:empty{display:none}
-.hl>div{background:var(--surface);border-radius:16px;padding:16px 20px;box-shadow:0 6px 24px rgba(13,27,46,.1)}
-.hl small{display:block;font-size:13px;color:var(--muted);font-weight:500}
-.hl b{display:block;font:400 42px/1.05 var(--display);letter-spacing:-.03em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
-.hl b u{text-decoration:none;font:400 16px var(--display);color:var(--muted);margin-left:3px;letter-spacing:0}
-.hl span{font-size:13.5px;color:var(--snow-ink);font-weight:600}
-@media (max-width:760px){.hl{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:-50px}.hl>div{padding:11px 11px}.hl small{font-size:11px;line-height:1.25}.hl b{font-size:25px;margin:5px 0 1px}.hl b u{font-size:11.5px;margin-left:2px}.hl span{font-size:12px;overflow-wrap:anywhere}.hero-h{font-size:34px}}
-.controls{margin-top:6px}
 
 /* Lista och karta */
 .seg,.ftabs{background:var(--pill);border:0;border-radius:999px}
@@ -1855,7 +1845,6 @@ function renderOverview(){
         ${Object.entries(AREAS).map(([k, a]) => `<button data-area="${k}" aria-pressed="${state.area===k}">${a.name}</button>`).join("")}
       </div>
       </div>
-      <div class="hl" id="hl"></div>
       <div class="controls">
         <div class="seg" role="group" aria-label="${T("Sortera på", "Sort by")}">
           <button id="m-past" class="past" aria-pressed="${state.mode==="past"}">${T("Ny snö, senaste 3 dygnen", "New snow, last 3 days")}</button>
@@ -2028,24 +2017,6 @@ function listWithoutSnow(msg, listOnly = false){
     .bindTooltip(`<b>${esc(r.name)}</b>`, {direction:"top"}).on("click", () => go(r.id))));
   fitMap(rows);
 }
-// Three overview cards under the sky: most snow, resorts with snow, highest avalanche level (from the rows on screen)
-function renderHighlights(rows, key){
-  const el = $("#hl"); if (!el) return;
-  if (!rows.length) { el.innerHTML = ""; return; }
-  const top = rows[0], withSnow = rows.filter(x => (x.o[key] || 0) >= 1).length;
-  let lv = 0, lvName = "";
-  rows.forEach(x => { const v = Number(state.avalLv[x.r.id]) || 0; if (v > lv) { lv = v; lvName = x.r.name; } });
-  const label = state.mode === "past" ? T("Mest ny snö, 3 dygn", "Most new snow, 3 days") : T("Mest snö kommande 3 dygn", "Most snow next 3 days");
-  // Where there is no avalanche forecast (Japan, or not yet loaded), the third card shows the other period's best resort
-  const otherKey = key === "past72" ? "next72" : "past72";
-  const alt = rows.reduce((b, x) => (x.o[otherKey] || 0) > (b.o[otherKey] || 0) ? x : b, rows[0]);
-  const otherLabel = state.mode === "past" ? T("Mest snö kommande 3 dygn", "Most snow next 3 days") : T("Mest ny snö, 3 dygn", "Most new snow, 3 days");
-  el.innerHTML = `
-    <div><small>${label}</small><b>${uSnowN(top.o[key])}<u>${SNOW_U}</u></b><span>${esc(top.r.name)}</span></div>
-    <div><small>${T("Orter med snö", "Resorts with snow")}</small><b>${withSnow}<u>${T(`av ${rows.length}`, `of ${rows.length}`)}</u></b><span>${esc(AREAS[state.area].name)}</span></div>
-    ${lv ? `<div><small>${T("Högsta lavinnivå idag", "Highest avalanche level today")}</small><b>${lv}</b><span>${esc(lvName)}</span></div>`
-          : `<div><small>${otherLabel}</small><b>${uSnowN(alt.o[otherKey])}<u>${SNOW_U}</u></b><span>${esc(alt.r.name)}</span></div>`}`;
-}
 // The sky behind the top of the page is as tall as the top block (hero or resort name) plus its ridge
 function fitSky(){
   const a = $("#hero") || $(".dhead");
@@ -2068,7 +2039,6 @@ function fillOverview(listOnly = false, keepView = false){
   const rows = areaResorts(state.area).filter(r => inRegion(r, state.region))
     .map(r => ({r, o: state.overview[r.id]})).filter(x => x.o)
     .sort((a,b) => (b.o[key] - a.o[key]) || (b.o.next72 + b.o.past72 - a.o.next72 - a.o.past72));
-  renderHighlights(rows, key);
   const maxDay = Math.max(1, ...rows.flatMap(x => x.o.daily.map(v => v||0)));
   const rankOf = new Map(rows.map((x, i) => [x.r.id, i + 1]));
   const shownRows = state.inView ? rows.filter(x => state.inView.contains([x.r.lat, x.r.lon])) : rows;
