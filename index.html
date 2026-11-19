@@ -1883,7 +1883,7 @@ function renderOverview(){
   addBasemap(overviewMap);
   // Nearby resorts merge into one pin showing the most snow among them, with the number of resorts
   markerLayer = L.markerClusterGroup({
-    maxClusterRadius: 34, showCoverageOnHover: false, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 10,
+    maxClusterRadius: 24, showCoverageOnHover: false, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 8,
     iconCreateFunction: c => {
       const kids = c.getAllChildMarkers(), vals = kids.map(m => m.options.snow).filter(v => v != null);
       const v = vals.length ? Math.max(...vals) : null;
