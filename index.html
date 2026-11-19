@@ -479,15 +479,15 @@ details.how .hint{margin-top:6px}
 .leaflet-popup .links{margin:4px 0}
 .tips{font-size:13px;color:var(--muted);margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 .leaflet-container{font-family:var(--body)}
-.snowpin{display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font:600 11px var(--mono);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.snowpin{display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font:600 10px var(--mono);border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
 .snowpin.group{position:relative;outline:2px solid rgba(255,255,255,.6);outline-offset:2px}
 .snowpin{position:relative}
-.snowpin .alv{position:absolute;left:-7px;bottom:-7px}
+.snowpin .alv{position:absolute;left:-6px;bottom:-6px}
 .alv{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 3px;border-radius:4px;
   font:600 10px var(--mono);vertical-align:2px;margin-left:6px;box-shadow:0 0 0 1.5px var(--surface)}
 .snowpin .alv{margin:0}
 .legend .alv{margin:0 0 0 3px;min-width:14px;height:14px;font-size:9px;box-shadow:none}
-.snowpin.group small{position:absolute;right:-8px;top:-8px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--ink);color:var(--bg);font:600 10px/18px var(--mono);text-align:center}
+.snowpin.group small{position:absolute;right:-7px;top:-7px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--ink);color:var(--bg);font:600 9px/15px var(--mono);text-align:center}
 .ramp{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;gap:3px;font:11px var(--body);box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .ramp-t{font-weight:600}
 .ramp-bar{display:block;width:150px;height:10px;border-radius:3px}
@@ -2137,7 +2137,7 @@ const alvBadge = lv => lv ? `<span class="alv" style="background:${DANGER[lv].c}
 let maxPinVal = 1;
 function snowIcon(v, maxVal, extra = "", cls = "", lv = 0){
   // v null = no forecast: small neutral pin with a dash
-  const size = v == null ? 24 : 24 + Math.round(Math.sqrt(v / maxVal) * 22);
+  const size = v == null ? 18 : 18 + Math.round(Math.sqrt(v / maxVal) * 14);
   const {bg, ink} = v == null ? {bg: "var(--line)", ink: "var(--muted)"} : rampColor(SNOW_RAMP[state.mode], v);
   return L.divIcon({className:"", iconSize:[size,size],
     html:`<div class="snowpin ${cls}" style="width:${size}px;height:${size}px;background:${bg};color:${ink}">${v == null ? "–" : Math.round(IN ? v / 2.54 : v)}${extra}${lv ? alvBadge(lv) : ""}</div>`});
