@@ -34,29 +34,31 @@ document.documentElement.lang=p?p[1]:l==="sv"||l==="en"?l:/^sv\b/i.test(navigato
 /* Layout: one-screen tool. Start = ranked resort list + snow map side by side (stacked on phone).
    Detail = resort forecast charts, then a map with lifts and parking (and onsen in Japan). */
 :root{
-  --bg:#f3f6f9; --surface:#ffffff; --ink:#14213a; --muted:#5b6b82; --line:#d9e1ea;
-  --snow:#2f6fd6; --snow-soft:#cfe0fa; --future:#7c5cd6; --future-soft:#e3dafa;
+  --bg:#f3f6fa; --surface:#ffffff; --ink:#0d1b2e; --muted:#5a6b82; --line:#e1e8f0;
+  --snow:#1f5fb5; --snow-soft:#dfeafa; --future:#5b95e0; --future-soft:#e8f1fc;
   --onsen:#c2410c; --toilet:#0f766e; --fav:#d99a00; --park:#7c3aed; --lift:#be123c; --warn:#b45309;
   --rose0:#e6ebf1; --rose1:#f4a6c0; --rose2:#d61f69;
   /* Text on tinted backgrounds (and links): darker than the accent colours so it reads (WCAG AA, 4.5:1) */
-  --snow-ink:#1d55b0; --future-ink:#5b3cb8; --warn-ink:#8a4106; --ok-ink:#0b5c55; --muted-2:#45536a;
-  --display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --snow-ink:#1a55a8; --future-ink:#2b6cc4; --warn-ink:#8a4106; --ok-ink:#0b5c55; --muted-2:#45536a;
+  --display:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --pill:#e5ecf4; --pill-on:#ffffff; --sky-a:#071d38; --sky-b:#14477a; --sky-c:#a9cbe6;
+  --ridge:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 150' preserveAspectRatio='none'%3E%3Cpath d='M0 150V96L120 60 210 92 330 34 450 88 560 52 690 98 800 40 930 90 1040 58 1200 100V150Z' fill='%232a64a0' opacity='.55'/%3E%3Cpath d='M0 150V118L150 82 260 112 400 66 520 112 650 78 780 116 920 70 1060 112 1200 84V150Z' fill='%23dbe9f5' opacity='.8'/%3E%3Cpath d='M0 150V130L180 108 320 130 470 100 610 132 760 108 900 134 1050 106 1200 130V150Z' fill='%23f3f6fa'/%3E%3C/svg%3E");
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
-  --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
+  --snow:#6ea3ff; --snow-soft:#1d3358; --future:#7fa8ef; --future-soft:#1b2c4f;
   --onsen:#fb923c; --toilet:#2dd4bf; --fav:#fbbf24; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
   --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f;
-  --snow-ink:#9cc2ff; --future-ink:#c9b8ff; --warn-ink:#fcd34d; --ok-ink:#5eead4; --muted-2:#b3c0d2; color-scheme:dark}}
+  --snow-ink:#9cc2ff; --future-ink:#b3c9f5; --warn-ink:#fcd34d; --ok-ink:#5eead4; --muted-2:#b3c0d2; --pill:#18243a; --pill-on:#2a3b5c; --sky-a:#040d1a; --sky-b:#0d2a4f; --sky-c:#2b4a73; --ridge:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 150' preserveAspectRatio='none'%3E%3Cpath d='M0 150V96L120 60 210 92 330 34 450 88 560 52 690 98 800 40 930 90 1040 58 1200 100V150Z' fill='%231d4a7e' opacity='.6'/%3E%3Cpath d='M0 150V118L150 82 260 112 400 66 520 112 650 78 780 116 920 70 1060 112 1200 84V150Z' fill='%233a5f8f' opacity='.7'/%3E%3Cpath d='M0 150V130L180 108 320 130 470 100 610 132 760 108 900 134 1050 106 1200 130V150Z' fill='%230b1220'/%3E%3C/svg%3E"); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1220; --surface:#121c2e; --ink:#e6edf7; --muted:#93a3ba; --line:#24324a;
-  --snow:#6ea3ff; --snow-soft:#1d3358; --future:#a78bfa; --future-soft:#2c2450;
+  --snow:#6ea3ff; --snow-soft:#1d3358; --future:#7fa8ef; --future-soft:#1b2c4f;
   --onsen:#fb923c; --toilet:#2dd4bf; --fav:#fbbf24; --park:#8b5cf6; --lift:#fb7185; --warn:#fbbf24;
   --rose0:#24324a; --rose1:#8a3a5c; --rose2:#ff4f8f;
-  --snow-ink:#9cc2ff; --future-ink:#c9b8ff; --warn-ink:#fcd34d; --ok-ink:#5eead4; --muted-2:#b3c0d2; color-scheme:dark}
+  --snow-ink:#9cc2ff; --future-ink:#b3c9f5; --warn-ink:#fcd34d; --ok-ink:#5eead4; --muted-2:#b3c0d2; --pill:#18243a; --pill-on:#2a3b5c; --sky-a:#040d1a; --sky-b:#0d2a4f; --sky-c:#2b4a73; --ridge:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 150' preserveAspectRatio='none'%3E%3Cpath d='M0 150V96L120 60 210 92 330 34 450 88 560 52 690 98 800 40 930 90 1040 58 1200 100V150Z' fill='%231d4a7e' opacity='.6'/%3E%3Cpath d='M0 150V118L150 82 260 112 400 66 520 112 650 78 780 116 920 70 1060 112 1200 84V150Z' fill='%233a5f8f' opacity='.7'/%3E%3Cpath d='M0 150V130L180 108 320 130 470 100 610 132 760 108 900 134 1050 106 1200 130V150Z' fill='%230b1220'/%3E%3C/svg%3E"); color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -612,6 +614,84 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 html.bigmap,html.bigmap body{overflow:hidden}
 .poimapbox.big{display:flex;flex-direction:column}.poimapbox.big #poimap{flex:1;height:auto;min-height:0}
 .poimapbox.big>.mypin{flex:none;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);max-height:42vh;overflow:auto}
+/* ===== Himmel-design: bergshimmel överst, vita kort, lätta stora siffror ===== */
+body{position:relative;background:var(--bg)}
+body::before{content:"";position:absolute;top:0;left:0;right:0;height:var(--skyh,380px);z-index:-1;pointer-events:none;
+  background:var(--ridge) bottom/100% 120px no-repeat,linear-gradient(180deg,var(--sky-a) 0%,var(--sky-b) 62%,var(--sky-c) 100%)}
+header.top .brand h1,header.top .brand h1 span{color:#fff}
+header.top .brand h1 span{color:#a8d2ff}
+header.top .logo .ink-s{stroke:#fff}header.top .logo .ink-f{fill:#fff}
+header.top .brand p{color:rgba(255,255,255,.72)}
+header.top .updated{color:rgba(255,255,255,.72)}
+header.top .status button,header.top .menubtn,header.top .acctbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);color:#fff}
+header.top .status .loginbtn{color:#fff;border-color:rgba(255,255,255,.55)}
+header.top .menubtn span{background:#fff}
+header.top .acctbtn{border-width:1px;font-weight:700}
+.brand h1{font-weight:700;letter-spacing:-.015em}
+
+/* Startsida: rubrik, sök och områdesval i himlen */
+.hero{display:flex;flex-direction:column;gap:16px;align-items:flex-start;padding:28px 0 74px;color:#fff}
+.hero-h{font:700 44px/1.06 var(--display);letter-spacing:-.025em;max-width:15ch;color:#fff}
+.hero .qbox{width:100%;max-width:520px;flex:none}
+.hero .qbox input{font-size:16px;padding:15px 38px 15px 46px;border-radius:14px;border:0;box-shadow:0 10px 30px rgba(3,16,36,.3);background:#fff;color:#0d1b2e}
+.hero .qbox input::placeholder{color:#5a6b82}
+.hero .qicon{left:16px;font-size:20px;color:#5a6b82}
+.hero .qcaret{color:#5a6b82}
+.seg.area{background:none;border:0;padding:0;gap:8px;display:flex;flex-wrap:wrap}
+.seg.area button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.34);color:#fff;border-radius:999px;padding:8px 16px;font-size:14px;font-weight:500}
+.seg.area button[aria-pressed="true"]{background:#fff;color:#071d38;border-color:#fff;font-weight:600}
+
+/* Överblickskort */
+.hl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:-62px;position:relative;z-index:2}
+.hl:empty{display:none}
+.hl>div{background:var(--surface);border-radius:16px;padding:16px 20px;box-shadow:0 6px 24px rgba(13,27,46,.1)}
+.hl small{display:block;font-size:13px;color:var(--muted);font-weight:500}
+.hl b{display:block;font:400 42px/1.05 var(--display);letter-spacing:-.03em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.hl b u{text-decoration:none;font:400 16px var(--display);color:var(--muted);margin-left:3px;letter-spacing:0}
+.hl span{font-size:13.5px;color:var(--snow-ink);font-weight:600}
+@media (max-width:760px){.hl{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:-50px}.hl>div{padding:11px 11px}.hl small{font-size:11px;line-height:1.25}.hl b{font-size:25px;margin:5px 0 1px}.hl b u{font-size:11.5px;margin-left:2px}.hl span{font-size:12px;overflow-wrap:anywhere}.hero-h{font-size:34px}}
+.controls{margin-top:6px}
+
+/* Lista och karta */
+.seg,.ftabs{background:var(--pill);border:0;border-radius:999px}
+.seg button[aria-pressed="true"],.seg button.past[aria-pressed="true"],.seg button.fut[aria-pressed="true"],.ftabs button[aria-selected="true"]{background:var(--pill-on);color:var(--ink);box-shadow:0 1px 3px rgba(13,27,46,.16)}
+.seg.area button[aria-pressed="true"]{box-shadow:none}
+.ftabs{max-width:none}.ftabs button{border-radius:999px}
+.list{gap:0;background:var(--surface);border-radius:16px;box-shadow:0 2px 10px rgba(13,27,46,.07);overflow:hidden}
+.list>.msg,.list>.inview,.list>.more{margin:10px 14px}
+.row{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:16px 20px 16px 20px}
+.rw:last-of-type .row{border-bottom:0}
+.row:hover{background:var(--snow-soft);border-color:var(--line)}
+.rw.sel .row{background:var(--snow-soft);box-shadow:none;border-bottom-color:var(--line)}
+.row .name{font-size:17px;font-weight:600}
+.row .big b{font:400 30px/1 var(--display);letter-spacing:-.02em;color:var(--snow-ink)}
+.mode-fut .big b{color:var(--future-ink)}
+.row .big b small{font-size:14px}
+.mapbox,.poimapbox{border:0;border-radius:16px;box-shadow:0 2px 10px rgba(13,27,46,.07)}
+.chip,.offbtn,.favbtn,.back,.pinbtn,.inview button,.banner button{border-radius:999px}
+
+/* Ortsida: namn och knappar i himlen, sammanfattning som stort kort */
+.back{background:none;border:0;padding:6px 0;color:#d6e6f8;font-weight:500}
+.dhead{padding-bottom:64px;color:#fff}
+.dhead .label{color:rgba(255,255,255,.78);font-weight:500;letter-spacing:.06em}
+.dhead h2{font:700 50px/1.04 var(--display);letter-spacing:-.03em;color:#fff}
+.dhead .jp{color:rgba(255,255,255,.7)}
+.dhead .favbtn,.dhead .dirbtn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.38);color:#fff}
+.dhead .favbtn .s{color:#ffd66b}
+.dhead .favbtn[aria-pressed="true"]{background:rgba(255,214,107,.22);border-color:#ffd66b}
+.jumps a{background:var(--pill);border:0;color:var(--muted);border-radius:999px;font-weight:600;padding:9px 18px}
+.jumps a:hover{color:var(--ink)}
+.sum{background:var(--surface);border:0;border-radius:20px;box-shadow:0 10px 36px rgba(13,27,46,.12);padding:24px 26px}
+.sumbig{font:400 96px/.92 var(--display);letter-spacing:-.05em;color:var(--ink)}
+.sumbig small{font:400 22px var(--display);color:var(--muted);letter-spacing:0}
+.sumside b{font-family:var(--display);font-weight:600}
+.sumtext{font-size:17.5px}
+.panel{border:0;border-radius:16px;box-shadow:0 2px 10px rgba(13,27,46,.07);padding:20px 22px}
+.panel h3{font:700 19px var(--display)}
+.daycard{border:0;border-radius:16px;box-shadow:0 2px 10px rgba(13,27,46,.07)}
+.daycard .amt{font:400 30px/1 var(--display);letter-spacing:-.02em;color:var(--snow-ink)}
+.daycard.best{box-shadow:0 0 0 2px var(--snow)}
+.dom{border-radius:10px}
 </style>
 <!-- Cloudflare Web Analytics: anonymous visit counts without cookies or local storage (see integritet.html).
      Loaded only on the real site, so local testing is not counted. "spa" counts page changes inside the app. -->
@@ -1755,14 +1835,8 @@ function renderOverview(){
   const app = $("#app");
   app.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="seg area" role="group" aria-label="${T("Område", "Area")}">
-        ${Object.entries(AREAS).map(([k, a]) => `<button data-area="${k}" aria-pressed="${state.area===k}">${a.name}</button>`).join("")}
-      </div>
-      <div class="controls">
-        <div class="seg" role="group" aria-label="${T("Sortera på", "Sort by")}">
-          <button id="m-past" class="past" aria-pressed="${state.mode==="past"}">${T("Fallit senaste 3 dygnen", "Fallen last 3 days")}</button>
-          <button id="m-fut" class="fut" aria-pressed="${state.mode==="fut"}">${T("Väntas kommande 3 dygn", "Expected next 3 days")}</button>
-        </div>
+      <div class="hero" id="hero">
+        <h2 class="hero-h">${T("Var ligger snön just nu?", "Where is the snow right now?")}</h2>
         <div class="qbox" id="qbox">
           <span class="qicon" aria-hidden="true">⌕</span>
           <input id="q" type="text" role="combobox" aria-expanded="false" aria-controls="qlist" aria-autocomplete="list"
@@ -1770,6 +1844,16 @@ function renderOverview(){
             aria-label="${T("Sök ort eller välj region", "Search for a resort or choose a region")}" placeholder="${T("Sök ort eller region", "Search resort or region")}">
           <span class="qcaret" aria-hidden="true">▾</span>
           <ul id="qlist" class="qlist" role="listbox" aria-label="${T("Orter och regioner", "Resorts and regions")}" hidden></ul>
+        </div>
+      <div class="seg area" role="group" aria-label="${T("Område", "Area")}">
+        ${Object.entries(AREAS).map(([k, a]) => `<button data-area="${k}" aria-pressed="${state.area===k}">${a.name}</button>`).join("")}
+      </div>
+      </div>
+      <div class="hl" id="hl"></div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="${T("Sortera på", "Sort by")}">
+          <button id="m-past" class="past" aria-pressed="${state.mode==="past"}">${T("Ny snö, senaste 3 dygnen", "New snow, last 3 days")}</button>
+          <button id="m-fut" class="fut" aria-pressed="${state.mode==="fut"}">${T("Kommande 3 dygn", "Next 3 days")}</button>
         </div>
         <button type="button" class="offbtn" id="offline" hidden></button>
         <div class="legend">
@@ -1812,6 +1896,7 @@ function renderOverview(){
   });
   fillOverview();
   tourAuto("start");
+  requestAnimationFrame(fitSky);
 }
 // ---------- Search / region field ----------
 // Empty: the region choices for the area, as the old dropdown. Typing: matching resorts in every area (opens the
@@ -1937,6 +2022,27 @@ function listWithoutSnow(msg, listOnly = false){
     .bindTooltip(`<b>${esc(r.name)}</b>`, {direction:"top"}).on("click", () => go(r.id))));
   fitMap(rows);
 }
+// Three overview cards under the sky: most snow, resorts with snow, highest avalanche level (from the rows on screen)
+function renderHighlights(rows, key){
+  const el = $("#hl"); if (!el) return;
+  if (!rows.length) { el.innerHTML = ""; return; }
+  const top = rows[0], withSnow = rows.filter(x => (x.o[key] || 0) >= 1).length;
+  let lv = 0, lvName = "";
+  rows.forEach(x => { const v = Number(state.avalLv[x.r.id]) || 0; if (v > lv) { lv = v; lvName = x.r.name; } });
+  const label = state.mode === "past" ? T("Mest ny snö, 3 dygn", "Most new snow, 3 days") : T("Mest snö kommande 3 dygn", "Most snow next 3 days");
+  el.innerHTML = `
+    <div><small>${label}</small><b>${uSnowN(top.o[key])}<u>${SNOW_U}</u></b><span>${esc(top.r.name)}</span></div>
+    <div><small>${T("Orter med snö", "Resorts with snow")}</small><b>${withSnow}<u>${T(`av ${rows.length}`, `of ${rows.length}`)}</u></b><span>${esc(AREAS[state.area].name)}</span></div>
+    <div><small>${T("Högsta lavinnivå idag", "Highest avalanche level today")}</small><b>${lv || "–"}</b><span>${lv ? esc(lvName) : T("ingen prognos ännu", "no forecast yet")}</span></div>`;
+}
+// The sky behind the top of the page is as tall as the top block (hero or resort name) plus its ridge
+function fitSky(){
+  const a = $("#hero") || $(".dhead");
+  if (!a) return;
+  document.body.style.setProperty("--skyh", Math.round(a.getBoundingClientRect().bottom + window.scrollY + 6) + "px");
+}
+window.addEventListener("resize", fitSky);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSky);
 // keepView: redraw without moving the map (used when the avalanche levels arrive)
 function fillOverview(listOnly = false, keepView = false){
   const list = $("#list"); if (!list) return;
@@ -1949,6 +2055,7 @@ function fillOverview(listOnly = false, keepView = false){
   const rows = areaResorts(state.area).filter(r => inRegion(r, state.region))
     .map(r => ({r, o: state.overview[r.id]})).filter(x => x.o)
     .sort((a,b) => (b.o[key] - a.o[key]) || (b.o.next72 + b.o.past72 - a.o.next72 - a.o.past72));
+  renderHighlights(rows, key);
   const maxDay = Math.max(1, ...rows.flatMap(x => x.o.daily.map(v => v||0)));
   const rankOf = new Map(rows.map((x, i) => [x.r.id, i + 1]));
   const shownRows = state.inView ? rows.filter(x => state.inView.contains([x.r.lat, x.r.lon])) : rows;
@@ -2197,6 +2304,7 @@ async function renderDetail(id){
       </div>
     </div>`;
   $("#back").onclick = () => go("");
+  requestAnimationFrame(fitSky);
   const showFav = showFavBtn = () => { const b = $("#favbtn"); if (!b) return; const on = favs.has(r.id); b.setAttribute("aria-pressed", on);
     b.innerHTML = on ? `<span class="s">★</span> ${T("Favorit", "Favourite")}` : `<span class="s">☆</span> ${T("Spara som favorit", "Save as favourite")}`; };
   $("#favbtn").onclick = () => { toggleFav(r.id); showFav(); };
