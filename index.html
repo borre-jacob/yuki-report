@@ -1640,14 +1640,14 @@ function mapLib(name){
   })().catch(e => { delete libLoads[name]; throw e; });
 }
 const mapAlive = map => !!map._container?.isConnected && !map._yrGone;
-// ----- The slope view of a resort's map: ground steeper than 25 degrees, coloured over the topographic map -----
+// ----- The slope view of a resort's map: ground steeper than 30 degrees, coloured over the topographic map -----
 // Worked out in the browser from Mapterhorn's open terrain tiles (terrarium WebP, 512 px: height = R*256 + G + B/256 - 32768 m),
 // built from national ground models (bare earth, 1-10 m: Sweden, Norway, Austria, Switzerland, France, Italy, Japan) and
 // Copernicus 30 m elsewhere. Heights are smoothed over about 40 m first, so small banks, road cuts and single rocks do not
 // show, and short steep pitches can look gentler. Not cached offline.
 const DEM_URL = (z, x, y) => `https://tiles.mapterhorn.com/${z}/${x}/${y}.webp`;
 const DEM_ATTR = `${T("Lutning", "Slope")}: <a href="https://mapterhorn.com/attribution">© Mapterhorn</a>`;
-const SLOPE_COL = [[45, [124, 30, 120]], [40, [214, 40, 57]], [35, [245, 128, 20]], [30, [246, 214, 60]], [25, [120, 200, 120]]];   // first match wins
+const SLOPE_COL = [[45, [124, 30, 120]], [40, [214, 40, 57]], [35, [245, 128, 20]], [30, [246, 214, 60]]];   // first match wins
 const DEM_SIZE = 512, DEM_MAXZ = 14, DEM_BASEZ = 12, SLOPE_MINZ = 12, SMOOTH_M = 20;
 const slopeCache = new Map();
 // Slope (degrees), aspect sector (0 = N … 7 = NW) and height for every pixel of one elevation tile
@@ -1757,10 +1757,10 @@ const SlopeLayer = L.GridLayer.extend({
             const k = (gy % DEM_SIZE) * DEM_SIZE + (gx % DEM_SIZE);
             if (t && t.slope[k] > best){ best = t.slope[k]; bt = t; bk = k; }
           }
-          if (best < 25) continue;
+          if (best < 30) continue;
           const q = (j * 256 + i) * 4;
           const col = SLOPE_COL.find(([min]) => best >= min)[1];
-          o[q] = col[0]; o[q + 1] = col[1]; o[q + 2] = col[2]; o[q + 3] = best >= 30 ? 170 : 110;
+          o[q] = col[0]; o[q + 1] = col[1]; o[q + 2] = col[2]; o[q + 3] = 175;
         }
         g.putImageData(img, 0, 0);
       });
@@ -1777,7 +1777,7 @@ function slopeKey(map){
     const d = L.DomUtil.create("div", "mslope");
     const sw = (c, t) => `<span><i style="background:rgb(${c.join(",")})"></i>${t}</span>`;
     d.innerHTML = `<div class="mslopeh" hidden>${T("Zooma in för att se lutningen", "Zoom in to see the slope")}</div>
-      <div class="mslopek">${sw(SLOPE_COL[4][1], "25–30°")}${sw(SLOPE_COL[3][1], "30–35°")}${sw(SLOPE_COL[2][1], "35–40°")}${sw(SLOPE_COL[1][1], "40–45°")}${sw(SLOPE_COL[0][1], T("över 45°", "over 45°"))}</div>`;
+      <div class="mslopek">${sw(SLOPE_COL[3][1], "30–35°")}${sw(SLOPE_COL[2][1], "35–40°")}${sw(SLOPE_COL[1][1], "40–45°")}${sw(SLOPE_COL[0][1], T("över 45°", "over 45°"))}</div>`;
     L.DomEvent.disableClickPropagation(d);
     return d;
   };
