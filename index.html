@@ -1879,7 +1879,7 @@ function drawTools(map){
   const ctl = L.control({position: "topright"});
   ctl.onAdd = () => {
     const box = L.DomUtil.create("div", "mapdraw");
-    box.innerHTML = `<button type="button" data-k="hike" style="--c:${HIKE_C}"><i></i>✏️ ${T("Rita topptur", "Plan a ski tour")}</button><button type="button" data-k="line" style="--c:${LINE_C}"><i></i>✏️ ${T("Rita offpiståk", "Plan an off-piste line")}</button>`;
+    box.innerHTML = `<button type="button" data-k="hike" style="--c:${HIKE_C}"><i></i>${T("Planera topptur", "Plan ski tour")}</button><button type="button" data-k="line" style="--c:${LINE_C}"><i></i>${T("Planera offpiståk", "Plan off-piste line")}</button>`;
     L.DomEvent.disableClickPropagation(box);
     box.onclick = e => {
       const b = e.target.closest("button"), r = RESORTS.find(x => x.id === curId());
