@@ -4387,7 +4387,7 @@ async function auditTrack(pts, kind, ctx = {}){
       const sd = zl + zr - 2 * q.z;
       if (Math.abs(sd) >= 3){
         const sl = slopeAt(el, ...offsetBy(q.lat, q.lon, nx * 30, ny * 30)), sr = slopeAt(el, ...offsetBy(q.lat, q.lon, -nx * 30, -ny * 30)), side = Math.max(sl ?? 0, sr ?? 0);
-        if (sd >= 3 && side >= 30) q.gully = true;
+        if (sd >= 3 && side >= 30){ q.gully = true; q.gullySide = side; }
         if (sd <= -3 && side >= 30) q.ridge = true;
       }
     }
@@ -4400,7 +4400,8 @@ async function auditTrack(pts, kind, ctx = {}){
           const pp = offsetBy(q.lat, q.lon, ex * dd, ny2 * dd), zp = el(...pp);
           if (zp == null) continue;
           const ang = Math.atan((zp - q.z) / dd) * 180 / Math.PI;
-          if (ang >= 20 && (slopeAt(el, pp[0], pp[1]) ?? 0) >= 32 && (!best || ang > best.ang)) best = {ang, dist: dd};
+          const sl = slopeAt(el, pp[0], pp[1]) ?? 0;
+          if (ang >= 20 && sl >= 32 && (!best || ang > best.ang)) best = {ang, dist: dd, sl};
         }
       }
       q.expo = best;
@@ -4429,7 +4430,9 @@ async function auditTrack(pts, kind, ctx = {}){
   const F = [], add = (type, rs, extra = {}) => rs.forEach(r => F.push({...r, type, ...extra}));
   add("steep", runs(level, 2, 2));
   if (kind !== "line") add("climb", runs(q => q.g != null && q.g >= 28, 3, 2));
-  add("flat", runs(q => q.g != null && Math.abs(q.g) < 6, 10, 1));
+  // Flat ground right by the start or the end of the route is the road or the village, not the tour
+  const endTotal = S[S.length - 1].d;
+  add("flat", runs(q => q.g != null && Math.abs(q.g) < 6, 10, 1).filter(r => S[r.i1].d > 400 && S[r.i0].d < endTotal - 400));
   if (kind === "line") add("uphill", runs(q => q.g != null && q.g >= 8, 4, 1));
   runs(q => q.convex, 1, 2).forEach(r => F.push({...r, type: "convex", lvl: 1}));
   add("gully", runs(q => q.gully, 4, 2));
@@ -4452,9 +4455,12 @@ async function auditTrack(pts, kind, ctx = {}){
     f.g = gs.length ? Math.round(Math.abs(gs.reduce((a, b) => a + b, 0) / gs.length)) : null;
     f.d0 = S[f.i0].d; f.d1 = Math.max(S[f.i1].d, f.d0 + STEP); f.z0 = S[f.i0].z; f.z1 = S[f.i1].z;
     if (f.type === "expo") f.ex = part.map(q => q.expo).filter(Boolean).reduce((m, e) => !m || e.ang > m.ang ? e : m, null);
+    if (f.type === "gully") f.gs = Math.round(Math.max(...part.map(q => q.gullySide || 0)));
     if (f.type === "bulletin") f.names = [...new Set(part.flatMap(q => q.bul || []))];
     if (f.type === "steep" || f.type === "bulletin") f.sev = f.type === "bulletin" ? (bul.level >= 3 ? 2 : 1) : f.lvl >= 2 ? 2 : 1;
-    f.sev = f.sev || ({gully: 2, convex: f.max >= 35 ? 2 : 1, expo: f.ex && f.ex.ang >= 25 ? 2 : 1})[f.type] || 1;
+    // A warning only where it is serious: a roll-over on ground of 40 degrees or more, a gully with sides of 35 or more, and steep ground
+    // above (35 or more, seen at 25 degrees or more) that could send an avalanche down on the route; otherwise it is a note
+    f.sev = f.sev || ({gully: f.gs >= 35 ? 2 : 1, convex: f.max >= 40 ? 2 : 1, expo: f.ex && f.ex.ang >= 25 && f.ex.sl >= 35 ? 2 : 1})[f.type] || 1;
   });
   // Many findings: keep the most important ones (warnings first, then the longest) and number them along the route
   let keep = F;
