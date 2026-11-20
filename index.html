@@ -4017,9 +4017,9 @@ function renderAcct(){
       <div class="accttools">
         <h4>${T("Toppturer och offpiståk", "Ski tours and off-piste lines")}</h4>
         <label class="acctres">${T("Ort", "Resort")} <select id="acctres">${resortOptions()}</select></label>
-        <div class="acctbtns"><button type="button" id="acctdraw">✏️ ${T("Planera eller rita din topptur", "Plan or map your ski tour")}</button>
+        <div class="acctbtns"><button type="button" id="acctdraw">${T("Planera din topptur", "Plan your ski tour")}</button>
           <label class="btnlike">⤒ ${T("Ladda upp GPX-fil", "Upload a GPX file")}<input type="file" id="acctgpx" accept=".gpx,application/gpx+xml" hidden></label></div>
-        <p class="mnote" id="accttoolmsg" role="status">${T("Rita en topptur eller ett offpiståk för orten du väljer. En GPX-fil från klockan, Strava eller liknande hamnar vid orten där spåret ligger.", "Draw a ski tour or off-piste line for the resort you choose. A GPX file from your watch, Strava or the like goes to the resort where the track is.")}</p>
+        <p class="mnote" id="accttoolmsg" role="status">${T("Planera en topptur eller ett offpiståk för orten du väljer. En GPX-fil från klockan, Strava eller liknande hamnar vid orten där spåret ligger.", "Plan a ski tour or off-piste line for the resort you choose. A GPX file from your watch, Strava or the like goes to the resort where the track is.")}</p>
       </div>
       <div class="acctbtns"><button type="button" id="acctout">${T("Logga ut", "Log out")}</button><button type="button" id="acctdel" class="danger">${T("Radera mitt konto", "Delete my account")}</button></div>
       <p class="acctmsg" id="acctmsg" role="status"></p>`;
@@ -4246,9 +4246,9 @@ async function drawMine(r, fitTo = null){
         who: own ? T("din", "yours") + (t.shared ? "" : " · " + T("bara för dig", "only for you")) : T("från en medlem", "from a member"), dir: gmapsDir(pts[0][0], pts[0][1])};
       const pop = document.createElement("div");
       pop.className = "pinpop";
-      pop.innerHTML = `<b>${esc(name)}</b><span>${item.sub}</span>${t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("ritad", "drawn") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}${own && onlyPin ? ` · ${T("håll in och dra för att flytta", "press and drag to move")}` : ""}</span>
+      pop.innerHTML = `<b>${esc(name)}</b><span>${item.sub}</span>${t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("planerad", "planned") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}${own && onlyPin ? ` · ${T("håll in och dra för att flytta", "press and drag to move")}` : ""}</span>
         <a href="${item.dir}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${onlyPin ? "" : `<button type="button" data-a="audit">🔍 ${T("Granska rutten", "Review the route")}</button>`}${
-        own ? `${onlyPin ? `<button type="button" data-a="draw">✏️ ${T("Rita spåret härifrån", "Draw the track from here")}</button>` : ""}<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
+        own ? `${onlyPin ? `<button type="button" data-a="draw">${T("Planera spåret härifrån", "Plan the track from here")}</button>` : ""}<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
       pop.querySelector('[data-a="audit"]')?.addEventListener("click", () => { poiMap.closePopup(); auditShow({name, kind: t.kind, pts, c, r}); });
       if (own){
         pop.querySelector('[data-a="edit"]').onclick = () => { poiMap.closePopup(); saveTrack({...t, pts, resort: r.id, edit: true}); };
@@ -4314,7 +4314,7 @@ async function drawMine(r, fitTo = null){
     <div class="minechoice" id="minechoice" hidden></div>
     <p class="pinmsg pinnote" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
       others ? T(`Andra medlemmars toppturer och offpiståk (${others}) visas på kartan. `, `Other members' ski tours and off-piste lines (${others}) show on the map. `) : ""}${
-      T("Rita ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Draw a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas toppturer och offpiståk är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' ski tours and off-piste lines are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
+      T("Planera ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Plan a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas toppturer och offpiståk är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' ski tours and off-piste lines are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
   // Ski tour or line: record it with GPS, or just put its start pin where you are (and draw the rest later)
   const choose = kind => {
     const ch = $("#minechoice"), what = kindLabel(kind).toLowerCase();
@@ -4322,7 +4322,7 @@ async function drawMine(r, fitTo = null){
     ch.dataset.kind = kind; ch.hidden = false; ch.className = "minechoice " + kind;
     ch.innerHTML = `<button type="button" class="pinbtn ${kind}" id="chrec">● ${T(`Spela in ${what} med GPS`, `Record the ${what} with GPS`)}</button>
       <button type="button" class="pinbtn ${kind}" id="chpin">📍 ${T("Sätt startnål här", "Put a start pin here")}</button>
-      <button type="button" class="pinbtn ${kind}" id="chdraw">✏️ ${T(`Planera eller rita ${kind === "line" ? "ditt" : "din"} ${what}`, `Plan or map your ${what}`)}</button>`;
+      <button type="button" class="pinbtn ${kind}" id="chdraw">${T(`Planera ${kind === "line" ? "ditt" : "din"} ${what}`, `Plan your ${what}`)}</button>`;
     $("#chrec").onclick = () => recStart(kind, r);
     $("#chdraw").onclick = () => drawStart(r, null, kind);
     $("#chpin").onclick = () => {
