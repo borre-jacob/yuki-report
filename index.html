@@ -405,6 +405,20 @@ details.how .hint{margin-top:6px}
 .minehead{font:600 12px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:8px 2px 4px}
 .minehead .tkey{text-transform:none;letter-spacing:0;font-weight:500;margin-left:10px;color:var(--muted)}
 .minelist{border-top:0;max-height:none;overflow:visible}
+.audit{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.audhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14.5px}
+.audx{border:0;background:none;font-size:16px;cursor:pointer;color:var(--muted);padding:4px 6px}
+.audsum{margin:0;font-size:13px;color:var(--muted)}
+.audprof{width:100%;height:64px;display:block;background:color-mix(in srgb,var(--line) 35%,transparent);border-radius:8px}
+.audprofk{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--muted);margin-top:-4px}
+.audlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.audlist li{border-radius:10px}.audlist li.sel{background:color-mix(in srgb,var(--snow) 12%,transparent)}
+.audrow{display:grid;grid-template-columns:26px 1fr;gap:10px;width:100%;text-align:left;border:0;background:none;padding:8px 6px;cursor:pointer;color:var(--ink);font:inherit}
+.audn,.audbadgew b{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font:700 12.5px var(--body);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.audrow span span{display:block}.audt{font-weight:600;font-size:14px}.audw{font:11.5px var(--mono);color:var(--muted);margin:1px 0}.audd{font-size:13px;color:var(--muted)}
+.audbadgew{background:none;border:0}.audbadgew.sel b{transform:scale(1.3)}
+.audok{margin:0;font-size:13.5px}.audnote{margin:0;font-size:12px;color:var(--muted)}
+.audbtn{display:block;margin-top:4px;border:0;background:none;padding:0;color:var(--lift);font:600 12.5px var(--body);cursor:pointer;text-decoration:underline}
 .poi.mine.hike i{border-radius:2px;transform:rotate(45deg)}
 .poi.mine.line i{border-radius:2px}
 .sel .mepin{box-shadow:0 0 0 4px #ff2d6f,0 2px 6px rgba(0,0,0,.4)}
@@ -2291,6 +2305,7 @@ async function renderDetail(id){
         <div class="dgrid">
           <div class="poimapbox"><div id="poimap" role="region" aria-label="${T("Karta med faciliteter", "Map of facilities")}"></div></div>
           <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <div class="audit" id="audit" hidden></div>
             <div class="pois minelist" id="minelist" hidden></div>
             <div class="pois" id="pois"><div class="msg">${T("Laddar platser…", "Loading places…")}</div></div>
             ${TIPS[r.area].length ? `<ul class="tips">${TIPS[r.area].map(t => `<li>${t}</li>`).join("")}</ul>` : ""}
@@ -3995,6 +4010,8 @@ function selectMine(n, fromList){
 document.addEventListener("click", e => {
   const b = e.target.closest("#minelist .n button");
   if (b) selectMine(+b.closest(".poi").dataset.n, true);
+  const a = e.target.closest("#minelist .audbtn");
+  if (a){ const i = mineItems[+a.dataset.n]; if (i?.ll){ selectMine(+a.dataset.n, true); auditShow({name: i.name, kind: i.kind, pts: i.ll, c: i.c}); } }
 });
 
 async function drawMine(r, fitTo = null){
@@ -4010,6 +4027,7 @@ async function drawMine(r, fitTo = null){
   if (draw !== mineDraw || curId() !== r.id || !$("#mypin") || drawing) return;   // the page moved on meanwhile
   if (mineLayer){ mineLayer.remove(); mineLayer = null; }
   mineItems = []; mineSel = null;
+  auditClose();
   // How many there are of each, in the chips above the map (for visitors: what members have shared)
   const cnt = k => sbUser ? tracks.filter(t => (t.kind === "line" ? "line" : "hike") === k).length : (counts?.[k + "s"] || 0);
   ["hike", "line"].forEach(k => { const el = $("#cnt-" + k); if (el) el.textContent = cnt(k); });
@@ -4028,8 +4046,9 @@ async function drawMine(r, fitTo = null){
       const pop = document.createElement("div");
       pop.className = "pinpop";
       pop.innerHTML = `<b>${esc(name)}</b><span>${item.sub}</span>${t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("ritad", "drawn") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}${own && onlyPin ? ` · ${T("håll in och dra för att flytta", "press and drag to move")}` : ""}</span>
-        <a href="${item.dir}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${
+        <a href="${item.dir}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${onlyPin ? "" : `<button type="button" data-a="audit">🔍 ${T("Granska rutten", "Review the route")}</button>`}${
         own ? `${onlyPin ? `<button type="button" data-a="draw">✏️ ${T("Rita spåret härifrån", "Draw the track from here")}</button>` : ""}<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
+      pop.querySelector('[data-a="audit"]')?.addEventListener("click", () => { poiMap.closePopup(); auditShow({name, kind: t.kind, pts, c}); });
       if (own){
         pop.querySelector('[data-a="edit"]').onclick = () => { poiMap.closePopup(); saveTrack({...t, pts, resort: r.id, edit: true}); };
         pop.querySelector('[data-a="draw"]')?.addEventListener("click", () => { poiMap.closePopup(); drawStart(r, {...t, pts}); });
@@ -4072,7 +4091,7 @@ async function drawMine(r, fitTo = null){
         <i></i>
         <div style="min-width:0"><div class="n"><button type="button" title="${T("Visa på kartan", "Show on the map")}">${esc(i.name)}</button></div>
           <div class="t">${i.sub} · ${i.who}</div>${i.note ? `<div class="t pnote">${esc(i.note)}</div>` : ""}</div>
-        <div class="d"><a href="${i.dir}" target="_blank" rel="noopener" aria-label="${esc(T(`Vägbeskrivning till ${i.name}`, `Directions to ${i.name}`))}">${T("Vägbeskrivning", "Directions")} ↗</a></div>
+        <div class="d"><a href="${i.dir}" target="_blank" rel="noopener" aria-label="${esc(T(`Vägbeskrivning till ${i.name}`, `Directions to ${i.name}`))}">${T("Vägbeskrivning", "Directions")} ↗</a>${i.ll ? `<button type="button" class="audbtn" data-n="${n}">🔍 ${T("Granska", "Review")}</button>` : ""}</div>
       </div>`).join("") : "";
   }
   if (!sbUser){
@@ -4231,6 +4250,192 @@ async function gpxLoad(file, msg){
   } catch (e) { msg.textContent = T("Kunde inte läsa GPX-filen: ", "Could not read the GPX file: ") + e.message + "."; }
 }
 
+// ----- Route review: how steep the terrain is along a track, and where on the map it is a problem -----
+// Heights come from open terrain tiles (Terrarium, about 10-30 m resolution), read in the browser; a track's own points
+// are only used for where it runs. Tiles are cached while the page is open.
+const demTiles = new Map();
+const tileXY = (lat, lon, z) => { const n = 2 ** z, sn = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + sn) / (1 - sn)) / (4 * Math.PI)) * n]; };
+function demTile(z, x, y){
+  const k = `${z}/${x}/${y}`;
+  if (!demTiles.has(k)){
+    if (demTiles.size > 64) [...demTiles.keys()].slice(0, 32).forEach(o => demTiles.delete(o));
+    demTiles.set(k, (async () => {
+      try {
+        const res = await fetch(`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${k}.png`);
+        if (!res.ok) return null;
+        const bmp = await createImageBitmap(await res.blob());
+        const c = document.createElement("canvas"); c.width = c.height = 256;
+        const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(bmp, 0, 0);
+        const d = g.getImageData(0, 0, 256, 256).data, out = new Float32Array(65536);
+        for (let i = 0; i < 65536; i++) out[i] = d[i * 4] * 256 + d[i * 4 + 1] + d[i * 4 + 2] / 256 - 32768;
+        return out;
+      } catch { return null; }
+    })());
+  }
+  return demTiles.get(k);
+}
+// A function giving the terrain height at any [lat, lon] inside the tiles that cover the track
+async function demSampler(ll){
+  const la = ll.map(p => p[0]), lo = ll.map(p => p[1]), pad = 0.004;
+  const [lat0, lat1, lon0, lon1] = [Math.min(...la) - pad, Math.max(...la) + pad, Math.min(...lo) - pad, Math.max(...lo) + pad];
+  for (let z = 14; z >= 11; z--){
+    const [xa, ya] = tileXY(lat1, lon0, z), [xb, yb] = tileXY(lat0, lon1, z);
+    const x0 = Math.floor(xa), x1 = Math.floor(xb), y0 = Math.floor(ya), y1 = Math.floor(yb);
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > 16) continue;   // a very long track: coarser tiles
+    const jobs = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) jobs.push(demTile(z, x, y));
+    const flat = await Promise.all(jobs), w = x1 - x0 + 1;
+    if (flat.every(t => !t)) return null;
+    const get = (gx, gy) => { const tx = Math.floor(gx / 256), ty = Math.floor(gy / 256), t = flat[(ty - y0) * w + (tx - x0)];
+      return t && tx >= x0 && tx <= x1 && ty >= y0 && ty <= y1 ? t[(gy - ty * 256) * 256 + (gx - tx * 256)] : null; };
+    return {z, elev(lat, lon){
+      const [tx, ty] = tileXY(lat, lon, z), u = tx * 256 - 0.5, v = ty * 256 - 0.5, i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+      const a = get(i, j), b = get(i + 1, j), c = get(i, j + 1), d = get(i + 1, j + 1);
+      return a == null || b == null || c == null || d == null ? null : a * (1 - fu) * (1 - fv) + b * fu * (1 - fv) + c * (1 - fu) * fv + d * fu * fv;
+    }};
+  }
+  return null;
+}
+// How steep the ground is at a point (steepest direction, over about 30 m, which is what the terrain model can show)
+function slopeAt(elev, lat, lon){
+  const d = 15, dl = d / 110540, dn = d / (111320 * Math.cos(lat * Math.PI / 180));
+  const e = elev(lat, lon + dn), w = elev(lat, lon - dn), n = elev(lat + dl, lon), s = elev(lat - dl, lon);
+  return e == null || w == null || n == null || s == null ? null : Math.atan(Math.hypot((e - w) / (2 * d), (n - s) / (2 * d))) * 180 / Math.PI;
+}
+// The review itself: a point every 20 m along the track, then the stretches that are too steep, too steep to climb
+// straight up, or too flat to ski down
+async function auditTrack(pts, kind){
+  const ll = pts.map(p => [p[0], p[1]]), dem = await demSampler(ll);
+  if (!dem) return null;
+  const STEP = 20, S = [];
+  let dist = 0, next = 0;
+  for (let i = 1; i < ll.length; i++){
+    const seg = metres(ll[i - 1], ll[i]);
+    if (!seg) continue;
+    while (next <= dist + seg){ const f = (next - dist) / seg; S.push({lat: ll[i - 1][0] + (ll[i][0] - ll[i - 1][0]) * f, lon: ll[i - 1][1] + (ll[i][1] - ll[i - 1][1]) * f, d: next}); next += STEP; }
+    dist += seg;
+  }
+  const last = ll[ll.length - 1];
+  if (S.length && dist - S[S.length - 1].d > 5) S.push({lat: last[0], lon: last[1], d: dist});
+  if (S.length < 3) return null;
+  S.forEach(q => { q.z = dem.elev(q.lat, q.lon); q.slope = slopeAt(dem.elev, q.lat, q.lon); });
+  // The gradient along the line (over about 80 m): positive is uphill in the direction the track was drawn
+  S.forEach((q, i) => {
+    const a = S[Math.max(0, i - 2)], b = S[Math.min(S.length - 1, i + 2)];
+    q.g = a.z == null || b.z == null || b.d === a.d ? null : Math.atan((b.z - a.z) / (b.d - a.d)) * 180 / Math.PI;
+  });
+  const level = q => q.slope == null ? 0 : q.slope >= 45 ? 3 : q.slope >= 40 ? 2 : q.slope >= 35 ? 1 : 0;
+  const runs = (val, minN, gap) => {
+    const out = []; let cur = null;
+    S.forEach((q, i) => {
+      const v = val(q); if (!v) return;
+      if (cur && i - cur.i1 <= gap + 1){ cur.i1 = i; cur.lvl = Math.max(cur.lvl, v); } else { cur = {i0: i, i1: i, lvl: v}; out.push(cur); }
+    });
+    return out.filter(r => r.i1 - r.i0 + 1 >= minN || r.lvl >= 2);
+  };
+  const F = [];
+  runs(level, 2, 2).forEach(r => F.push({...r, type: "steep"}));
+  if (kind !== "line") runs(q => q.g != null && q.g >= 28 ? 1 : 0, 3, 2).forEach(r => F.push({...r, type: "climb"}));
+  // Too flat to ski: along the line the ground falls less than 6 degrees for 200 m or more
+  runs(q => q.g != null && Math.abs(q.g) < 6 ? 1 : 0, 10, 1).forEach(r => F.push({...r, type: "flat"}));
+  // A line is skied down: where it goes uphill for 80 m or more you have to climb or skate it
+  if (kind === "line") runs(q => q.g != null && q.g >= 8 ? 1 : 0, 4, 1).forEach(r => F.push({...r, type: "uphill"}));
+  F.sort((a, b) => a.i0 - b.i0 || a.i1 - b.i1);
+  F.forEach((f, n) => {
+    const part = S.slice(f.i0, f.i1 + 1), sl = part.map(q => q.slope).filter(v => v != null), gs = part.map(q => q.g).filter(v => v != null);
+    f.n = n + 1; f.max = sl.length ? Math.round(Math.max(...sl)) : null;
+    f.g = gs.length ? Math.round(Math.abs(gs.reduce((a, b) => a + b, 0) / gs.length)) : null;
+    f.d0 = S[f.i0].d; f.d1 = Math.max(S[f.i1].d, f.d0 + STEP); f.z0 = S[f.i0].z; f.z1 = S[f.i1].z;
+  });
+  const slopes = S.map(q => q.slope).filter(v => v != null), top = S.reduce((m, q) => q.slope != null && (!m || q.slope > m.slope) ? q : m, null);
+  const st = trackStats(S.map(q => [q.lat, q.lon, q.z == null ? null : Math.round(q.z)]));
+  return {S, F, st, len: dist, max: top ? Math.round(top.slope) : null, topAt: top, share: slopes.length ? Math.round(slopes.filter(v => v >= 30).length / slopes.length * 100) : 0, kind};
+}
+const AUD_C = {1: "#f59e0b", 2: "#dc2626", 3: "#7f1d1d", climb: "#2563eb", flat: "#64748b"};
+const audColor = f => f.type === "steep" ? AUD_C[f.lvl] : f.type === "uphill" ? AUD_C.climb : AUD_C[f.type];
+function audText(f, kind){
+  if (f.type === "steep"){
+    const t = [null, T(`Brant: upp till ${f.max}°`, `Steep: up to ${f.max}°`), T(`Mycket brant: upp till ${f.max}°`, `Very steep: up to ${f.max}°`), T(`Extremt brant: ${f.max}°`, `Extremely steep: ${f.max}°`)][f.lvl];
+    const d = [null, T("Lavinterräng: de flesta laviner går i 30–45° lutning.", "Avalanche terrain: most avalanches release on 30–45° slopes."),
+      T("Svårt att åka och gå kontrollerat. Titta noga på linjen på plats.", "Hard to ski and walk in control. Look closely at the line on site."),
+      T("Kan vara en klippa eller vägg som terrängmodellen jämnar ut. Hitta en annan väg eller kolla på plats.", "Could be a cliff or wall that the terrain model smooths out. Find another way or check on site.")][f.lvl];
+    return [t, d];
+  }
+  if (f.type === "climb") return [T(`Brant stigning: ${f.g}° längs linjen`, `Steep climb: ${f.g}° along the line`),
+    T("Rakt upp är det svårt med stighudar. Lägg linjen i serpentiner eller välj en annan väg.", "Straight up is hard on skins. Zigzag the line or choose another way.")];
+  if (f.type === "uphill") return [T(`Uppförs: ${f.g}° längs linjen`, `Uphill: ${f.g}° along the line`),
+    T("Här går linjen uppför, så du får gå eller staka upp den.", "The line goes uphill here, so you have to walk or skate it.")];
+  return [T(`Flackt: ${f.g}° i snitt`, `Flat: ${f.g}° on average`),
+    kind === "line" ? T("Här tar farten slut, du får staka eller gå.", "You run out of speed here and have to skate or walk.")
+                    : T("Du får staka eller skjuta dig fram på nedfärden här.", "You have to skate or push yourself along on the way down here.")];
+}
+let auditLayer = null, auditRun = 0, auditData = null;
+function auditClose(){
+  auditRun++; auditData = null;
+  if (auditLayer){ auditLayer.remove(); auditLayer = null; }
+  const b = $("#audit"); if (b){ b.hidden = true; b.innerHTML = ""; }
+}
+async function auditShow({name, kind, pts, c}){
+  const box = $("#audit"); if (!box || !poiMap || pts.length < 2) return;
+  auditClose();
+  const key = auditRun;
+  box.hidden = false; box.innerHTML = `<div class="msg">${T("Granskar rutten…", "Reviewing the route…")}</div>`;
+  box.scrollIntoView({block: "nearest", behavior: "smooth"});
+  const res = await auditTrack(pts, kind);
+  if (key !== auditRun || !$("#audit") || !poiMap) return;
+  if (!res){ box.innerHTML = `<div class="msg">${T("Kunde inte hämta terrängdata för den här rutten. Försök igen när du har uppkoppling.", "Could not get terrain data for this route. Try again when you are online.")}</div>`; return; }
+  auditData = res;
+  const {S, F, st} = res, esc2 = esc(name), total = S[S.length - 1].d || 1;
+  F.forEach(f => f.lvl = f.lvl || 1);
+  // On the map: a coloured band under the track for each stretch, with a numbered badge that matches the list
+  if (!poiMap.getPane("audit")) poiMap.createPane("audit").style.zIndex = 395;
+  auditLayer = L.layerGroup().addTo(poiMap);
+  const used = [];
+  F.forEach(f => {
+    const a = Math.max(0, f.i0 - (f.i1 - f.i0 < 2 ? 1 : 0)), b = Math.min(S.length - 1, f.i1 + (f.i1 - f.i0 < 2 ? 1 : 0)), col = audColor(f);
+    f.line = L.polyline(S.slice(a, b + 1).map(q => [q.lat, q.lon]), {pane: "audit", color: col, weight: 12, opacity: 0.6, lineCap: "round", interactive: false}).addTo(auditLayer);
+    // The badge sits mid-stretch, or at an end when another badge is already there
+    const at = [Math.round((f.i0 + f.i1) / 2), f.i0, f.i1].find(k => used.every(u => Math.abs(u - k) >= 4)) ?? Math.round((f.i0 + f.i1) / 2);
+    used.push(at);
+    const mid = S[at];
+    f.badge = L.marker([mid.lat, mid.lon], {zIndexOffset: 1300, icon: L.divIcon({className: "audbadgew", iconSize: [24, 24], iconAnchor: [12, 12], html: `<b style="--c:${col}">${f.n}</b>`})}).addTo(auditLayer);
+    f.badge.on("click", () => auditPick(f.n, false));
+  });
+  // The profile: height along the route, with the stretches in their colours
+  const zs = S.map(q => q.z).filter(v => v != null), zmin = Math.min(...zs), zmax = Math.max(...zs), W = 300, H = 64;
+  const X = d => (d / total * W).toFixed(1), Y = z => (H - 6 - (z - zmin) / Math.max(1, zmax - zmin) * (H - 14)).toFixed(1);
+  const prof = S.filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ");
+  const bands = F.map(f => `<polyline data-n="${f.n}" points="${S.slice(f.i0, f.i1 + 1).filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ")}" fill="none" stroke="${audColor(f)}" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("");
+  const summary = [kmText(res.len), st.ele ? `↑ ${uH(st.up)} ↓ ${uH(st.down)}` : "", res.max != null ? T(`brantast ${res.max}°`, `steepest ${res.max}°`) : "",
+    res.share ? T(`${res.share} % över 30°`, `${res.share} % over 30°`) : ""].filter(Boolean).join(" · ");
+  box.innerHTML = `<div class="audhead"><b>${T("Granskning", "Route review")} · ${esc2}</b><button type="button" class="audx" aria-label="${T("Stäng granskningen", "Close the review")}">✕</button></div>
+    <p class="audsum">${summary}</p>
+    <svg class="audprof" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${T("Höjdprofil med de markerade styckena", "Height profile with the marked stretches")}"><polyline points="${prof}" fill="none" stroke="var(--muted)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${bands}</svg>
+    <div class="audprofk"><span>${uH(Math.round(zmin))}</span><span>${kmText(total)}</span></div>
+    ${F.length ? `<ol class="audlist">${F.map(f => { const [t, d] = audText(f, kind);
+      return `<li data-n="${f.n}"><button type="button" class="audrow"><b class="audn" style="--c:${audColor(f)}">${f.n}</b>
+        <span><span class="audt">${t}</span><span class="audw">${kmText(f.d0)}–${kmText(f.d1)}${f.z0 != null && f.z1 != null ? ` · ${uH(Math.round(f.z0))} → ${uH(Math.round(f.z1))}` : ""}</span><span class="audd">${d}</span></span></button></li>`; }).join("")}</ol>`
+      : `<p class="audok">${T("Inga stycken över 35°, för branta stigningar eller för flacka stycken hittades längs den här rutten.", "No stretches over 35°, climbs that are too steep or stretches that are too flat were found along this route.")}</p>`}
+    <p class="audnote">${T("Beräknat på en terrängmodell med ungefär 10–30 m upplösning. Små klippor, skavlar, sprickor och snödjup syns inte, och inga varningar betyder inte att rutten är säker. Bedöm alltid lavinläget och terrängen själv.",
+      "Based on a terrain model with roughly 10–30 m resolution. Small cliffs, cornices, crevasses and snow depth do not show, and no warnings does not mean the route is safe. Always judge the avalanche conditions and the terrain yourself.")}</p>`;
+  box.querySelector(".audx").onclick = auditClose;
+  box.querySelectorAll(".audlist li").forEach(li => li.querySelector("button").onclick = () => auditPick(+li.dataset.n, true));
+  box.querySelectorAll(".audprof polyline[data-n]").forEach(pl => { pl.style.cursor = "pointer"; pl.onclick = () => auditPick(+pl.dataset.n, true); });
+  const all = L.latLngBounds(S.map(q => [q.lat, q.lon]));
+  if (!poiMap.getBounds().contains(all)) poiMap.flyToBounds(all.pad(0.15), {maxZoom: 15, duration: .6});
+}
+function auditPick(n, fromList){
+  if (!auditData || !poiMap) return;
+  auditData.F.forEach(f => {
+    const on = f.n === n;
+    f.line.setStyle({weight: on ? 18 : 12, opacity: on ? 0.9 : 0.5});
+    f.badge.getElement()?.classList.toggle("sel", on);
+    if (on && fromList){ poiMap.flyToBounds(f.line.getBounds().pad(1.2), {maxZoom: 16, duration: .5}); const box = $("#poimap").getBoundingClientRect(); if (box.top < 0 || box.bottom > innerHeight) $("#poimap").scrollIntoView({block: "center", behavior: "smooth"}); }
+  });
+  document.querySelectorAll("#audit .audlist li").forEach(li => li.classList.toggle("sel", +li.dataset.n === n));
+  if (!fromList) $(`#audit .audlist li[data-n="${n}"]`)?.scrollIntoView({block: "nearest", behavior: "smooth"});
+}
+
 // ----- Drawing a hike or line by hand on the map -----
 // Tap the map to add points; heights along the line come from Open-Meteo's elevation service (the same terrain model
 // the forecasts use), so a drawn track also gets its climb or descent.
@@ -4249,7 +4454,7 @@ function drawStart(r, track = null, kind = null){
 function drawClick(e){
   if (!drawing) return;
   drawing.pts.push([+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)]);
-  drawPaint(); drawBar();
+  auditClose(); drawPaint(); drawBar();
 }
 function drawPaint(){
   drawing.layer.clearLayers();
@@ -4269,13 +4474,15 @@ function drawBar(){
   const box = $("#mypin"), n = drawing.pts.length;
   box.innerHTML = `<div class="minebtns">
       <button type="button" class="pinbtn" id="drawdone"${n < 2 ? " disabled" : ""}>✓ ${T("Klar", "Done")}</button>
+      <button type="button" class="pinbtn gpx" id="drawaudit"${n < 2 ? " disabled" : ""}>🔍 ${T("Granska", "Review")}</button>
       <button type="button" class="pinbtn gpx" id="drawundo"${n ? "" : " disabled"}>↶ ${T("Ångra punkt", "Undo point")}</button>
       <button type="button" class="pinbtn gpx" id="drawcancel">${T("Avbryt", "Cancel")}</button>
     </div>
     <p class="pinmsg" id="pinmsg" role="status">${n ? T(`${n} ${n === 1 ? "punkt" : "punkter"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Fortsätt trycka längs vägen, och tryck Klar när du är framme.`,
         `${n} ${n === 1 ? "point" : "points"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Keep tapping along the way, and tap Done when you are there.`)
       : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>`;
-  $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); drawPaint(); drawBar(); };
+  $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); auditClose(); drawPaint(); drawBar(); };
+  $("#drawaudit").onclick = () => auditShow({name: T("Din skiss", "Your sketch"), kind: drawing.kind || drawing.track?.kind || "hike", pts: drawing.pts.map(p => [p[0], p[1], null]), c: "#e11d48"});
   $("#drawcancel").onclick = drawEnd;
   $("#drawdone").onclick = async () => {
     const {r, pts, track, kind} = drawing;
