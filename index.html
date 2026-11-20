@@ -376,6 +376,8 @@ details.how .hint{margin-top:6px}
 .tkey{display:inline-flex;align-items:center;gap:5px;margin-right:6px;color:var(--ink)}
 .tkey i{display:inline-block;width:18px;height:0;border-top:3px solid var(--c);margin-left:4px}
 .tkey i.dash{border-top-style:dashed}
+.chip i.arr{width:auto;height:auto;background:none;font-style:normal;font-size:11px;line-height:1;color:var(--ink)}
+.trkarrow{background:none;border:0;pointer-events:none}.trkarrow svg{width:20px;height:20px;display:block;filter:drop-shadow(0 0 1px rgba(0,0,0,.35))}
 .drawing{cursor:crosshair}
 .recbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:1500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   max-width:640px;margin:0 auto;padding:10px 12px;border-radius:14px;background:var(--surface);color:var(--ink);border:2px solid #15803d;box-shadow:0 6px 24px rgba(0,0,0,.3)}
@@ -2282,6 +2284,7 @@ async function renderDetail(id){
             ${poiTypesFor(r).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
             <button class="chip" data-mk="hike" aria-pressed="${mineOn.hike}" style="--c:${HIKE_C}"><i></i>${T("Toppturer", "Ski tours")} <span class="num" id="cnt-hike"></span></button>
             <button class="chip" data-mk="line" aria-pressed="${mineOn.line}" style="--c:${LINE_C}"><i></i>${T("Offpiståk", "Off-piste lines")} <span class="num" id="cnt-line"></span></button>
+            <button class="chip" id="chip-arrows" aria-pressed="${arrowsOn}" title="${T("Pilar som visar åt vilket håll spåret går", "Arrows showing which way the track runs")}"><i class="arr">➤</i>${T("Riktningspilar", "Direction arrows")}</button>
           </div>
         </div>
         <div class="mypin" id="mypin"></div>
@@ -2315,6 +2318,9 @@ async function renderDetail(id){
   $("#chips").querySelectorAll(".chip[data-mk]").forEach(b => b.onclick = () => {
     mineOn[b.dataset.mk] = !mineOn[b.dataset.mk]; b.setAttribute("aria-pressed", mineOn[b.dataset.mk]); drawMine(r);
   });
+  $("#chip-arrows").onclick = e => {
+    arrowsOn = !arrowsOn; store.set("yr-arrows", arrowsOn ? "1" : "0"); e.currentTarget.setAttribute("aria-pressed", arrowsOn); refreshArrows(); if (drawing) drawPaint();
+  };
   window.scrollTo(0, 0);
   document.querySelectorAll(".jumps a").forEach(a => a.onclick = e => {
     e.preventDefault();
@@ -2324,6 +2330,7 @@ async function renderDetail(id){
   // Start zoomed on the ski area when we know where its lifts are, otherwise on the resort point
   poiMap = L.map("poimap");
   mapTools(poiMap, $(".poimapbox"));
+  poiMap.on("zoomend", () => { refreshArrows(); if (drawing) drawPaint(); });
   let liftPts = [];
   const startView = () => liftPts.length
     ? poiMap.fitBounds(L.latLngBounds(liftPts).pad(0.1), {maxZoom: 14, animate: false})
@@ -3880,7 +3887,33 @@ async function sharedCounts(r){
 // heights are stored, no times. Visitors who are not logged in see how many of each members have shared.
 // A web app gets GPS only while it is open with the screen on, so recording asks the browser to keep the screen
 // awake (Screen Wake Lock), keeps the track on the phone as it goes, and carries on when the app is opened again.
-let mineLayer = null, mineDraw = 0;
+let mineLayer = null, mineDraw = 0, arrowLayer = null;
+let arrowsOn = store.get("yr-arrows") !== "0";   // on unless the member has switched them off
+// Direction arrows along a track, about every 80 px on screen, pointing the way the points were recorded or drawn. They are
+// placed again at each zoom level so there are always a few to follow, and they never catch clicks (the line under them does).
+function addArrows(group, ll, color){
+  if (!arrowsOn || !poiMap || ll.length < 2) return;
+  const z = poiMap.getZoom(), P = ll.map(p => poiMap.project(L.latLng(p[0], p[1]), z)), GAP = 80;
+  let total = 0; for (let i = 1; i < P.length; i++) total += P[i].distanceTo(P[i - 1]);
+  if (total < 24) return;
+  const n = Math.max(1, Math.round(total / GAP)), step = total / n;
+  let next = step / 2, run = 0, i = 1;
+  for (let k = 0; k < n && i < P.length; k++){
+    while (i < P.length && run + P[i].distanceTo(P[i - 1]) < next){ run += P[i].distanceTo(P[i - 1]); i++; }
+    if (i >= P.length) break;
+    const a = P[i - 1], b = P[i], len = a.distanceTo(b) || 1, f = (next - run) / len;
+    const at = poiMap.unproject(L.point(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f), z);
+    const deg = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+    L.marker(at, {interactive: false, keyboard: false, zIndexOffset: 900, icon: L.divIcon({className: "trkarrow", iconSize: [20, 20], iconAnchor: [10, 10],
+      html: `<svg viewBox="-9 -9 18 18" style="transform:rotate(${deg.toFixed(1)}deg)" aria-hidden="true"><path d="M-5.5 -6L7 0 -5.5 6-2.5 0Z" fill="#fff" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/></svg>`})}).addTo(group);
+    next += step;
+  }
+}
+function refreshArrows(){
+  if (!arrowLayer) return;
+  arrowLayer.clearLayers();
+  mineItems.forEach(i => { if (i.ll) addArrows(arrowLayer, i.ll, i.c); });
+}
 const mineOn = {hike: true, line: true};
 const pinIcon = cls => L.divIcon({className: "", iconSize: [30, 38], iconAnchor: [15, 36], html: `<div class="mepin ${cls}" aria-hidden="true"></div>`});
 // A "hike" is a ski tour (topptur): up on foot and down on skis, often much the same way. A "line" is an off-piste line
@@ -3982,6 +4015,7 @@ async function drawMine(r, fitTo = null){
   ["hike", "line"].forEach(k => { const el = $("#cnt-" + k); if (el) el.textContent = cnt(k); });
   if (poiMap){
     mineLayer = L.layerGroup().addTo(poiMap);
+    arrowLayer = L.layerGroup().addTo(mineLayer);
     // Each ski tour or line has a start pin in its colour; a track that is more than a pin also has its line (a ski
     // tour dashed green the whole way, a line purple)
     tracks.filter(t => mineOn[t.kind === "line" ? "line" : "hike"]).forEach(t => {
@@ -4012,7 +4046,7 @@ async function drawMine(r, fitTo = null){
       const line = segs.length ? L.featureGroup(segs.map(s => s.pl)) : null;
       const marker = L.marker([pts[0][0], pts[0][1]], {icon: pinIcon(t.kind), zIndexOffset: own ? 1100 : 1000, draggable: own && onlyPin, autoPan: true})
         .addTo(mineLayer).bindPopup(pop, {offset: [0, -30]});
-      Object.assign(item, {segs, marker, bounds: line?.getBounds()});
+      Object.assign(item, {segs, marker, bounds: line?.getBounds(), ll: onlyPin ? null : pts});
       const n = mineItems.push(item) - 1;
       line?.on("click", () => selectMine(n, false)); marker.on("click", () => selectMine(n, false));
       // A start pin of your own can be dragged to where it should be; the new position is saved right away
@@ -4024,6 +4058,7 @@ async function drawMine(r, fitTo = null){
         drawMine(r);
       });
     });
+    refreshArrows();
     if (fitTo?.length) poiMap.fitBounds(L.latLngBounds(fitTo).pad(0.2), {maxZoom: 15});
     recDrawLive();
   }
@@ -4220,6 +4255,7 @@ function drawPaint(){
   drawing.layer.clearLayers();
   const ll = drawing.pts;
   if (ll.length > 1) L.polyline(ll, {color: "#e11d48", weight: 4, dashArray: "2 6"}).addTo(drawing.layer);
+  addArrows(drawing.layer, ll, "#e11d48");
   ll.forEach((p, i) => L.circleMarker(p, {radius: i ? 4 : 6, color: "#fff", weight: 2, fillColor: "#e11d48", fillOpacity: 1, interactive: false}).addTo(drawing.layer));
 }
 function drawEnd(){
@@ -4460,7 +4496,7 @@ function route(){
   tourEnd();
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
   bigMap(false); myPos(false);
-  if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = null; drawing = null; }
+  if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = arrowLayer = null; drawing = null; }
   if (id) renderDetail(id); else renderOverview();
 }
 addEventListener("popstate", route);
