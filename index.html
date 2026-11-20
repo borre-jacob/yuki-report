@@ -417,6 +417,11 @@ details.how .hint{margin-top:6px}
 .audn,.audbadgew b{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font:700 12.5px var(--body);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .audrow span span{display:block}.audt{font-weight:600;font-size:14px}.audw{font:11.5px var(--mono);color:var(--muted);margin:1px 0}.audd{font-size:13px;color:var(--muted)}
 .audbadgew{background:none;border:0}.audbadgew.sel b{transform:scale(1.3)}
+.audinfo{margin:0;font-size:12.5px;color:var(--muted)}
+.audsev{font-style:normal;font:700 10.5px var(--body);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 6px;margin-right:4px}
+.audsev.w{color:#fff;background:#dc2626;border-color:#dc2626}.audwarn{color:#dc2626}
+.audf{margin-top:2px;color:var(--ink)}.audf b{font-weight:700}
+.audlist li.warn{border-left:3px solid #dc2626}
 .audok{margin:0;font-size:13.5px}.audnote{margin:0;font-size:12px;color:var(--muted)}
 .audbtn{display:block;margin-top:4px;border:0;background:none;padding:0;color:var(--lift);font:600 12.5px var(--body);cursor:pointer;text-decoration:underline}
 .poi.mine.hike i{border-radius:2px;transform:rotate(45deg)}
@@ -4011,7 +4016,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("#minelist .n button");
   if (b) selectMine(+b.closest(".poi").dataset.n, true);
   const a = e.target.closest("#minelist .audbtn");
-  if (a){ const i = mineItems[+a.dataset.n]; if (i?.ll){ selectMine(+a.dataset.n, true); auditShow({name: i.name, kind: i.kind, pts: i.ll, c: i.c}); } }
+  if (a){ const i = mineItems[+a.dataset.n]; if (i?.ll){ selectMine(+a.dataset.n, true); auditShow({name: i.name, kind: i.kind, pts: i.ll, c: i.c, r: RESORTS.find(x => x.id === curId())}); } }
 });
 
 async function drawMine(r, fitTo = null){
@@ -4048,7 +4053,7 @@ async function drawMine(r, fitTo = null){
       pop.innerHTML = `<b>${esc(name)}</b><span>${item.sub}</span>${t.note ? `<span class="pnote">${esc(t.note)}</span>` : ""}<span>${own ? T("Din", "Yours") : T("Från en medlem", "From a member")}${t.drawn ? " · " + T("ritad", "drawn") : ""}${own && !t.shared ? ` · ${T("bara för dig", "only for you")}` : ""}${own && onlyPin ? ` · ${T("håll in och dra för att flytta", "press and drag to move")}` : ""}</span>
         <a href="${item.dir}" target="_blank" rel="noopener">${T("Vägbeskrivning till starten", "Directions to the start")} ↗</a>${onlyPin ? "" : `<button type="button" data-a="audit">🔍 ${T("Granska rutten", "Review the route")}</button>`}${
         own ? `${onlyPin ? `<button type="button" data-a="draw">✏️ ${T("Rita spåret härifrån", "Draw the track from here")}</button>` : ""}<button type="button" data-a="edit">${T("Ändra", "Edit")}</button><button type="button" data-a="del">${T("Ta bort", "Remove")}</button>` : ""}`;
-      pop.querySelector('[data-a="audit"]')?.addEventListener("click", () => { poiMap.closePopup(); auditShow({name, kind: t.kind, pts, c}); });
+      pop.querySelector('[data-a="audit"]')?.addEventListener("click", () => { poiMap.closePopup(); auditShow({name, kind: t.kind, pts, c, r}); });
       if (own){
         pop.querySelector('[data-a="edit"]').onclick = () => { poiMap.closePopup(); saveTrack({...t, pts, resort: r.id, edit: true}); };
         pop.querySelector('[data-a="draw"]')?.addEventListener("click", () => { poiMap.closePopup(); drawStart(r, {...t, pts}); });
@@ -4250,9 +4255,10 @@ async function gpxLoad(file, msg){
   } catch (e) { msg.textContent = T("Kunde inte läsa GPX-filen: ", "Could not read the GPX file: ") + e.message + "."; }
 }
 
-// ----- Route review: how steep the terrain is along a track, and where on the map it is a problem -----
+// ----- Route review: what the terrain and the map say about a track, and where on the map it is -----
 // Heights come from open terrain tiles (Terrarium, about 10-30 m resolution), read in the browser; a track's own points
-// are only used for where it runs. Tiles are cached while the page is open.
+// are only used for where it runs. Tiles are cached while the page is open. Nothing here uses weather: only the terrain,
+// today's avalanche bulletin when it is loaded, and the lifts and car parks the app already has for the resort.
 const demTiles = new Map();
 const tileXY = (lat, lon, z) => { const n = 2 ** z, sn = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + sn) / (1 - sn)) / (4 * Math.PI)) * n]; };
 function demTile(z, x, y){
@@ -4276,7 +4282,7 @@ function demTile(z, x, y){
 }
 // A function giving the terrain height at any [lat, lon] inside the tiles that cover the track
 async function demSampler(ll){
-  const la = ll.map(p => p[0]), lo = ll.map(p => p[1]), pad = 0.004;
+  const la = ll.map(p => p[0]), lo = ll.map(p => p[1]), pad = 0.006;
   const [lat0, lat1, lon0, lon1] = [Math.min(...la) - pad, Math.max(...la) + pad, Math.min(...lo) - pad, Math.max(...lo) + pad];
   for (let z = 14; z >= 11; z--){
     const [xa, ya] = tileXY(lat1, lon0, z), [xb, yb] = tileXY(lat0, lon1, z);
@@ -4296,18 +4302,60 @@ async function demSampler(ll){
   }
   return null;
 }
-// How steep the ground is at a point (steepest direction, over about 30 m, which is what the terrain model can show)
-function slopeAt(elev, lat, lon){
-  const d = 15, dl = d / 110540, dn = d / (111320 * Math.cos(lat * Math.PI / 180));
-  const e = elev(lat, lon + dn), w = elev(lat, lon - dn), n = elev(lat + dl, lon), s = elev(lat - dl, lon);
-  return e == null || w == null || n == null || s == null ? null : Math.atan(Math.hypot((e - w) / (2 * d), (n - s) / (2 * d))) * 180 / Math.PI;
+const M_LAT = 110540, mLon = lat => 111320 * Math.cos(lat * Math.PI / 180);
+const offsetBy = (lat, lon, east, north) => [lat + north / M_LAT, lon + east / mLon(lat)];   // the point east and north of here, in metres
+const compassIdx = (east, north) => Math.round(((Math.atan2(east, north) * 180 / Math.PI) + 360) % 360 / 45) % 8;
+// The steepness of the ground at a point (steepest direction, over about 30 m, which is what the terrain model can show)
+// and which way is downhill
+function terrainAt(elev, lat, lon){
+  const d = 15, e = elev(...offsetBy(lat, lon, d, 0)), w = elev(...offsetBy(lat, lon, -d, 0)), n = elev(...offsetBy(lat, lon, 0, d)), s = elev(...offsetBy(lat, lon, 0, -d));
+  if (e == null || w == null || n == null || s == null) return null;
+  const gx = (e - w) / (2 * d), gy = (n - s) / (2 * d), g = Math.hypot(gx, gy);
+  return {slope: Math.atan(g) * 180 / Math.PI, ux: g ? -gx / g : 0, uy: g ? -gy / g : 0};
 }
-// The review itself: a point every 20 m along the track, then the stretches that are too steep, too steep to climb
-// straight up, or too flat to ski down
-async function auditTrack(pts, kind){
+const slopeAt = (elev, lat, lon) => terrainAt(elev, lat, lon)?.slope ?? null;
+const p90 = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.min(b.length - 1, Math.floor(b.length * 0.9))] : 0; };
+
+// Lifts near the track, and the car parks and lift stations that count as help close by (the resort's own map data)
+function nearLifts(S, lifts, maxM = 25){
+  const hits = new Array(S.length).fill(null), pad = 0.0006;
+  const [la0, la1] = [Math.min(...S.map(q => q.lat)) - pad, Math.max(...S.map(q => q.lat)) + pad], [lo0, lo1] = [Math.min(...S.map(q => q.lon)) - pad, Math.max(...S.map(q => q.lon)) + pad];
+  for (const [kind, name, pts] of lifts){
+    if (!pts || pts.length < 2 || !pts.some(p => p[0] >= la0 && p[0] <= la1 && p[1] >= lo0 && p[1] <= lo1)) continue;
+    S.forEach((q, i) => {
+      if (hits[i]) return;
+      const k = mLon(q.lat);
+      for (let j = 1; j < pts.length; j++){
+        const ax = (pts[j - 1][1] - q.lon) * k, ay = (pts[j - 1][0] - q.lat) * M_LAT, dx = (pts[j][1] - pts[j - 1][1]) * k, dy = (pts[j][0] - pts[j - 1][0]) * M_LAT, l2 = dx * dx + dy * dy;
+        const t = l2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2)) : 0;
+        if (Math.hypot(ax + dx * t, ay + dy * t) <= maxM){ hits[i] = name || LIFT_NAMES[kind] || T("lift", "lift"); return; }
+      }
+    });
+  }
+  return hits;
+}
+function helpPoints(r){
+  const pl = placeCache[r?.id]; if (!pl) return [];
+  return [...pl.lifts.flatMap(l => l[2]?.length ? [l[2][0], l[2][l[2].length - 1]] : []), ...pl.pois.filter(p => p.type === "park").map(p => [p.lat, p.lon])];
+}
+// The steepest-stretch alternative: the same stretch moved 25, 50 or 75 m to one side, if the ground there is clearly gentler
+function altFor(S, f, elev){
+  const idx = []; for (let i = Math.max(0, f.i0 - 1); i <= Math.min(S.length - 1, f.i1 + 1); i++) idx.push(i);
+  const base = p90(idx.map(i => S[i].slope ?? 0));
+  let best = null;
+  for (const side of [1, -1]) for (const dist of [25, 50, 75]){
+    const ll = idx.map(i => offsetBy(S[i].lat, S[i].lon, -S[i].ty * dist * side, S[i].tx * dist * side)), sl = ll.map(q => slopeAt(elev, q[0], q[1]));
+    if (sl.some(v => v == null)) continue;
+    const v = p90(sl);
+    if (!best || v < best.slope) best = {slope: v, dist, ll, dir: COMPASS[compassIdx(-S[idx[0]].ty * side, S[idx[0]].tx * side)]};
+  }
+  return best && best.slope <= Math.min(34, base - 5) ? {...best, slope: Math.round(best.slope)} : null;
+}
+// The review itself: a point every 20 m along the track, then the stretches worth a warning or a note
+async function auditTrack(pts, kind, ctx = {}){
   const ll = pts.map(p => [p[0], p[1]]), dem = await demSampler(ll);
   if (!dem) return null;
-  const STEP = 20, S = [];
+  const el = dem.elev, STEP = 20, S = [];
   let dist = 0, next = 0;
   for (let i = 1; i < ll.length; i++){
     const seg = metres(ll[i - 1], ll[i]);
@@ -4318,7 +4366,49 @@ async function auditTrack(pts, kind){
   const last = ll[ll.length - 1];
   if (S.length && dist - S[S.length - 1].d > 5) S.push({lat: last[0], lon: last[1], d: dist});
   if (S.length < 3) return null;
-  S.forEach(q => { q.z = dem.elev(q.lat, q.lon); q.slope = slopeAt(dem.elev, q.lat, q.lon); });
+  const bul = ctx.bul && ctx.bul.ok && ctx.bul.level >= 2 ? ctx.bul : null;
+  S.forEach((q, i) => {
+    const a = S[Math.max(0, i - 1)], b = S[Math.min(S.length - 1, i + 1)], dx = (b.lon - a.lon) * mLon(q.lat), dy = (b.lat - a.lat) * M_LAT, l = Math.hypot(dx, dy) || 1;
+    q.tx = dx / l; q.ty = dy / l;                                   // the way the track runs here (east, north)
+    q.z = el(q.lat, q.lon);
+    const t = terrainAt(el, q.lat, q.lon);
+    q.slope = t ? t.slope : null;
+    if (!t || q.z == null) return;
+    q.asp = t.slope >= 5 ? compassIdx(t.ux, t.uy) : null;              // the way the slope faces
+    if (t.slope >= 28){                                              // a roll-over: the fall line bends downward within 15 m
+      const sd = el(...offsetBy(q.lat, q.lon, t.ux * 15, t.uy * 15)) + el(...offsetBy(q.lat, q.lon, -t.ux * 15, -t.uy * 15)) - 2 * q.z;
+      q.convex = sd <= -3;
+    }
+    // Across the track: a crest (both sides fall away) or a gully (both sides rise), and how steep the sides are
+    const nx = -q.ty, ny = q.tx, zl = el(...offsetBy(q.lat, q.lon, nx * 15, ny * 15)), zr = el(...offsetBy(q.lat, q.lon, -nx * 15, -ny * 15));
+    if (zl != null && zr != null){
+      const sd = zl + zr - 2 * q.z;
+      if (Math.abs(sd) >= 3){
+        const sl = slopeAt(el, ...offsetBy(q.lat, q.lon, nx * 30, ny * 30)), sr = slopeAt(el, ...offsetBy(q.lat, q.lon, -nx * 30, -ny * 30)), side = Math.max(sl ?? 0, sr ?? 0);
+        if (sd >= 3 && side >= 30) q.gully = true;
+        if (sd <= -3 && side >= 30) q.ridge = true;
+      }
+    }
+    // Under steep ground: terrain above that climbs at 20 degrees or more as seen from here, and is itself 32 degrees or steeper
+    if (t.slope < 28){
+      let best = null;
+      for (let k = 0; k < 8 && !(best && best.ang >= 25); k++){
+        const ex = Math.sin(k * Math.PI / 4), ny2 = Math.cos(k * Math.PI / 4);
+        for (const dd of [60, 120, 180, 240]){
+          const pp = offsetBy(q.lat, q.lon, ex * dd, ny2 * dd), zp = el(...pp);
+          if (zp == null) continue;
+          const ang = Math.atan((zp - q.z) / dd) * 180 / Math.PI;
+          if (ang >= 20 && (slopeAt(el, pp[0], pp[1]) ?? 0) >= 32 && (!best || ang > best.ang)) best = {ang, dist: dd};
+        }
+      }
+      q.expo = best;
+    }
+    if (bul && t.slope >= 30 && q.asp != null){
+      const hit = bul.problems.filter(pr => (pr.dirsIdx.length || pr.lo != null || pr.hi != null) && (!pr.dirsIdx.length || pr.dirsIdx.includes(q.asp))
+        && (pr.lo == null || q.z >= pr.lo) && (pr.hi == null || q.z <= pr.hi));
+      if (hit.length) q.bul = hit.map(pr => pr.name);
+    }
+  });
   // The gradient along the line (over about 80 m): positive is uphill in the direction the track was drawn
   S.forEach((q, i) => {
     const a = S[Math.max(0, i - 2)], b = S[Math.min(S.length - 1, i + 2)];
@@ -4328,46 +4418,124 @@ async function auditTrack(pts, kind){
   const runs = (val, minN, gap) => {
     const out = []; let cur = null;
     S.forEach((q, i) => {
-      const v = val(q); if (!v) return;
-      if (cur && i - cur.i1 <= gap + 1){ cur.i1 = i; cur.lvl = Math.max(cur.lvl, v); } else { cur = {i0: i, i1: i, lvl: v}; out.push(cur); }
+      const v = val(q, i); if (!v) return;
+      const w = typeof v === "number" ? v : 1;
+      if (cur && i - cur.i1 <= gap + 1){ cur.i1 = i; cur.lvl = Math.max(cur.lvl, w); } else { cur = {i0: i, i1: i, lvl: w}; out.push(cur); }
     });
     return out.filter(r => r.i1 - r.i0 + 1 >= minN || r.lvl >= 2);
   };
-  const F = [];
-  runs(level, 2, 2).forEach(r => F.push({...r, type: "steep"}));
-  if (kind !== "line") runs(q => q.g != null && q.g >= 28 ? 1 : 0, 3, 2).forEach(r => F.push({...r, type: "climb"}));
-  // Too flat to ski: along the line the ground falls less than 6 degrees for 200 m or more
-  runs(q => q.g != null && Math.abs(q.g) < 6 ? 1 : 0, 10, 1).forEach(r => F.push({...r, type: "flat"}));
-  // A line is skied down: where it goes uphill for 80 m or more you have to climb or skate it
-  if (kind === "line") runs(q => q.g != null && q.g >= 8 ? 1 : 0, 4, 1).forEach(r => F.push({...r, type: "uphill"}));
-  F.sort((a, b) => a.i0 - b.i0 || a.i1 - b.i1);
-  F.forEach((f, n) => {
+  const F = [], add = (type, rs, extra = {}) => rs.forEach(r => F.push({...r, type, ...extra}));
+  add("steep", runs(level, 2, 2));
+  if (kind !== "line") add("climb", runs(q => q.g != null && q.g >= 28, 3, 2));
+  add("flat", runs(q => q.g != null && Math.abs(q.g) < 6, 10, 1));
+  if (kind === "line") add("uphill", runs(q => q.g != null && q.g >= 8, 4, 1));
+  runs(q => q.convex, 1, 2).forEach(r => F.push({...r, type: "convex", lvl: 1}));
+  add("gully", runs(q => q.gully, 4, 2));
+  add("ridge", runs(q => q.ridge, 8, 2));
+  add("expo", runs(q => q.expo, 3, 2));
+  if (bul) add("bulletin", runs(q => !!q.bul, 2, 2));
+  // Lifts close to the track, and the stretch furthest from help (car parks and lift stations of the resort)
+  const lifts = placeCache[ctx.r?.id]?.lifts || [], near = lifts.length ? nearLifts(S, lifts) : [];
+  runs((q, i) => !!near[i], 1, 2).forEach(r => F.push({...r, type: "lift", lvl: 1, name: near.slice(r.i0, r.i1 + 1).find(Boolean)}));
+  const help = helpPoints(ctx.r);
+  let far = null;
+  if (help.length){
+    S.forEach((q, i) => { const k = mLon(q.lat); q.help = Math.min(...help.map(h => Math.hypot((h[1] - q.lon) * k, (h[0] - q.lat) * M_LAT))); if (!far || q.help > far.q.help) far = {q, i}; });
+    if (far.q.help >= 2000) F.push({type: "help", i0: far.i, i1: far.i, lvl: 1, helpM: far.q.help});
+  }
+  // Each finding: where it is, how steep, and for steep stretches a gentler line beside it if there is one
+  F.forEach(f => {
     const part = S.slice(f.i0, f.i1 + 1), sl = part.map(q => q.slope).filter(v => v != null), gs = part.map(q => q.g).filter(v => v != null);
-    f.n = n + 1; f.max = sl.length ? Math.round(Math.max(...sl)) : null;
+    f.max = sl.length ? Math.round(Math.max(...sl)) : null;
     f.g = gs.length ? Math.round(Math.abs(gs.reduce((a, b) => a + b, 0) / gs.length)) : null;
     f.d0 = S[f.i0].d; f.d1 = Math.max(S[f.i1].d, f.d0 + STEP); f.z0 = S[f.i0].z; f.z1 = S[f.i1].z;
+    if (f.type === "expo") f.ex = part.map(q => q.expo).filter(Boolean).reduce((m, e) => !m || e.ang > m.ang ? e : m, null);
+    if (f.type === "bulletin") f.names = [...new Set(part.flatMap(q => q.bul || []))];
+    if (f.type === "steep" || f.type === "bulletin") f.sev = f.type === "bulletin" ? (bul.level >= 3 ? 2 : 1) : f.lvl >= 2 ? 2 : 1;
+    f.sev = f.sev || ({gully: 2, convex: f.max >= 35 ? 2 : 1, expo: f.ex && f.ex.ang >= 25 ? 2 : 1})[f.type] || 1;
   });
+  // Many findings: keep the most important ones (warnings first, then the longest) and number them along the route
+  let keep = F;
+  if (F.length > 14) keep = F.slice().sort((a, b) => b.sev - a.sev || (b.d1 - b.d0) - (a.d1 - a.d0)).slice(0, 14);
+  keep.sort((a, b) => a.i0 - b.i0 || a.i1 - b.i1);
+  keep.forEach((f, n) => { f.n = n + 1; if (f.type === "steep") f.alt = altFor(S, f, el); });
+  // Whole-route notes
+  const notes = [];
+  const withH = pts.filter(p => p[2] != null && isFinite(p[2]));
+  if (withH.length >= 10){
+    const diffs = withH.map(p => { const z = el(p[0], p[1]); return z == null ? null : p[2] - z; }).filter(v => v != null).sort((a, b) => a - b), med = diffs[Math.floor(diffs.length / 2)];
+    if (diffs.length >= 10 && Math.abs(med) >= 80) notes.push(T(`Spårets egna höjder avviker ${Math.abs(Math.round(med))} m från terrängmodellen (${med > 0 ? "för höga" : "för låga"}). Höjdsiffrorna i spåret kan vara fel; granskningen använder terrängmodellens.`,
+      `The track's own heights are ${Math.abs(Math.round(med))} m ${med > 0 ? "above" : "below"} the terrain model. The heights in the track may be wrong; the review uses the terrain model's.`));
+  }
+  if (S.filter(q => q.slope == null).length > S.length * 0.2) notes.push(T("Terrängdata saknas för delar av rutten, så de delarna är inte granskade.", "Terrain data is missing for parts of the route, so those parts are not reviewed."));
+  if (ctx.bul && !bul && ctx.bul.ok) notes.push(T(`Dagens lavinprognos: nivå ${ctx.bul.level}. Den är låg nog att inte vägas in här, men kolla den själv.`, `Today's avalanche bulletin: level ${ctx.bul.level}. It is low enough not to be weighed in here, but check it yourself.`));
+  if (!ctx.bul) notes.push(T("Dagens lavinprognos var inte laddad för den här orten, så granskningen jämför inte med den. Öppna avsnittet Lavin och försök igen.", "Today's avalanche bulletin was not loaded for this resort, so the review does not compare against it. Open the Avalanche section and try again."));
+  else if (!ctx.bul.ok) notes.push(T("Det finns ingen lavinprognos för den här orten, så granskningen jämför inte med någon.", "There is no avalanche bulletin for this resort, so the review does not compare against one."));
   const slopes = S.map(q => q.slope).filter(v => v != null), top = S.reduce((m, q) => q.slope != null && (!m || q.slope > m.slope) ? q : m, null);
   const st = trackStats(S.map(q => [q.lat, q.lon, q.z == null ? null : Math.round(q.z)]));
-  return {S, F, st, len: dist, max: top ? Math.round(top.slope) : null, topAt: top, share: slopes.length ? Math.round(slopes.filter(v => v >= 30).length / slopes.length * 100) : 0, kind};
+  const res = {S, F: keep, all: F.length, st, notes, len: dist, max: top ? Math.round(top.slope) : null, topAt: top, share: slopes.length ? Math.round(slopes.filter(v => v >= 30).length / slopes.length * 100) : 0, kind, bul};
+  res.grade = suggestGrade(res);
+  return res;
 }
-const AUD_C = {1: "#f59e0b", 2: "#dc2626", 3: "#7f1d1d", climb: "#2563eb", flat: "#64748b"};
-const audColor = f => f.type === "steep" ? AUD_C[f.lvl] : f.type === "uphill" ? AUD_C.climb : AUD_C[f.type];
+// A suggested difficulty in the app's own scale (1 easy to 4 expert), from how steep the ground gets and for how long
+function suggestGrade(res){
+  const long2 = Math.max(0, ...res.F.filter(f => f.type === "steep" && f.lvl >= 2).map(f => f.d1 - f.d0));
+  if (res.max == null) return 0;
+  if (res.max >= 45 || long2 >= 100) return 4;
+  if (res.max >= 40 || (res.max >= 35 && res.share >= 25)) return 3;
+  return res.max >= 30 ? 2 : 1;
+}
+const AUD_C = {steep: {1: "#f59e0b", 2: "#dc2626", 3: "#7f1d1d"}, climb: "#2563eb", uphill: "#2563eb", flat: "#64748b", convex: "#7c3aed", gully: "#0f766e",
+  ridge: "#65a30d", expo: "#0e7490", bulletin: "#c2410c", lift: "#475569", help: "#16a34a"};
+const audColor = f => f.type === "steep" ? AUD_C.steep[f.lvl] : AUD_C[f.type];
+// Title, what it means, and a suggestion for each kind of finding
 function audText(f, kind){
+  const dir = f.alt ? f.alt.dir : "", m = f.alt ? f.alt.dist : 0;
   if (f.type === "steep"){
     const t = [null, T(`Brant: upp till ${f.max}°`, `Steep: up to ${f.max}°`), T(`Mycket brant: upp till ${f.max}°`, `Very steep: up to ${f.max}°`), T(`Extremt brant: ${f.max}°`, `Extremely steep: ${f.max}°`)][f.lvl];
     const d = [null, T("Lavinterräng: de flesta laviner går i 30–45° lutning.", "Avalanche terrain: most avalanches release on 30–45° slopes."),
-      T("Svårt att åka och gå kontrollerat. Titta noga på linjen på plats.", "Hard to ski and walk in control. Look closely at the line on site."),
-      T("Kan vara en klippa eller vägg som terrängmodellen jämnar ut. Hitta en annan väg eller kolla på plats.", "Could be a cliff or wall that the terrain model smooths out. Find another way or check on site.")][f.lvl];
-    return [t, d];
+      T("Svårt att åka och gå kontrollerat.", "Hard to ski and walk in control."),
+      T("Kan vara en klippa eller vägg som terrängmodellen jämnar ut.", "Could be a cliff or wall that the terrain model smooths out.")][f.lvl];
+    const sug = f.alt ? T(`Flytta linjen ungefär ${m} m åt ${dir}: där är det omkring ${f.alt.slope}°. Den föreslagna linjen visas grön och streckad när du väljer stycket.`,
+      `Move the line about ${m} m to the ${dir}: it is around ${f.alt.slope}° there. The suggested line shows green and dashed when you select the stretch.`)
+      : f.lvl >= 2 ? T("Hitta en annan väg runt, eller kolla på plats att det går. Ta bara den om du kan bedöma stabiliteten.", "Find another way around, or check on site that it works. Only take it if you can judge the stability.")
+      : T("Håll dig till de flackare delarna av sluttningen eller en rygg intill, och åk en i taget.", "Keep to the gentler parts of the slope or a ridge beside it, and go one at a time.");
+    return [t, d, sug];
   }
   if (f.type === "climb") return [T(`Brant stigning: ${f.g}° längs linjen`, `Steep climb: ${f.g}° along the line`),
-    T("Rakt upp är det svårt med stighudar. Lägg linjen i serpentiner eller välj en annan väg.", "Straight up is hard on skins. Zigzag the line or choose another way.")];
+    T("Rakt upp är det svårt med stighudar.", "Straight up is hard on skins."),
+    T("Lägg linjen i serpentiner: gå diagonalt över sluttningen och vänd där det är flackare.", "Zigzag the line: go diagonally across the slope and turn where it is gentler.")];
   if (f.type === "uphill") return [T(`Uppförs: ${f.g}° längs linjen`, `Uphill: ${f.g}° along the line`),
-    T("Här går linjen uppför, så du får gå eller staka upp den.", "The line goes uphill here, so you have to walk or skate it.")];
-  return [T(`Flackt: ${f.g}° i snitt`, `Flat: ${f.g}° on average`),
-    kind === "line" ? T("Här tar farten slut, du får staka eller gå.", "You run out of speed here and have to skate or walk.")
-                    : T("Du får staka eller skjuta dig fram på nedfärden här.", "You have to skate or push yourself along on the way down here.")];
+    T("Här går linjen uppför, så du får gå eller staka upp den.", "The line goes uphill here, so you have to walk or skate it."),
+    T("Välj en linje som håller sig nedförs hela vägen, eller räkna med att gå här.", "Choose a line that keeps going down all the way, or expect to walk here.")];
+  if (f.type === "flat") return [T(`Flackt: ${f.g}° i snitt`, `Flat: ${f.g}° on average`),
+    kind === "line" ? T("Här tar farten slut, du får staka eller gå.", "You run out of speed here and have to skate or walk.") : T("Du får staka eller skjuta dig fram på nedfärden här.", "You have to skate or push yourself along on the way down here."),
+    kind === "line" ? T("Starta längre upp, eller välj en linje som håller lutningen hela vägen.", "Start higher up, or choose a line that keeps its fall all the way.")
+      : T("Ha med fart in i partiet och ta av stighudarna sist. Kolla om en annan väg ned är lättare.", "Carry speed into the stretch. Check whether another way down is easier.")];
+  if (f.type === "convex") return [T(`Brant brytpunkt: ${f.max}°`, `Roll-over: ${f.max}°`),
+    T("Sluttningen blir plötsligt brantare här, och sådana punkter är vanliga utlösningsställen för laviner.", "The slope gets suddenly steeper here, and such points are common places for avalanches to release."),
+    T("Närma dig brytpunkten en i taget och titta över kanten, eller välj en passage där den är flackare.", "Approach the roll-over one at a time and look over the edge, or choose a passage where it is gentler.")];
+  if (f.type === "gully") return [T("Ränna med branta sidor", "Gully with steep sides"),
+    T("Laviner från sidorna samlas i botten, och en liten lavin kan bli djup här.", "Avalanches from the sides collect at the bottom, and a small avalanche can bury deeply here."),
+    T("Undvik att stanna i rännan. Korsa den snabbt, en i taget, eller håll dig på ryggen intill.", "Avoid stopping in the gully. Cross it quickly, one at a time, or keep to the ridge beside it.")];
+  if (f.type === "ridge") return [T("Linjen följer en kam", "The line follows a crest"),
+    T("Längs en kam med brant sida kan det finnas skavlar, som kan brytas av under dig.", "A crest with a steep side can have cornices, which can break off under you."),
+    T("Håll dig en bit in från kanten och bedöm var skaveln bildas, särskilt på läsidan.", "Stay a bit back from the edge and judge where the cornice forms, especially on the lee side.")];
+  if (f.type === "expo") return [T(`Under brant terräng (${Math.round(f.ex?.dist || 0)} m bort)`, `Below steep terrain (${Math.round(f.ex?.dist || 0)} m away)`),
+    T("Brant terräng över 32° ligger ovanför dig, så en lavin därifrån kan nå dig här.", "Terrain steeper than 32° lies above you, so an avalanche from there could reach you here."),
+    T("Korsa snabbt, en i taget, och stanna inte. Välj om du kan en väg längre från branten.", "Cross quickly, one at a time, and do not stop. If you can, choose a way further from the steep ground.")];
+  if (f.type === "bulletin"){
+    const w = f.names.length ? f.names.join(", ") : "";
+    return [T(`Lavinproblem här: ${w}`, `Avalanche problem here: ${w}`),
+      T(`Dagens lavinprognos (nivå ${auditData?.bul?.level}) pekar ut den här sluttningen: över 30° lutning, i ett utsatt väderstreck och på en utsatt höjd.`, `Today's avalanche bulletin (level ${auditData?.bul?.level}) points at this slope: over 30°, on an exposed aspect and at an exposed elevation.`),
+      T("Välj en sluttning med ett annat väderstreck eller en annan höjd, eller vänta tills läget är lägre.", "Choose a slope with another aspect or elevation, or wait until the danger is lower.")];
+  }
+  if (f.type === "lift") return [T(`Vid liften${f.name ? " " + f.name : ""}`, `Near the lift${f.name ? " " + f.name : ""}`),
+    T("Liftlinjen eller stationen ligger inom 25 m från din rutt.", "The lift line or station is within 25 m of your route."),
+    T("Håll dig undan från liftlinjen och stationerna, och korsa bara där det är tillåtet.", "Keep away from the lift line and stations, and only cross where allowed.")];
+  return [T(`Längst från hjälp: ${kmText(f.helpM)}`, `Furthest from help: ${kmText(f.helpM)}`),
+    T("Så långt är det härifrån till närmaste lift eller parkering i kartdata.", "That is how far it is from here to the nearest lift or car park in the map data."),
+    T("Berätta för någon var du går, ha mobil, första hjälpen och extra kläder med dig.", "Tell someone where you are going, and bring a phone, first aid and extra clothes.")];
 }
 let auditLayer = null, auditRun = 0, auditData = null;
 function auditClose(){
@@ -4375,18 +4543,18 @@ function auditClose(){
   if (auditLayer){ auditLayer.remove(); auditLayer = null; }
   const b = $("#audit"); if (b){ b.hidden = true; b.innerHTML = ""; }
 }
-async function auditShow({name, kind, pts, c}){
+async function auditShow({name, kind, pts, c, r}){
   const box = $("#audit"); if (!box || !poiMap || pts.length < 2) return;
   auditClose();
   const key = auditRun;
   box.hidden = false; box.innerHTML = `<div class="msg">${T("Granskar rutten…", "Reviewing the route…")}</div>`;
   box.scrollIntoView({block: "nearest", behavior: "smooth"});
-  const res = await auditTrack(pts, kind);
+  const rr = r || RESORTS.find(x => x.id === curId());
+  const res = await auditTrack(pts, kind, {r: rr, bul: avalCur && avalCur.id === rr?.id ? avalCur.B : null});
   if (key !== auditRun || !$("#audit") || !poiMap) return;
   if (!res){ box.innerHTML = `<div class="msg">${T("Kunde inte hämta terrängdata för den här rutten. Försök igen när du har uppkoppling.", "Could not get terrain data for this route. Try again when you are online.")}</div>`; return; }
   auditData = res;
-  const {S, F, st} = res, esc2 = esc(name), total = S[S.length - 1].d || 1;
-  F.forEach(f => f.lvl = f.lvl || 1);
+  const {S, F, st} = res, total = S[S.length - 1].d || 1;
   // On the map: a coloured band under the track for each stretch, with a numbered badge that matches the list
   if (!poiMap.getPane("audit")) poiMap.createPane("audit").style.zIndex = 395;
   auditLayer = L.layerGroup().addTo(poiMap);
@@ -4405,19 +4573,24 @@ async function auditShow({name, kind, pts, c}){
   const zs = S.map(q => q.z).filter(v => v != null), zmin = Math.min(...zs), zmax = Math.max(...zs), W = 300, H = 64;
   const X = d => (d / total * W).toFixed(1), Y = z => (H - 6 - (z - zmin) / Math.max(1, zmax - zmin) * (H - 14)).toFixed(1);
   const prof = S.filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ");
-  const bands = F.map(f => `<polyline data-n="${f.n}" points="${S.slice(f.i0, f.i1 + 1).filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ")}" fill="none" stroke="${audColor(f)}" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("");
+  const bands = F.map(f => `<polyline data-n="${f.n}" points="${S.slice(f.i0, Math.max(f.i1, f.i0 + 1) + 1).filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ")}" fill="none" stroke="${audColor(f)}" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("");
+  const nW = F.filter(f => f.sev === 2).length, nN = F.length - nW;
   const summary = [kmText(res.len), st.ele ? `↑ ${uH(st.up)} ↓ ${uH(st.down)}` : "", res.max != null ? T(`brantast ${res.max}°`, `steepest ${res.max}°`) : "",
     res.share ? T(`${res.share} % över 30°`, `${res.share} % over 30°`) : ""].filter(Boolean).join(" · ");
-  box.innerHTML = `<div class="audhead"><b>${T("Granskning", "Route review")} · ${esc2}</b><button type="button" class="audx" aria-label="${T("Stäng granskningen", "Close the review")}">✕</button></div>
+  const verdict = F.length ? `${nW ? `<b class="audwarn">${nW} ${nW === 1 ? T("varning", "warning") : T("varningar", "warnings")}</b>` : ""}${nW && nN ? " · " : ""}${nN ? `${nN} ${T("att notera", "to note")}` : ""}${res.all > F.length ? ` · ${T(`visar de ${F.length} viktigaste av ${res.all}`, `showing the ${F.length} most important of ${res.all}`)}` : ""}` : "";
+  box.innerHTML = `<div class="audhead"><b>${T("Granskning", "Route review")} · ${esc(name)}</b><button type="button" class="audx" aria-label="${T("Stäng granskningen", "Close the review")}">✕</button></div>
     <p class="audsum">${summary}</p>
+    ${res.grade ? `<p class="audsum">${T("Föreslagen svårighetsgrad", "Suggested difficulty")}: ${gradeTag(res.grade)} <span>${T("(du ändrar den själv under Ändra)", "(you change it yourself under Edit)")}</span></p>` : ""}
     <svg class="audprof" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${T("Höjdprofil med de markerade styckena", "Height profile with the marked stretches")}"><polyline points="${prof}" fill="none" stroke="var(--muted)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${bands}</svg>
     <div class="audprofk"><span>${uH(Math.round(zmin))}</span><span>${kmText(total)}</span></div>
-    ${F.length ? `<ol class="audlist">${F.map(f => { const [t, d] = audText(f, kind);
-      return `<li data-n="${f.n}"><button type="button" class="audrow"><b class="audn" style="--c:${audColor(f)}">${f.n}</b>
-        <span><span class="audt">${t}</span><span class="audw">${kmText(f.d0)}–${kmText(f.d1)}${f.z0 != null && f.z1 != null ? ` · ${uH(Math.round(f.z0))} → ${uH(Math.round(f.z1))}` : ""}</span><span class="audd">${d}</span></span></button></li>`; }).join("")}</ol>`
-      : `<p class="audok">${T("Inga stycken över 35°, för branta stigningar eller för flacka stycken hittades längs den här rutten.", "No stretches over 35°, climbs that are too steep or stretches that are too flat were found along this route.")}</p>`}
-    <p class="audnote">${T("Beräknat på en terrängmodell med ungefär 10–30 m upplösning. Små klippor, skavlar, sprickor och snödjup syns inte, och inga varningar betyder inte att rutten är säker. Bedöm alltid lavinläget och terrängen själv.",
-      "Based on a terrain model with roughly 10–30 m resolution. Small cliffs, cornices, crevasses and snow depth do not show, and no warnings does not mean the route is safe. Always judge the avalanche conditions and the terrain yourself.")}</p>`;
+    ${verdict ? `<p class="audsum">${verdict}</p>` : ""}
+    ${res.notes.map(n => `<p class="audinfo">ⓘ ${n}</p>`).join("")}
+    ${F.length ? `<ol class="audlist">${F.map(f => { const [t, d, sg] = audText(f, kind);
+      return `<li data-n="${f.n}" class="${f.sev === 2 ? "warn" : ""}"><button type="button" class="audrow"><b class="audn" style="--c:${audColor(f)}">${f.n}</b>
+        <span><span class="audt"><em class="audsev${f.sev === 2 ? " w" : ""}">${f.sev === 2 ? T("Varning", "Warning") : T("Notera", "Note")}</em> ${t}</span><span class="audw">${f.type === "help" ? `${kmText(f.d0)}` : `${kmText(f.d0)}–${kmText(f.d1)}`}${f.z0 != null && f.z1 != null && f.type !== "help" ? ` · ${uH(Math.round(f.z0))} → ${uH(Math.round(f.z1))}` : ""}</span><span class="audd">${d}</span><span class="audd audf"><b>${T("Förslag", "Suggestion")}:</b> ${sg}</span></span></button></li>`; }).join("")}</ol>`
+      : `<p class="audok">${T("Inga stycken över 35°, branta stigningar, flacka partier eller andra varningar hittades längs den här rutten.", "No stretches over 35°, steep climbs, flat parts or other warnings were found along this route.")}</p>`}
+    <p class="audnote">${T("Beräknat på en terrängmodell med ungefär 10–30 m upplösning. Små klippor, skavlar, sprickor, glaciärer, vatten och snödjup syns inte, väder är inte medräknat, och inga varningar betyder inte att rutten är säker. Förslagen är utkast. Bedöm alltid lavinläget och terrängen själv.",
+      "Based on a terrain model with roughly 10–30 m resolution. Small cliffs, cornices, crevasses, glaciers, water and snow depth do not show, weather is not included, and no warnings does not mean the route is safe. The suggestions are drafts. Always judge the avalanche conditions and the terrain yourself.")}</p>`;
   box.querySelector(".audx").onclick = auditClose;
   box.querySelectorAll(".audlist li").forEach(li => li.querySelector("button").onclick = () => auditPick(+li.dataset.n, true));
   box.querySelectorAll(".audprof polyline[data-n]").forEach(pl => { pl.style.cursor = "pointer"; pl.onclick = () => auditPick(+pl.dataset.n, true); });
@@ -4426,10 +4599,12 @@ async function auditShow({name, kind, pts, c}){
 }
 function auditPick(n, fromList){
   if (!auditData || !poiMap) return;
+  auditData.alt?.remove(); auditData.alt = null;
   auditData.F.forEach(f => {
     const on = f.n === n;
     f.line.setStyle({weight: on ? 18 : 12, opacity: on ? 0.9 : 0.5});
     f.badge.getElement()?.classList.toggle("sel", on);
+    if (on && f.alt) auditData.alt = L.polyline(f.alt.ll, {color: "#16a34a", weight: 4, dashArray: "7 6", lineCap: "round", interactive: false}).addTo(auditLayer);
     if (on && fromList){ poiMap.flyToBounds(f.line.getBounds().pad(1.2), {maxZoom: 16, duration: .5}); const box = $("#poimap").getBoundingClientRect(); if (box.top < 0 || box.bottom > innerHeight) $("#poimap").scrollIntoView({block: "center", behavior: "smooth"}); }
   });
   document.querySelectorAll("#audit .audlist li").forEach(li => li.classList.toggle("sel", +li.dataset.n === n));
@@ -4482,7 +4657,7 @@ function drawBar(){
         `${n} ${n === 1 ? "point" : "points"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Keep tapping along the way, and tap Done when you are there.`)
       : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>`;
   $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); auditClose(); drawPaint(); drawBar(); };
-  $("#drawaudit").onclick = () => auditShow({name: T("Din skiss", "Your sketch"), kind: drawing.kind || drawing.track?.kind || "hike", pts: drawing.pts.map(p => [p[0], p[1], null]), c: "#e11d48"});
+  $("#drawaudit").onclick = () => auditShow({name: T("Din skiss", "Your sketch"), kind: drawing.kind || drawing.track?.kind || "hike", pts: drawing.pts.map(p => [p[0], p[1], null]), c: "#e11d48", r: drawing.r});
   $("#drawcancel").onclick = drawEnd;
   $("#drawdone").onclick = async () => {
     const {r, pts, track, kind} = drawing;
