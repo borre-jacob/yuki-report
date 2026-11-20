@@ -656,6 +656,7 @@ html.bigmap,html.bigmap body{overflow:hidden}
 .poimapbox.big #mypin{position:absolute;z-index:1200;left:12px;right:12px;bottom:30px;margin:0;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.32);max-height:40%;overflow:auto;justify-content:center}
 @media (min-width:1000px){.poimapbox.big #mypin{left:auto;right:12px;max-width:520px}}
 @media (max-width:999px){.drawing .mslope{display:none}}
+@media (max-width:520px){.mslope{margin-bottom:34px}.poimapbox.big .mslope{margin-bottom:0}}
 .poimapbox.big #mypin .pinbtn{font-size:13px;padding:7px 12px}
 #drawdone{background:var(--snow);border-color:var(--snow);color:#fff}
 #drawdone:disabled{opacity:.45}
@@ -720,6 +721,34 @@ header.top .acctbtn{border-width:1px;font-weight:700}
 .dhead .favbtn[aria-pressed="true"]{background:rgba(255,214,107,.22);border-color:#ffd66b}
 .jumps a{background:var(--pill);border:0;color:var(--muted);border-radius:999px;font-weight:600;padding:9px 18px}
 .jumps a:hover{color:var(--ink)}
+.jumps a[aria-selected="true"]{background:var(--snow);color:#fff}
+/* One page at a time: the parts of the resort page are shown by the open tab */
+#dview[data-tab="ov"]>:is(#fc,#aval,#cams,#karta),#dview[data-tab="vader"]>:is(#ovextra,#aval,#cams,#karta),
+#dview[data-tab="lavin"]>:is(#stats,#ovextra,#fc,#cams,#karta),#dview[data-tab="cams"]>:is(#stats,#ovextra,#fc,#aval,#karta),
+#dview[data-tab="karta"]>:is(#stats,#ovextra,#fc,#aval,#cams){display:none}
+/* The overview shows the summary without the ten-day chart */
+#dview[data-tab="ov"] #stats :is(.mchart,.flg,.how){display:none}
+.ovx{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.ovx{grid-template-columns:1fr}}
+.ovcard{display:flex;flex-direction:column;gap:10px}
+.ovcard h3{margin:0}
+.ovgo{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.ovgo .more,.ovcap .more{font-weight:600;font-size:13px;color:var(--snow);white-space:nowrap}
+.ovav{flex-direction:column;align-items:stretch}
+.ovav .aans{display:flex;gap:12px;align-items:flex-start}
+.ovav .abottom{display:block;margin:2px 0 0;font-size:13px;color:var(--muted)}
+.ovdays{display:flex;flex-direction:column;gap:6px}
+.ovday{display:grid;grid-template-columns:62px 1fr auto;grid-template-areas:"d amt b" "d s b";align-items:center;gap:0 10px;text-align:left;font:inherit;color:inherit;background:var(--pill);border:0;border-radius:12px;padding:9px 12px;cursor:pointer}
+.ovday .d{grid-area:d;font-weight:700;display:flex;flex-direction:column}.ovday .d small{font-weight:400;color:var(--muted);font-size:11.5px}
+.ovday .amt{grid-area:amt;font-size:20px;font-weight:700;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.ovday .amt small{font-size:12px;font-weight:600;color:var(--muted)}
+.ovday .amt.zero{color:var(--muted)}
+.ovday .pw,.ovday .rn{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px}
+.ovday .pw{background:color-mix(in srgb,var(--snow) 18%,var(--surface));color:var(--snow)}.ovday .rn{background:color-mix(in srgb,#0e7490 16%,var(--surface));color:#0e7490}
+.ovday .ovs{grid-area:s;font-size:12px;color:var(--muted)}.ovday>:last-child:not(.ovs){grid-area:b}
+.ovcam{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.ovcam img{width:100%;height:auto;max-height:240px;aspect-ratio:400/224;object-fit:cover;border-radius:10px;background:var(--line)}
+@media (max-width:860px){.jumps a{padding:9px 14px}}
+.ovcap{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sum{background:var(--surface);border:0;border-radius:20px;box-shadow:0 10px 36px rgba(13,27,46,.12);padding:24px 26px}
 .sumbig{font:400 96px/.92 var(--display);letter-spacing:-.05em;color:var(--ink)}
 .sumbig small{font:400 22px var(--display);color:var(--muted);letter-spacing:0}
@@ -2474,8 +2503,10 @@ async function renderDetail(id){
   const r = RESORTS.find(x => x.id === id);
   if (!r) return go("");
   const app = $("#app");
+  shownId = id;
+  const tab0 = tabOfHash();
   app.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
+    <div id="dview" data-tab="${tab0}" style="display:flex;flex-direction:column;gap:16px">
       <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
       <div class="dhead">
         <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}${isTour(r) ? ` · ${T("topptur", "ski touring")} · ${T("start", "start")} ${uH(r.base)}` : ` · ${T("dal", "base")} ${uH(r.base)}`} · ${T("topp", "top")} ${uH(r.top)}</span>
@@ -2484,10 +2515,17 @@ async function renderDetail(id){
           <a class="dirbtn" href="${isTour(r) ? gmapsDir(r.slat, r.slon) : gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${isTour(r) ? T("Vägbeskrivning till startplatsen", "Directions to the start") : T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
         </div>
       </div>
-      <nav class="jumps" aria-label="${T("Hoppa till", "Jump to")}">
-        <a href="#stats">${T("Prognos", "Forecast")}</a><a href="#aval">${T("Lavin", "Avalanche")}</a><a href="#cams" hidden>${T("Kameror", "Webcams")}</a><a href="#karta">${T("Karta", "Map")}</a>
+      <nav class="jumps dtabs" id="dtabs" role="tablist" aria-label="${T("Ortens sida", "The resort page")}">
+        ${DTABS.map(([k, hash, sv, en]) => `<a href="${pathOf(id)}${hash ? "#" + hash : ""}" role="tab" data-t="${k}" aria-selected="${k === tab0}"${k === "cams" && tab0 !== "cams" ? " hidden" : ""}>${T(sv, en)}</a>`).join("")}
       </nav>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
+      <div class="ovx" id="ovextra">
+        <div class="panel ovcard" id="ov-days"></div>
+        <div class="panel ovcard" id="ov-aval"><h3>${T("Lavinläget", "Avalanche conditions")}</h3><div class="msg">${T("Hämtar dagens lavinprognos…", "Fetching today's avalanche bulletin…")}</div></div>
+        <div class="panel ovcard" id="ov-cam" hidden></div>
+        <div class="panel ovcard" id="ov-map"><h3>${r.area === "japan" ? T("Liftar, onsen och parkering", "Lifts, onsen and parking") : T("Liftar och parkering", "Lifts and parking")}</h3>
+          <button type="button" class="ovgo" data-go="karta"><span id="ov-mapn">${T("Se liftar, parkering och toppturer", "See lifts, parking and ski tours")}</span><span class="more">${T("Öppna kartan", "Open the map")} →</span></button></div>
+      </div>
       <div class="fc" id="fc" hidden>
         <div class="ftabs" role="tablist" aria-label="${T("Visa prognosen som", "Show the forecast as")}">
           ${FC_TABS.map(([k, sv, en]) => `<button type="button" role="tab" id="ft-${k}" aria-controls="fp-${k}" aria-selected="false">${T(sv, en)}</button>`).join("")}
@@ -2548,10 +2586,8 @@ async function renderDetail(id){
     arrowsOn = !arrowsOn; store.set("yr-arrows", arrowsOn ? "1" : "0"); e.currentTarget.setAttribute("aria-pressed", arrowsOn); refreshArrows(); if (drawing) drawPaint();
   };
   window.scrollTo(0, 0);
-  document.querySelectorAll(".jumps a").forEach(a => a.onclick = e => {
-    e.preventDefault();
-    document.querySelector(a.getAttribute("href"))?.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
-  });
+  document.querySelectorAll("#dtabs a").forEach(a => a.onclick = e => { e.preventDefault(); setTab(a.dataset.t); });
+  drawOvAval();
 
   // Start zoomed on the ski area when we know where its lifts are, otherwise on the resort point
   poiMap = L.map("poimap");
@@ -2569,6 +2605,8 @@ async function renderDetail(id){
   ["pointerdown","wheel","touchstart","keydown"].forEach(ev => el.addEventListener(ev, () => touched = true, {once:true, passive:true}));
   const settle = () => { if (!touched && poiMap){ poiMap.invalidateSize(); startView(); } };
   [300, 1000, 2500].forEach(t => setTimeout(settle, t));
+  // The map is built while its tab may be hidden (no size); when the tab opens it is measured again
+  mapShow = () => { if (!poiMap) return; poiMap.invalidateSize(); if (!touched) startView(); };
   // The base map (and its libraries) only once the map is near the screen; it sits far down the page
   const bm = poiMap, io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ io.disconnect(); if (mapAlive(bm)) addBasemap(bm, r); } }, {rootMargin: "400px"});
   io.observe(el);
@@ -2595,6 +2633,8 @@ async function renderDetail(id){
     liftLayer = drawLifts(r);
     if (liftOn) liftLayer.addTo(poiMap);
     $("#cnt-lift").textContent = pl.lifts.length;
+    { const parks = pl.pois.filter(p => p.type === "park").length, n = $("#ov-mapn");
+      if (n && (pl.lifts.length || parks)) n.textContent = [pl.lifts.length ? T(`${pl.lifts.length} liftar`, `${pl.lifts.length} lifts`) : "", parks ? T(`${parks} parkeringar`, `${parks} car parks`) : ""].filter(Boolean).join(" · "); }
     liftPts = pl.lifts.flatMap(l => l[2]);
     if (!touched) startView();
     drawPois(r);
@@ -2678,8 +2718,12 @@ async function loadCams(r){
   const d = await camData(r.area), box = $("#cams");
   if (!box || curId() !== r.id) return;
   const cams = d?.resorts?.[r.id] || [], links = CAMS[r.id] || [];
-  const jump = $('.jumps a[href="#cams"]');
-  if (!cams.length && !links.length){ box.hidden = true; if (jump) jump.hidden = true; return; }
+  const jump = $('#dtabs a[data-t="cams"]'), ov = $("#ov-cam");
+  if (!cams.length && !links.length){
+    box.hidden = true; if (jump) jump.hidden = true; if (ov) ov.hidden = true;
+    if ($("#dview")?.dataset.tab === "cams") setTab("ov", false);
+    return;
+  }
   if (jump) jump.hidden = false;
   const u = (c, k) => c[k] || (d.tpl?.[k] || "").replace("{id}", c.id);
   const name = t => { t = t.replace(/[\u200e\u200f]/g, ""); return (t.includes(": ") ? t.slice(t.indexOf(": ") + 2) : t).trim() || t; };
@@ -2695,6 +2739,17 @@ async function loadCams(r){
     ${cams.length ? `<p class="camsrc">${T("Webbkameror från", "Webcams provided by")} <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a> — <a href="https://www.windy.com/webcams/add" target="_blank" rel="noopener">${T("lägg till en webbkamera", "add a webcam")}</a></p>` : ""}`;
   box.querySelectorAll(".cam img").forEach(img => img.onerror = () => img.closest(".cam").remove());
   box.querySelectorAll(".camimg").forEach(b => b.onclick = () => openCam(b.dataset.play, b.querySelector("img").alt));
+  // A picture from the first camera on the overview
+  if (ov){
+    if (!cams.length) ov.hidden = true;
+    else {
+      const c = cams[0];
+      ov.hidden = false;
+      ov.innerHTML = `<h3>${T("Webbkamera", "Webcam")}</h3><button type="button" class="ovcam" data-go="cams"><img src="${esc(u(c, "img"))}" alt="${esc(name(c.t))}" loading="lazy" width="400" height="224">
+        <span class="ovcap"><b>${esc(name(c.t))}</b><span class="more">${cams.length > 1 ? T(`Visa alla ${cams.length} kameror`, `Show all ${cams.length} cameras`) : T("Visa kameran", "Show the camera")} →</span></span></button>`;
+      ov.querySelector("img").onerror = () => { ov.hidden = true; };
+    }
+  }
 }
 // The timelapse opens in a window over the page, as wide as the screen (bigger still with the phone turned sideways)
 function openCam(url, title){
@@ -3035,6 +3090,17 @@ function avalOfficial(r){
 }
 // The open resort's bulletin, so the weather can be added when the forecast arrives
 let avalCur = null;
+// The short version on the overview: the level, the problems named, and a way to the full page
+function drawOvAval(){
+  const box = $("#ov-aval"); if (!box) return;
+  const A = avalCur && avalCur.id === curId() ? avalCur.B : null;
+  if (!A) return;
+  const L = A.ok ? A.level : 0, probs = A.ok ? [...new Set(A.problems.map(p => p.name))].slice(0, 3).join(", ") : "";
+  box.innerHTML = `<h3>${T("Lavinläget", "Avalanche conditions")}</h3>
+    <button type="button" class="ovgo ovav" data-go="lavin"><span class="aans">${dangerBox(L, true)}<span><b class="ahead">${A.ok ? `${L} – ${T(`${DANGER[L].n} lavinfara`, `${DANGER[L].n} avalanche danger`)}` : A.title}</b>
+      <span class="abottom">${A.ok ? (probs ? esc(probs) : esc(avalSentence(A))) : A.text}</span></span></span>
+      <span class="more">${T("Visa lavinläget", "Show the avalanche conditions")} →</span></button>`;
+}
 async function fillAval(r){
   let B;
   try {
@@ -3050,6 +3116,7 @@ async function fillAval(r){
   if (curId() !== r.id || !$("#avalbox")) return;
   avalCur = {id: r.id, B};
   $("#avalbox").innerHTML = avalHtml(r, B);
+  drawOvAval();
   drawAvalWeather();
   const lv = B.ok ? {today: B.level, tomorrow: B.tomorrow || 0} : {today: 0, tomorrow: 0};
   if (detailAval[r.id]?.today !== lv.today || detailAval[r.id]?.tomorrow !== lv.tomorrow){ detailAval[r.id] = lv; if (fcData?.r.id === r.id) drawForecast(); }
@@ -3659,7 +3726,7 @@ function drawForecast(){
     </div>
     <p class="sumtext">${sentence}</p>
     ${chips ? `<div class="schips">${chips}</div>` : ""}
-    <div>
+    <div class="mchart">
       <div class="mdays" style="--n:${days10.length}">${days10.map(d => { const i = top.daily.time.indexOf(d), v = top.daily.snowfall_sum[i] || 0, past = d < today, rn = !past && dayRain(d) >= 1;
         const g = !past ? dayRange(d) : null, whisk = g && g.max >= 1;
         // The forecast's number sits on its bar, and a small purple number above the dashed box says how much it
@@ -3791,6 +3858,20 @@ function drawForecast(){
     b.setAttribute("aria-expanded", o);
     if (o) fcOpen.add(b.dataset.d); else fcOpen.delete(b.dataset.d);
   });
+
+  // The next three days in short, for the overview
+  const ovd = $("#ov-days");
+  if (ovd) ovd.innerHTML = `<h3>${T("Närmaste dagarna", "The next days")}</h3><div class="ovdays">${ahead.slice(0, 3).map((d, k) => {
+    const hs = hoursOf(d), i = todayIdx + k, v = top.daily.snowfall_sum[i] || 0;
+    let sp = 0, dir = null, g = 0;
+    hs.forEach(h => { const w = top.hourly.wind_speed_10m[h] || 0; if (w > sp){ sp = w; dir = top.hourly.wind_direction_10m?.[h]; } g = Math.max(g, top.hourly.wind_gusts_10m?.[h] || 0); });
+    const best = k === bestK && powderOn(d, v), rn = dayRain(d) >= 1, lv = k === 0 ? avl.today : k === 1 ? avl.tomorrow : 0;
+    return `<button type="button" class="ovday ${best ? "best" : ""}" data-go="vader">
+      <span class="d">${k === 0 ? T("Idag", "Today") : cap(WD[wdOf(d)])}<small>${+d.slice(8)}/${+d.slice(5, 7)}</small></span>
+      <span class="amt ${v < 3 ? "zero" : ""}">${uSnowN(v)}<small> ${SNOW_U}</small>${best ? `<span class="pw">${T("Puderdag", "Powder day")}</span>` : ""}${rn ? `<span class="rn">${T("regn i dalen", "rain at the base")}</span>` : ""}</span>
+      <span class="ovs">${dir != null ? CMP[Math.round(((dir % 360) + 360) % 360 / 45) % 8] + " " : ""}${uWindN(sp)} (${uWindN(g)}) ${WIND_U} · ${uTempN(top.daily.temperature_2m_min[i])} ${T("till", "to")} ${uTemp(top.daily.temperature_2m_max[i])}</span>
+      ${lv ? dayBadge(lv, rel(d)) : ""}</button>`; }).join("")}</div>
+    <button type="button" class="ovgo" data-go="vader"><span></span><span class="more">${T("Hela prognosen", "The full forecast")} →</span></button>`;
 
   // --- Table and heights: morning 06–12, afternoon 12–18, night 18–06, per day ---
   const periods = n => {
@@ -4039,7 +4120,7 @@ function renderAcct(){
       const id = $("#acctres").value;
       if (rec && !rec.done){ $("#accttoolmsg").textContent = T("Avsluta inspelningen först.", "Finish the recording first."); return; }
       menu.close();
-      if (curId() !== id) go(id);
+      if (curId() !== id) go(id, "karta"); else setTab("karta");
       // Start drawing once the resort page and its map are there
       let tries = 0;
       const wait = setInterval(() => {
@@ -5000,8 +5081,8 @@ function saveTrack(t){
       if (error) throw error;
       if (t.fromRec){ rec = null; recSave(); recBar(); recDrawLive(); }
       dlg.close();
-      if (r && curId() === r.id) drawMine(r, t.edit ? null : isPin ? [[r.lat, r.lon], [pts[0][0], pts[0][1]]] : pts.map(p => [p[0], p[1]]));
-      else if (r) go(r.id);
+      if (r && curId() === r.id){ setTab("karta"); drawMine(r, t.edit ? null : isPin ? [[r.lat, r.lon], [pts[0][0], pts[0][1]]] : pts.map(p => [p[0], p[1]])); }
+      else if (r) go(r.id, "karta");
     } catch (e) { save.disabled = false; $("#tdmsg").textContent = T("Kunde inte spara: ", "Could not save: ") + (e.message || T("ingen uppkoppling", "no connection")) + T(". Försök igen när du har täckning.", ". Try again when you have coverage."); }
   };
   if (!dlg.open) dlg.showModal();
@@ -5106,6 +5187,33 @@ document.addEventListener("click", e => {
   if (b) selectPoi(+b.closest(".poi").dataset.n, true);
 });
 
+// ---------- The pages of a resort: Översikt, Väder, Lavin, Kameror, Karta ----------
+// One page at a time in the same address (#vader, #lavin, #kameror, #karta; the overview has no hash), so the back button
+// steps between them. All parts are built at once; the others are hidden with CSS (see #dview[data-tab]).
+const DTABS = [["ov", "", "Översikt", "Overview"], ["vader", "vader", "Väder", "Weather"], ["lavin", "lavin", "Lavin", "Avalanche"],
+  ["cams", "kameror", "Kameror", "Webcams"], ["karta", "karta", "Karta", "Map"]];
+const tabOfHash = () => (DTABS.find(t => t[1] && t[1] === location.hash.slice(1)) || ["ov"])[0];
+let shownId = "", mapShow = () => {};
+function setTab(t, push = true){
+  const view = $("#dview");
+  if (!view || !DTABS.some(x => x[0] === t)) return;
+  const was = view.dataset.tab;
+  view.dataset.tab = t;
+  document.querySelectorAll("#dtabs a").forEach(a => a.setAttribute("aria-selected", a.dataset.t === t));
+  document.querySelector(`#dtabs a[data-t="${t}"]`)?.scrollIntoView({inline: "center", block: "nearest"});   // the bar scrolls sideways on a phone
+  if (push && was !== t){
+    const hash = DTABS.find(x => x[0] === t)[1];
+    history.pushState(null, "", pathOf(curId()) + (hash ? "#" + hash : ""));
+  }
+  if (t === "karta") mapShow();
+  if (was !== t){
+    // The page starts under the tab bar, not wherever the last one was scrolled to
+    const top = $(".dhead").getBoundingClientRect().bottom + scrollY + 6;
+    if (scrollY > top) scrollTo(0, top);
+  }
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b && $("#dview")) setTab(b.dataset.go); });
+
 // ---------- Routing ----------
 // Every resort has its own address in each language: /sv/hemsedal/ and /en/hemsedal/ (built for search engines by
 // tools/build_site.py). The start page is /sv/ or /en/, and / picks the language as before. Old #hemsedal links
@@ -5118,9 +5226,10 @@ function curId(){
   return RESORT_IDS.has(h) ? h : "";
 }
 const pathOf = (id, lang = LANG) => `/${lang}/${id ? id + "/" : ""}`;
-function go(id){
-  if (curId() === id && location.pathname === pathOf(id)) return route();
-  history.pushState(null, "", pathOf(id));
+function go(id, tab){
+  const hash = tab && DTABS.find(x => x[0] === tab)?.[1];
+  if (curId() === id && location.pathname === pathOf(id)){ if (tab && $("#dview")) return setTab(tab); return route(); }
+  history.pushState(null, "", pathOf(id) + (hash ? "#" + hash : ""));
   route();
 }
 function route(){
@@ -5132,9 +5241,11 @@ function route(){
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
   bigMap(false); myPos(false);
   if (poiMap){ poiMap.remove(); poiMap = null; poiLayer = null; mineLayer = recLive = arrowLayer = null; drawing = null; }
+  shownId = ""; mapShow = () => {};
   if (id) renderDetail(id); else renderOverview();
 }
-addEventListener("popstate", route);
+// Back and forward between the pages of the same resort only switch page
+addEventListener("popstate", () => { if (curId() && curId() === shownId && $("#dview")) return setTab(tabOfHash(), false); route(); });
 addEventListener("hashchange", () => { if (!RESORT_IDS.has(location.hash.slice(1))) return; history.replaceState(null, "", pathOf(curId())); route(); });
 
 function setupGoogleForm(){
@@ -5261,7 +5372,7 @@ function bigMap(on, box, map){
     const b = $("#mt-big"); if (b){ b.textContent = "⤢"; b.setAttribute("aria-pressed", "false"); b.title = T("Stor karta", "Big map"); }
     removeEventListener("keydown", bigKey);
     bigBox = null;
-    if (poiMap) setTimeout(() => poiMap.invalidateSize(), 50);
+    if (poiMap) setTimeout(() => poiMap?.invalidateSize(), 50);
     return;
   }
   bigBox = box; box.classList.add("big"); document.documentElement.classList.add("bigmap");
@@ -5329,20 +5440,20 @@ const TOURS = {
           "Language, units, dark mode and logging in. As a member you keep favourites and share ski tours and off-piste lines with others. The tour is here too.")},
   ],
   resort: () => [
-    {el: ".jumps", t: T("Ortens sida", "The resort page"), p: T("Hoppa direkt till prognosen, lavinläget, kamerorna eller kartan.", "Jump straight to the forecast, avalanche conditions, webcams or map.")},
-    {el: "#stats", t: T("Prognosen", "The forecast"),
+    {el: ".jumps", tab: "ov", t: T("Ortens sida", "The resort page"), p: T("Byt mellan översikt, väder, lavin, kameror och karta. Översikten är en kort sammanfattning av allt.", "Switch between overview, weather, avalanche, webcams and map. The overview is a short summary of everything.")},
+    {el: "#stats", tab: "vader", t: T("Prognosen", "The forecast"),
      p: T("Snö, vind och temperatur dag för dag. Under den kan du visa prognosen som dagkort, tabell eller timme för timme.",
           "Snow, wind and temperature day by day. Below it you can show the forecast as day cards, a table or hour by hour.")},
-    {el: "#aval", t: T("Lavinläget", "Avalanche conditions"),
+    {el: "#aval", tab: "lavin", t: T("Lavinläget", "Avalanche conditions"),
      p: T("Den officiella lavinprognosen där den finns, och vad vädret säger om snötäcket.", "The official avalanche forecast where there is one, and what the weather says about the snowpack.")},
-    {el: "#cams", t: T("Kameror", "Webcams"), p: T("Webbkameror vid orten.", "Webcams at the resort.")},
-    {el: "#karta", t: T("Kartan", "The map"),
+    {el: "#cams", tab: "cams", t: T("Kameror", "Webcams"), p: T("Webbkameror vid orten.", "Webcams at the resort.")},
+    {el: "#karta", tab: "karta", t: T("Kartan", "The map"),
      p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning.",
           "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions.")},
-    {el: "#mypin", t: T("Toppturer och offpiståk", "Ski tours and off-piste lines"),
+    {el: "#mypin", tab: "karta", t: T("Toppturer och offpiståk", "Ski tours and off-piste lines"),
      p: T("Medlemmar spelar in eller sätter ut toppturer (grön streckad) och offpiståk från liftarna (lila), och delar dem med varandra.",
           "Members record or pin ski tours (dashed green) and off-piste lines from the lifts (purple), and share them with each other.")},
-    {el: "#favbtn", t: T("Favorit", "Favourite"), p: T("Spara orten bland dina favoriter (för medlemmar).", "Keep the resort among your favourites (for members).")},
+    {el: "#favbtn", tab: "ov", t: T("Favorit", "Favourite"), p: T("Spara orten bland dina favoriter (för medlemmar).", "Keep the resort among your favourites (for members).")},
   ],
 };
 let tour = null;
@@ -5377,6 +5488,7 @@ function tourStart(which){
   };
   const show = () => {
     const s = tour.steps[tour.i], n = tour.steps.length, last = tour.i === n - 1;
+    if (s.tab) setTab(s.tab, false);   // the part of the page the step is about
     const counted = tour.steps.filter(x => !x.first).length, k = tour.steps.slice(0, tour.i + 1).filter(x => !x.first).length;
     card.innerHTML = `<h3 id="tour-t">${esc(s.t)}</h3><p>${esc(s.p)}</p><div class="tnav">
       <span class="tcount">${s.first ? "" : `${k} / ${counted}`}</span>
