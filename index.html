@@ -728,16 +728,22 @@ header.top .acctbtn{border-width:1px;font-weight:700}
 #dview[data-tab="karta"]>:is(#stats,#ovextra,#fc,#aval,#cams){display:none}
 /* The overview shows the summary without the ten-day chart */
 #dview[data-tab="ov"] #stats :is(.mchart,.flg,.how){display:none}
-/* The map is part of the overview too, smaller and without the lists beside it */
+#dview{display:flex;flex-direction:column;gap:16px}
+/* The overview is a grid of small cards: the next days and the avalanche, then the webcam and the map (in miniature, with
+   its buttons, but without the lists and the planning bar that belong to the Karta page) */
+#dview[data-tab="ov"] #ovextra{display:contents}
 #dview[data-tab="ov"] #karta .dgrid{grid-template-columns:1fr}
 #dview[data-tab="ov"] #karta .dgrid>div:not(.poimapbox){display:none!important}
-#dview[data-tab="ov"] #karta .poimapbox:not(.big){height:300px}
-#dview[data-tab="ov"] #karta .pinnote{display:none}
-.ovmore{display:none}#dview[data-tab="ov"] .ovmore{display:flex;margin-top:10px}
-.ovx{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-#ov-cam{grid-column:1/-1}
-@media (min-width:861px){#ov-cam .ovcam{flex-direction:row;align-items:center;gap:16px}#ov-cam .ovcam img{width:min(46%,340px);flex:none}#ov-cam .ovcap{flex-direction:column;align-items:flex-start;gap:6px}}
-@media (max-width:860px){.ovx{grid-template-columns:1fr}}
+#dview[data-tab="ov"] #karta .poimapbox:not(.big){height:200px}
+#dview[data-tab="ov"] :is(#karta #mypin,#chip-arrows){display:none}
+#dview[data-tab="ov"] .mslope{display:none}
+.ovmore{display:none}#dview[data-tab="ov"] .ovmore{display:flex;margin-top:4px}
+@media (min-width:861px){
+  #dview[data-tab="ov"]{display:grid;grid-template-columns:1fr 1fr}
+  #dview[data-tab="ov"]>*{grid-column:1/-1}
+  #dview[data-tab="ov"]>#karta{grid-column:auto}
+  #dview[data-tab="ov"]:has(#ov-cam[hidden])>#karta{grid-column:1/-1}
+}
 .ovcard{display:flex;flex-direction:column;gap:10px}
 .ovcard h3{margin:0}
 .ovgo{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
@@ -2514,7 +2520,7 @@ async function renderDetail(id){
   shownId = id;
   const tab0 = tabOfHash();
   app.innerHTML = `
-    <div id="dview" data-tab="${tab0}" style="display:flex;flex-direction:column;gap:16px">
+    <div id="dview" data-tab="${tab0}">
       <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
       <div class="dhead">
         <span class="label">${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}${isTour(r) ? ` · ${T("topptur", "ski touring")} · ${T("start", "start")} ${uH(r.base)}` : ` · ${T("dal", "base")} ${uH(r.base)}`} · ${T("topp", "top")} ${uH(r.top)}</span>
