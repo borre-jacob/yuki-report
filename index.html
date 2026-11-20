@@ -653,16 +653,18 @@ html.bigmap,html.bigmap body{overflow:hidden}
 .mapdraw button{font:600 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:6px}
 .mapdraw button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
 /* In the big map the buttons are a card on top of the map, so they are clearly in front of it */
-.poimapbox.big #mypin{position:absolute;z-index:1200;left:12px;right:12px;bottom:30px;margin:0;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.32);max-height:40%;overflow:auto;justify-content:center}
-@media (min-width:1000px){.poimapbox.big #mypin{left:auto;right:12px;max-width:520px}}
-@media (max-width:999px){.drawing .mslope{display:none}}
+.poimapbox.big #mypin{position:absolute;z-index:1200;left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 24px));bottom:30px;margin:0;padding:16px 18px;background:var(--surface);border:0;border-radius:16px;box-shadow:0 10px 32px rgba(13,27,46,.26);max-height:45%;overflow:auto;gap:8px 12px}
+@media (max-width:1249px){.drawing .mslope{display:none}}
+.plhead{flex:1 1 100%;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.plhead b{font:700 17px var(--display)}
+.plstat{font-size:13px;font-weight:600;color:var(--muted)}
 @media (max-width:520px){.mslope{margin-bottom:34px}.poimapbox.big .mslope{margin-bottom:0}}
 .poimapbox.big #mypin .pinbtn{font-size:13px;padding:7px 12px}
 #drawdone{background:var(--snow);border-color:var(--snow);color:#fff}
 #drawdone:disabled{opacity:.45}
 .pinbtn.gpx:disabled{opacity:.45}
-.poimapbox.big #mypin .minebtns{justify-content:center}
-@media (max-width:520px){.poimapbox.big #mypin .pinbtn{padding:6px 8px;font-size:12px}.poimapbox.big #mypin .minebtns{gap:5px}.poimapbox.big #mypin{padding:9px 10px}}
+.poimapbox.big #mypin .minebtns{justify-content:flex-start}
+@media (max-width:520px){.poimapbox.big #mypin .pinbtn{padding:6px 8px;font-size:12px}.poimapbox.big #mypin .minebtns{gap:5px}.poimapbox.big #mypin{padding:14px 14px}}
 /* ===== Himmel-design: bergshimmel överst, vita kort, lätta stora siffror ===== */
 body{position:relative;background:var(--bg)}
 body::before{content:"";position:absolute;top:0;left:0;right:0;height:var(--skyh,380px);z-index:-1;pointer-events:none;
@@ -4993,15 +4995,17 @@ function drawEnd(){
 }
 function drawBar(){
   const box = $("#mypin"), n = drawing.pts.length;
-  box.innerHTML = `<div class="minebtns">
+  const kd = drawing.kind || drawing.track?.kind || "hike";
+  const stat = n ? `${n} ${n === 1 ? T("punkt", "point") : T("punkter", "points")} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}` : "";
+  box.innerHTML = `<div class="plhead"><b>${kd === "line" ? T("Planera offpiståk", "Plan off-piste line") : T("Planera topptur", "Plan ski tour")}</b><span class="plstat">${stat}</span></div>
+    <p class="pinmsg" id="pinmsg" role="status">${n ? T("Fortsätt trycka längs vägen, och tryck Klar när du är framme.", "Keep tapping along the way, and tap Done when you are there.")
+      : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>
+    <div class="minebtns">
       <button type="button" class="pinbtn" id="drawdone"${n < 2 ? " disabled" : ""}>✓ ${T("Klar", "Done")}</button>
       <button type="button" class="pinbtn gpx" id="drawaudit"${n < 2 ? " disabled" : ""}>🔍 ${T("Granska", "Review")}</button>
       <button type="button" class="pinbtn gpx" id="drawundo"${n ? "" : " disabled"}>↶ ${T("Ångra punkt", "Undo point")}</button>
       <button type="button" class="pinbtn gpx" id="drawcancel">${T("Avbryt", "Cancel")}</button>
-    </div>
-    <p class="pinmsg" id="pinmsg" role="status">${n ? T(`${n} ${n === 1 ? "punkt" : "punkter"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Fortsätt trycka längs vägen, och tryck Klar när du är framme.`,
-        `${n} ${n === 1 ? "point" : "points"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Keep tapping along the way, and tap Done when you are there.`)
-      : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>`;
+    </div>`;
   $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); auditAfterEdit(); drawPaint(); drawBar(); };
   $("#drawaudit").onclick = () => drawAudit(false);
   $("#drawcancel").onclick = drawEnd;
