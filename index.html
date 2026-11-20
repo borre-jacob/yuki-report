@@ -4439,12 +4439,12 @@ async function auditTrack(pts, kind, ctx = {}){
   // Lifts close to the track, and the stretch furthest from help (car parks and lift stations of the resort)
   const lifts = placeCache[ctx.r?.id]?.lifts || [], near = lifts.length ? nearLifts(S, lifts) : [];
   runs((q, i) => !!near[i], 1, 2).forEach(r => F.push({...r, type: "lift", lvl: 1, name: near.slice(r.i0, r.i1 + 1).find(Boolean)}));
-  const help = helpPoints(ctx.r);
+  // A tour starts and ends where people can be reached (a road, a house, a car park), so the route's own ends count as help
+  // too; the lift stations and car parks in the map data are only the ones at the ski area
+  const help = [...helpPoints(ctx.r), [S[0].lat, S[0].lon], [S[S.length - 1].lat, S[S.length - 1].lon]];
   let far = null;
-  if (help.length){
-    S.forEach((q, i) => { const k = mLon(q.lat); q.help = Math.min(...help.map(h => Math.hypot((h[1] - q.lon) * k, (h[0] - q.lat) * M_LAT))); if (!far || q.help > far.q.help) far = {q, i}; });
-    if (far.q.help >= 2000) F.push({type: "help", i0: far.i, i1: far.i, lvl: 1, helpM: far.q.help});
-  }
+  S.forEach((q, i) => { const k = mLon(q.lat); q.help = Math.min(...help.map(h => Math.hypot((h[1] - q.lon) * k, (h[0] - q.lat) * M_LAT))); if (!far || q.help > far.q.help) far = {q, i}; });
+  if (far.q.help >= 3000) F.push({type: "help", i0: far.i, i1: far.i, lvl: 1, helpM: far.q.help});
   // Each finding: where it is, how steep, and for steep stretches a gentler line beside it if there is one
   F.forEach(f => {
     const part = S.slice(f.i0, f.i1 + 1), sl = part.map(q => q.slope).filter(v => v != null), gs = part.map(q => q.g).filter(v => v != null);
@@ -4536,7 +4536,7 @@ function audText(f, kind){
     T("Liftlinjen eller stationen ligger inom 25 m från din rutt.", "The lift line or station is within 25 m of your route."),
     T("Håll dig undan från liftlinjen och stationerna, och korsa bara där det är tillåtet.", "Keep away from the lift line and stations, and only cross where allowed.")];
   return [T(`Längst från hjälp: ${kmText(f.helpM)}`, `Furthest from help: ${kmText(f.helpM)}`),
-    T("Så långt är det härifrån till närmaste lift eller parkering i kartdata.", "That is how far it is from here to the nearest lift or car park in the map data."),
+    T("Så långt är det härifrån till rutten börjar eller slutar, eller till närmaste lift eller parkering i kartdata.", "That is how far it is from here to where the route starts or ends, or to the nearest lift or car park in the map data."),
     T("Berätta för någon var du går, ha mobil, första hjälpen och extra kläder med dig.", "Tell someone where you are going, and bring a phone, first aid and extra clothes.")];
 }
 let auditLayer = null, auditRun = 0, auditData = null;
