@@ -645,13 +645,21 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 html.bigmap,html.bigmap body{overflow:hidden}
 .poimapbox.big{display:flex;flex-direction:column}.poimapbox.big #poimap{flex:1;height:auto;min-height:0}
 .poimapbox.big>.audit{flex:none;margin:0;border-width:1px 0 0;border-radius:14px 14px 0 0;max-height:32vh;overflow:auto}
-.poimapbox.big>.audit:not([hidden])+.mypin{max-height:17vh}
 .poimapbox.big .pinnote{display:none}
 .poimapbox:not(.big) .mapdraw,.drawing .mapdraw{display:none}
 .mapdraw{display:flex;flex-direction:column;gap:5px;align-items:flex-end;margin-top:6px!important}
 .mapdraw button{font:600 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:6px}
 .mapdraw button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
-.poimapbox.big>.mypin{flex:none;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);max-height:42vh;overflow:auto}
+/* In the big map the buttons are a card on top of the map, so they are clearly in front of it */
+.poimapbox.big #mypin{position:absolute;z-index:1200;left:12px;right:12px;bottom:30px;margin:0;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.32);max-height:40%;overflow:auto;justify-content:center}
+@media (min-width:1000px){.poimapbox.big #mypin{left:auto;right:12px;max-width:520px}}
+@media (max-width:999px){.drawing .mslope{display:none}}
+.poimapbox.big #mypin .pinbtn{font-size:13px;padding:7px 12px}
+#drawdone{background:var(--snow);border-color:var(--snow);color:#fff}
+#drawdone:disabled{opacity:.45}
+.pinbtn.gpx:disabled{opacity:.45}
+.poimapbox.big #mypin .minebtns{justify-content:center}
+@media (max-width:520px){.poimapbox.big #mypin .pinbtn{padding:6px 8px;font-size:12px}.poimapbox.big #mypin .minebtns{gap:5px}.poimapbox.big #mypin{padding:9px 10px}}
 /* ===== Himmel-design: bergshimmel överst, vita kort, lätta stora siffror ===== */
 body{position:relative;background:var(--bg)}
 body::before{content:"";position:absolute;top:0;left:0;right:0;height:var(--skyh,380px);z-index:-1;pointer-events:none;
@@ -4299,7 +4307,7 @@ async function drawMine(r, fitTo = null){
     const n = counts || {hikes: 0, lines: 0}, parts = [];
     if (n.hikes) parts.push(kindPlural("hike", n.hikes));
     if (n.lines) parts.push(kindPlural("line", n.lines));
-    box.innerHTML = `<button type="button" class="pinbtn" id="minejoin">${T("Logga in", "Log in")}</button><span class="pinmsg">${parts.length
+    box.innerHTML = `<button type="button" class="pinbtn" id="minejoin">${T("Logga in", "Log in")}</button><span class="pinmsg pinnote">${parts.length
       ? T(`Medlemmarna har delat ${parts.join(" och ")} här. Logga in för att se dem och lägga till dina egna.`,
           `Members have shared ${parts.join(" and ")} here. Log in to see them and add your own.`)
       : T("Som medlem sätter du ut var dina toppturer och offpiståk börjar, eller spelar in dem med telefonens GPS.", "As a member you mark where your ski tours and off-piste lines start, or record them with the phone's GPS.")}</span>`;
@@ -4312,9 +4320,9 @@ async function drawMine(r, fitTo = null){
       <button type="button" class="pinbtn line" id="addline"${busy ? " disabled" : ""}>▼ ${T("Offpiståk", "Off-piste line")}</button>
     </div>
     <div class="minechoice" id="minechoice" hidden></div>
-    <p class="pinmsg pinnote" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
+    <p class="pinmsg" id="pinmsg" role="status"><span class="pinnote">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
       others ? T(`Andra medlemmars toppturer och offpiståk (${others}) visas på kartan. `, `Other members' ski tours and off-piste lines (${others}) show on the map. `) : ""}${
-      T("Planera ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Plan a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas toppturer och offpiståk är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' ski tours and off-piste lines are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
+      T("Planera ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Plan a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas toppturer och offpiståk är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' ski tours and off-piste lines are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</span></p>`;
   // Ski tour or line: record it with GPS, or just put its start pin where you are (and draw the rest later)
   const choose = kind => {
     const ch = $("#minechoice"), what = kindLabel(kind).toLowerCase();
@@ -5224,7 +5232,7 @@ function bigMap(on, box, map){
     if (!bigBox) return;
     bigBox.classList.remove("big"); document.documentElement.classList.remove("bigmap");
     // The buttons for ski tours and lines go back under the map
-    const mp = bigBox.querySelector("#mypin"), au = bigBox.querySelector("#audit");
+    const mp = bigBox.querySelector("#mypin"), au = bigBox.querySelector("#audit");   // (the buttons are inside the map element)
     if (mp && bigHome?.[0]?.isConnected) bigHome[0].insertBefore(mp, bigHome[1]?.parentNode === bigHome[0] ? bigHome[1] : null);
     if (au && bigAuditHome?.[0]?.isConnected) bigAuditHome[0].insertBefore(au, bigAuditHome[1]?.parentNode === bigAuditHome[0] ? bigAuditHome[1] : null);
     bigHome = null; bigAuditHome = null;
@@ -5239,7 +5247,8 @@ function bigMap(on, box, map){
   // The route review sits under the map (above the buttons) so it can be read next to the markers
   const au = $("#audit");
   if (au){ bigAuditHome = [au.parentNode, au.nextSibling]; box.appendChild(au); }
-  if (mp){ bigHome = [mp.parentNode, mp.nextSibling]; box.appendChild(mp); }
+  if (mp){ bigHome = [mp.parentNode, mp.nextSibling]; $("#poimap").appendChild(mp);
+    if (!mp._yrProp){ mp._yrProp = true; L.DomEvent.disableClickPropagation(mp); L.DomEvent.disableScrollPropagation(mp); } }
   const b = $("#mt-big"); b.textContent = "✕"; b.setAttribute("aria-pressed", "true"); b.title = T("Stäng stor karta", "Close big map");
   addEventListener("keydown", bigKey);
   setTimeout(() => map.invalidateSize(), 50);
