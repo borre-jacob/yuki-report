@@ -658,6 +658,7 @@ html.bigmap,html.bigmap body{overflow:hidden}
 .plhead{flex:1 1 100%;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .plhead b{font:700 17px var(--display)}
 .plstat{font-size:13px;font-weight:600;color:var(--muted)}
+.mypin .pinmsg:empty{display:none}
 .plstats{flex:1 1 100%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 @media (max-width:520px){.plstats{gap:5px}.plstats>div{padding:6px 7px!important}.plstats span{font-size:9px!important;letter-spacing:0!important}.plstats b{font-size:13px!important}}
 .plstats>div{background:var(--pill);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}
@@ -5043,8 +5044,7 @@ function drawBar(){
   const stat = n ? `${n} ${n === 1 ? T("punkt", "point") : T("punkter", "points")}` : "";
   box.innerHTML = `<div class="plhead"><b>${kd === "line" ? T("Planera offpiståk", "Plan off-piste line") : T("Planera topptur", "Plan ski tour")}</b><span class="plstat">${stat}</span></div>
     ${n ? `<div class="plstats${drawing.prof && drawing.profN === n ? "" : " stale"}" id="plstats">${planTiles(drawing)}</div>` : ""}
-    <p class="pinmsg" id="pinmsg" role="status">${n ? T("Fortsätt trycka längs vägen, och tryck Klar när du är framme.", "Keep tapping along the way, and tap Done when you are there.")
-      : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>
+    <p class="pinmsg" id="pinmsg" role="status">${n ? "" : T("Tryck på kartan där spåret börjar, och sedan längs vägen.", "Tap the map where the track starts, then along the way.")}</p>
     <div class="minebtns">
       <button type="button" class="pinbtn" id="drawdone"${n < 2 ? " disabled" : ""}>✓ ${T("Klar", "Done")}</button>
       <button type="button" class="pinbtn gpx" id="drawaudit"${n < 2 ? " disabled" : ""}>🔍 ${T("Granska", "Review")}</button>
