@@ -4102,7 +4102,7 @@ async function drawMine(r, fitTo = null){
     ch.dataset.kind = kind; ch.hidden = false; ch.className = "minechoice " + kind;
     ch.innerHTML = `<button type="button" class="pinbtn ${kind}" id="chrec">● ${T(`Spela in ${what} med GPS`, `Record the ${what} with GPS`)}</button>
       <button type="button" class="pinbtn ${kind}" id="chpin">📍 ${T("Sätt startnål här", "Put a start pin here")}</button>
-      <button type="button" class="pinbtn ${kind}" id="chdraw">✏️ ${T("Rita på kartan", "Draw on the map")}</button>`;
+      <button type="button" class="pinbtn ${kind}" id="chdraw">✏️ ${T(`Planera eller rita ${kind === "line" ? "ditt" : "din"} ${what}`, `Plan or map your ${what}`)}</button>`;
     $("#chrec").onclick = () => recStart(kind, r);
     $("#chdraw").onclick = () => drawStart(r, null, kind);
     $("#chpin").onclick = () => {
