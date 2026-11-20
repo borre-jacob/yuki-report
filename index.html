@@ -483,8 +483,8 @@ details.how .hint{margin-top:6px}
 .poimapbox{height:420px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
 @media (max-width:860px){.poimapbox{height:320px}}
 /* While a route review is open the map stays in view under the page's jump bar, so the numbered markers can be read against the list */
-.dgrid.auditing .poimapbox{position:sticky;top:56px;z-index:5}
-@media (max-width:860px){.dgrid.auditing .poimapbox{height:min(320px,36vh)}}
+.dgrid.auditing .poimapbox:not(.big){position:sticky;top:56px;z-index:5}
+@media (max-width:860px){.dgrid.auditing .poimapbox:not(.big){height:min(320px,36vh)}}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:13px;display:inline-flex;gap:6px;align-items:center}
 .chip i{width:10px;height:10px;border-radius:50%;background:var(--c)}
@@ -644,6 +644,13 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .poimapbox.big{position:fixed;inset:0;z-index:1500;height:auto;border-radius:0;border:0}
 html.bigmap,html.bigmap body{overflow:hidden}
 .poimapbox.big{display:flex;flex-direction:column}.poimapbox.big #poimap{flex:1;height:auto;min-height:0}
+.poimapbox.big>.audit{flex:none;margin:0;border-width:1px 0 0;border-radius:14px 14px 0 0;max-height:32vh;overflow:auto}
+.poimapbox.big>.audit:not([hidden])+.mypin{max-height:17vh}
+.poimapbox.big .pinnote{display:none}
+.poimapbox:not(.big) .mapdraw,.drawing .mapdraw{display:none}
+.mapdraw{display:flex;flex-direction:column;gap:5px;align-items:flex-end;margin-top:6px!important}
+.mapdraw button{font:600 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:6px}
+.mapdraw button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
 .poimapbox.big>.mypin{flex:none;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);max-height:42vh;overflow:auto}
 /* ===== Himmel-design: bergshimmel överst, vita kort, lätta stora siffror ===== */
 body{position:relative;background:var(--bg)}
@@ -1815,6 +1822,7 @@ function addBasemap(map, r){
       (wantTopo ? topo : road).addTo(map);
       L.control.layers({...(topo ? {[TOPO_NAME]: topo} : {}), [T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
         [T("Satellit", "Satellite")]: L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
+      if (r) drawTools(map);
     }).catch(() => addOpenFreeMap(map, topo, wantTopo, startMode));
     return;
   }
@@ -1864,6 +1872,25 @@ function mapSwitch(map, topo, plain, mode){
   };
   ctl.addTo(map);
   if (mode === "slope") apply(mode);
+  drawTools(map);
+}
+// Buttons on the big map for drawing a ski tour or an off-piste line in one tap (hidden in the small map and while drawing)
+function drawTools(map){
+  const ctl = L.control({position: "topright"});
+  ctl.onAdd = () => {
+    const box = L.DomUtil.create("div", "mapdraw");
+    box.innerHTML = `<button type="button" data-k="hike" style="--c:${HIKE_C}"><i></i>✏️ ${T("Rita topptur", "Plan a ski tour")}</button><button type="button" data-k="line" style="--c:${LINE_C}"><i></i>✏️ ${T("Rita offpiståk", "Plan an off-piste line")}</button>`;
+    L.DomEvent.disableClickPropagation(box);
+    box.onclick = e => {
+      const b = e.target.closest("button"), r = RESORTS.find(x => x.id === curId());
+      if (!b || !r || drawing) return;
+      if (!sbUser) return askLogin("map");
+      if (rec && !rec.done){ const m = $("#pinmsg"); if (m) m.textContent = T("En inspelning pågår, avsluta den först.", "A recording is running, finish it first."); return; }
+      drawStart(r, null, b.dataset.k);
+    };
+    return box;
+  };
+  ctl.addTo(map);
 }
 function addOpenFreeMapNow(map, show = true){
   const layer = L.maplibreGL({style: "https://tiles.openfreemap.org/styles/liberty",
@@ -4285,7 +4312,7 @@ async function drawMine(r, fitTo = null){
       <button type="button" class="pinbtn line" id="addline"${busy ? " disabled" : ""}>▼ ${T("Offpiståk", "Off-piste line")}</button>
     </div>
     <div class="minechoice" id="minechoice" hidden></div>
-    <p class="pinmsg" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
+    <p class="pinmsg pinnote" id="pinmsg" role="status">${busy ? T("En inspelning pågår, se fältet längst ner.", "A recording is running, see the bar at the bottom.") + " " : ""}${
       others ? T(`Andra medlemmars toppturer och offpiståk (${others}) visas på kartan. `, `Other members' ski tours and off-piste lines (${others}) show on the map. `) : ""}${
       T("Rita ett spår eller ladda upp en GPX-fil i menyn ☰. ", "Draw a track or upload a GPX file in the menu ☰. ") + T("Medlemmarnas toppturer och offpiståk är deras egna, inga rekommendationer: bedöm alltid lavinläget och terrängen själv.", "Members' ski tours and off-piste lines are their own, not recommendations: always judge the avalanche conditions and the terrain yourself.")}</p>`;
   // Ski tour or line: record it with GPS, or just put its start pin where you are (and draw the rest later)
@@ -4789,6 +4816,7 @@ async function auditShow({name, kind, pts, c, r}){
   box.querySelector(".audx").onclick = auditClose;
   box.querySelectorAll(".audlist li").forEach(li => li.querySelector("button").onclick = () => auditPick(+li.dataset.n, true));
   box.querySelectorAll(".audprof polyline[data-n]").forEach(pl => { pl.style.cursor = "pointer"; pl.onclick = () => auditPick(+pl.dataset.n, true); });
+  poiMap.invalidateSize();
   const all = L.latLngBounds(S.map(q => [q.lat, q.lon]));
   if (!poiMap.getBounds().contains(all)) poiMap.flyToBounds(all.pad(0.15), {maxZoom: 15, duration: .6});
 }
@@ -5174,7 +5202,7 @@ showTheme();
 // ---------- Big map and my position (the resort map) ----------
 // ⤢ opens the map over the whole screen (a fixed box rather than the Fullscreen API, which iPhones lack for
 // anything but video); ◎ shows where the phone is, following it until pressed again. The position stays on the phone.
-let bigBox = null, bigHome = null, posWatch = null, posLayer = null, posFirst = false;
+let bigBox = null, bigHome = null, bigAuditHome = null, posWatch = null, posLayer = null, posFirst = false;
 function mapTools(map, box){
   const ctl = L.control({position: "topleft"});
   ctl.onAdd = () => {
@@ -5196,9 +5224,10 @@ function bigMap(on, box, map){
     if (!bigBox) return;
     bigBox.classList.remove("big"); document.documentElement.classList.remove("bigmap");
     // The buttons for ski tours and lines go back under the map
-    const mp = bigBox.querySelector("#mypin");
+    const mp = bigBox.querySelector("#mypin"), au = bigBox.querySelector("#audit");
     if (mp && bigHome?.[0]?.isConnected) bigHome[0].insertBefore(mp, bigHome[1]?.parentNode === bigHome[0] ? bigHome[1] : null);
-    bigHome = null;
+    if (au && bigAuditHome?.[0]?.isConnected) bigAuditHome[0].insertBefore(au, bigAuditHome[1]?.parentNode === bigAuditHome[0] ? bigAuditHome[1] : null);
+    bigHome = null; bigAuditHome = null;
     const b = $("#mt-big"); if (b){ b.textContent = "⤢"; b.setAttribute("aria-pressed", "false"); b.title = T("Stor karta", "Big map"); }
     removeEventListener("keydown", bigKey);
     bigBox = null;
@@ -5207,6 +5236,9 @@ function bigMap(on, box, map){
   }
   bigBox = box; box.classList.add("big"); document.documentElement.classList.add("bigmap");
   const mp = $("#mypin");
+  // The route review sits under the map (above the buttons) so it can be read next to the markers
+  const au = $("#audit");
+  if (au){ bigAuditHome = [au.parentNode, au.nextSibling]; box.appendChild(au); }
   if (mp){ bigHome = [mp.parentNode, mp.nextSibling]; box.appendChild(mp); }
   const b = $("#mt-big"); b.textContent = "✕"; b.setAttribute("aria-pressed", "true"); b.title = T("Stäng stor karta", "Close big map");
   addEventListener("keydown", bigKey);
