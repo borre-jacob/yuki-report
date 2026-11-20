@@ -4404,7 +4404,7 @@ async function drawMine(r, fitTo = null){
     box.innerHTML = `<button type="button" class="pinbtn" id="minejoin">${T("Logga in", "Log in")}</button><span class="pinmsg pinnote">${parts.length
       ? T(`Medlemmarna har delat ${parts.join(" och ")} här. Logga in för att se dem och lägga till dina egna.`,
           `Members have shared ${parts.join(" and ")} here. Log in to see them and add your own.`)
-      : T("Som medlem sätter du ut var dina toppturer och offpiståk börjar, eller spelar in dem med telefonens GPS.", "As a member you mark where your ski tours and off-piste lines start, or record them with the phone's GPS.")}</span>`;
+      : T("Som medlem kan du skapa och ladda upp dina toppturer och offpiståk.", "As a member you can create and upload your ski tours and off-piste lines.")}</span>`;
     $("#minejoin").onclick = () => askLogin("map");
     return;
   }
