@@ -636,6 +636,9 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .mapswitch{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .mapswitch button{font:600 12.5px var(--body);border:0;background:none;color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
 .mapswitch button[aria-pressed="true"]{background:var(--snow);color:#fff}
+.mslope{background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font:600 11.5px var(--body);color:var(--ink);max-width:calc(100vw - 80px)}
+.mslopek{display:flex;flex-wrap:wrap;gap:2px 10px}.mslopek span{display:inline-flex;align-items:center;gap:4px}.mslopek i{width:11px;height:11px;border-radius:3px}
+.mslopeh{margin-bottom:3px;font-weight:700}
 .maptools a{font-size:17px;line-height:30px;text-decoration:none;color:#14213a;cursor:pointer}
 .maptools a.on{color:#2f6fd6;font-weight:700}
 .poimapbox.big{position:fixed;inset:0;z-index:1500;height:auto;border-radius:0;border:0}
@@ -1637,6 +1640,153 @@ function mapLib(name){
   })().catch(e => { delete libLoads[name]; throw e; });
 }
 const mapAlive = map => !!map._container?.isConnected && !map._yrGone;
+// ----- The slope view of a resort's map: ground steeper than 25 degrees, coloured over the topographic map -----
+// Worked out in the browser from Mapterhorn's open terrain tiles (terrarium WebP, 512 px: height = R*256 + G + B/256 - 32768 m),
+// built from national ground models (bare earth, 1-10 m: Sweden, Norway, Austria, Switzerland, France, Italy, Japan) and
+// Copernicus 30 m elsewhere. Heights are smoothed over about 40 m first, so small banks, road cuts and single rocks do not
+// show, and short steep pitches can look gentler. Not cached offline.
+const DEM_URL = (z, x, y) => `https://tiles.mapterhorn.com/${z}/${x}/${y}.webp`;
+const DEM_ATTR = `${T("Lutning", "Slope")}: <a href="https://mapterhorn.com/attribution">© Mapterhorn</a>`;
+const SLOPE_COL = [[45, [124, 30, 120]], [40, [214, 40, 57]], [35, [245, 128, 20]], [30, [246, 214, 60]], [25, [120, 200, 120]]];   // first match wins
+const DEM_SIZE = 512, DEM_MAXZ = 14, DEM_BASEZ = 12, SLOPE_MINZ = 12, SMOOTH_M = 20;
+const slopeCache = new Map();
+// Slope (degrees), aspect sector (0 = N … 7 = NW) and height for every pixel of one elevation tile
+// Heights, slope (degrees) and aspect sector (0 = N … 7 = NW) for every pixel of one elevation tile.
+// px: RGBA bytes of the S×S tile. Runs in a Web Worker when the browser can (see slopeWorker), so scrolling stays smooth.
+function slopeCompute(px, z, y, S, SMOOTH_M){
+  const n = S * S, raw = new Float32Array(n);
+  for (let i = 0; i < n; i++) raw[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
+  const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / 2 ** z)));
+  const res = Math.cos(lat) * 2 * Math.PI * 6378137 / (S * 2 ** z);   // metres per pixel
+  // Box blur over about 2 × SMOOTH_M, done as two passes
+  const R = Math.max(1, Math.min(6, Math.round(SMOOTH_M / res))), tmp = new Float32Array(n), h = new Float32Array(n);
+  const blur = (src, dst, dx, dy) => {
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
+      let sum = 0, cnt = 0;
+      for (let t = -R; t <= R; t++){
+        const a = i + t * dx, b = j + t * dy;
+        if (a >= 0 && a < S && b >= 0 && b < S){ sum += src[b * S + a]; cnt++; }
+      }
+      dst[j * S + i] = sum / cnt;
+    }
+  };
+  blur(raw, tmp, 1, 0); blur(tmp, h, 0, 1);
+  const slope = new Uint8Array(n), sector = new Uint8Array(n);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++){
+    const at = (a, b) => h[Math.min(S - 1, Math.max(0, b)) * S + Math.min(S - 1, Math.max(0, a))];
+    const dx = (at(i + 1, j) - at(i - 1, j)) / (2 * res), dy = (at(i, j + 1) - at(i, j - 1)) / (2 * res);   // east, south
+    const k = j * S + i;
+    slope[k] = Math.min(90, Math.round(Math.atan(Math.hypot(dx, dy)) * 180 / Math.PI));
+    // Aspect: the way the slope faces (downhill), clockwise from north
+    sector[k] = Math.round(((Math.atan2(-dx, dy) * 180 / Math.PI + 360) % 360) / 45) % 8;
+  }
+  return {h, slope, sector};
+}
+// The worker fetches and decodes the tile itself and sends the arrays back without copying.
+// Browsers without OffscreenCanvas in workers (older Safari) do it on the page instead.
+let slopeWorker = null, slopeJobs = new Map(), slopeJobId = 0;
+try {
+  if (typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined"){
+    const src = `${slopeCompute.toString()}
+      onmessage = async e => {
+        const {id, url, z, y, S, SM} = e.data;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(res.status);
+          const bmp = await createImageBitmap(await res.blob());
+          const c = new OffscreenCanvas(S, S), g = c.getContext("2d");
+          g.drawImage(bmp, 0, 0, S, S);
+          const d = slopeCompute(g.getImageData(0, 0, S, S).data, z, y, S, SM);
+          postMessage({id, d}, [d.h.buffer, d.slope.buffer, d.sector.buffer]);
+        } catch (err) { postMessage({id, err: String(err)}); }
+      };`;
+    slopeWorker = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
+    slopeWorker.onmessage = e => { const j = slopeJobs.get(e.data.id); if (!j) return; slopeJobs.delete(e.data.id); e.data.err ? j.fail(new Error(e.data.err)) : j.ok(e.data.d); };
+    slopeWorker.onerror = () => { slopeWorker = null; for (const j of slopeJobs.values()) j.fail(new Error("worker")); slopeJobs.clear(); };
+  }
+} catch { slopeWorker = null; }
+function slopeDemTile(z, x, y){
+  const key = `${z}/${x}/${y}`;
+  if (slopeCache.has(key)) return slopeCache.get(key);
+  const url = DEM_URL(z, x, y);
+  const onPage = () => new Promise((ok, fail) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = c.height = DEM_SIZE;
+      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(img, 0, 0, DEM_SIZE, DEM_SIZE);
+      ok(slopeCompute(g.getImageData(0, 0, DEM_SIZE, DEM_SIZE).data, z, y, DEM_SIZE, SMOOTH_M));
+    };
+    img.onerror = () => fail(new Error("dem"));
+    img.src = url;
+  });
+  const inWorker = () => new Promise((ok, fail) => {
+    const id = ++slopeJobId;
+    slopeJobs.set(id, {ok, fail});
+    slopeWorker.postMessage({id, url, z, y, S: DEM_SIZE, SM: SMOOTH_M});
+  });
+  // A missing tile (no detailed data there) fails in both; any other worker failure tries on the page
+  const p = slopeWorker ? inWorker().catch(e => /^(Error: )?4\d\d$/.test(e.message) ? Promise.reject(e) : onPage()) : onPage();
+  slopeCache.set(key, p);
+  p.catch(() => slopeCache.delete(key));
+  if (slopeCache.size > 60) slopeCache.delete(slopeCache.keys().next().value);
+  return p;
+}
+// A map tile (256 px) at zoom z uses the 512-px elevation tile of the same zoom, so each map pixel covers 2×2
+// elevation pixels and shows the steepest of them; zooming out never makes the terrain look gentler. Past
+// DEM_MAXZ one elevation tile is stretched. Where there is no detailed data, the zoom-12 tiles are used.
+// Below SLOPE_MINZ it would need too many tiles, so the map asks you to zoom in instead.
+const SlopeLayer = L.GridLayer.extend({
+  createTile(co, done){
+    const c = document.createElement("canvas"); c.width = c.height = 256;
+    const draw = zd => {
+      const sc = 2 ** (zd - co.z + 1), s = Math.max(1, sc);       // elevation pixels per map pixel
+      const gx0 = co.x * 256 * sc, gy0 = co.y * 256 * sc, span = 256 * sc;
+      const tx0 = Math.floor(gx0 / DEM_SIZE), ty0 = Math.floor(gy0 / DEM_SIZE);
+      const tx1 = Math.floor((gx0 + span - 1e-6) / DEM_SIZE), ty1 = Math.floor((gy0 + span - 1e-6) / DEM_SIZE);
+      const keys = [];
+      for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) keys.push([tx, ty]);
+      return Promise.all(keys.map(([tx, ty]) => slopeDemTile(zd, tx, ty))).then(list => {
+        const tiles = new Map(keys.map((k, i) => [k.join(","), list[i]]));
+        const g = c.getContext("2d"), img = g.createImageData(256, 256), o = img.data;
+                for (let j = 0; j < 256; j++) for (let i = 0; i < 256; i++){
+          let best = -1, bt = null, bk = 0;
+          const bx = Math.floor(gx0 + i * sc), by = Math.floor(gy0 + j * sc);
+          for (let v = 0; v < s; v++) for (let u = 0; u < s; u++){
+            const gx = bx + u, gy = by + v, t = tiles.get(Math.floor(gx / DEM_SIZE) + "," + Math.floor(gy / DEM_SIZE));
+            const k = (gy % DEM_SIZE) * DEM_SIZE + (gx % DEM_SIZE);
+            if (t && t.slope[k] > best){ best = t.slope[k]; bt = t; bk = k; }
+          }
+          if (best < 25) continue;
+          const q = (j * 256 + i) * 4;
+          const col = SLOPE_COL.find(([min]) => best >= min)[1];
+          o[q] = col[0]; o[q + 1] = col[1]; o[q + 2] = col[2]; o[q + 3] = best >= 30 ? 170 : 110;
+        }
+        g.putImageData(img, 0, 0);
+      });
+    };
+    const zd = Math.min(DEM_MAXZ, co.z);
+    draw(zd).catch(() => zd > DEM_BASEZ ? draw(DEM_BASEZ) : null).catch(() => {}).then(() => done(null, c));
+    return c;
+  },
+});
+// The legend in the corner of the map while the slope view is on, and a hint to zoom in below SLOPE_MINZ
+function slopeKey(map){
+  const ctl = L.control({position: "bottomleft"});
+  ctl.onAdd = () => {
+    const d = L.DomUtil.create("div", "mslope");
+    const sw = (c, t) => `<span><i style="background:rgb(${c.join(",")})"></i>${t}</span>`;
+    d.innerHTML = `<div class="mslopeh" hidden>${T("Zooma in för att se lutningen", "Zoom in to see the slope")}</div>
+      <div class="mslopek">${sw(SLOPE_COL[4][1], "25–30°")}${sw(SLOPE_COL[3][1], "30–35°")}${sw(SLOPE_COL[2][1], "35–40°")}${sw(SLOPE_COL[1][1], "40–45°")}${sw(SLOPE_COL[0][1], T("över 45°", "over 45°"))}</div>`;
+    L.DomEvent.disableClickPropagation(d);
+    return d;
+  };
+  const update = () => { const d = ctl.getContainer(); if (d) d.querySelector(".mslopeh").hidden = map.getZoom() >= SLOPE_MINZ; };
+  ctl.addTo(map); update(); map.on("zoomend", update);
+  ctl._off = () => { map.off("zoomend", update); ctl.remove(); };
+  return ctl;
+}
+
 // A resort's map (r given) also gets a topographic map with contour lines, the national one where it is free to
 // use (Kartverket in Norway, GSI in Japan, swisstopo in Switzerland), OpenTopoMap elsewhere. It is the default
 // there; the choice between it and the plain map is remembered (yr-basemap).
@@ -1656,7 +1806,7 @@ function topoLayer(r){
 const TOPO_NAME = T("Topografisk", "Topographic");
 function addBasemap(map, r){
   map.once("unload", () => { map._yrGone = true; });
-  const topo = r && topoLayer(r), wantTopo = topo && store.get("yr-basemap") !== "map";
+  const topo = r && topoLayer(r), saved = store.get("yr-basemap"), wantTopo = topo && saved !== "map", startMode = saved === "slope" ? "slope" : wantTopo ? "topo" : "map";
   if (topo) map.on("baselayerchange", e => store.set("yr-basemap", e.layer === topo ? "topo" : "map"));
   if (googleOk){
     mapLib("google").then(() => {
@@ -1665,41 +1815,55 @@ function addBasemap(map, r){
       (wantTopo ? topo : road).addTo(map);
       L.control.layers({...(topo ? {[TOPO_NAME]: topo} : {}), [T("Karta", "Map")]: road, [T("Terräng", "Terrain")]: L.gridLayer.googleMutant({type:"terrain"}),
         [T("Satellit", "Satellite")]: L.gridLayer.googleMutant({type:"hybrid"})}, null, {position:"topright"}).addTo(map);
-    }).catch(() => addOpenFreeMap(map, topo, wantTopo));
+    }).catch(() => addOpenFreeMap(map, topo, wantTopo, startMode));
     return;
   }
-  addOpenFreeMap(map, topo, wantTopo);
+  addOpenFreeMap(map, topo, wantTopo, startMode);
 }
-function addOpenFreeMap(map, topo, wantTopo){
+function addOpenFreeMap(map, topo, wantTopo, startMode){
   if (wantTopo) topo.addTo(map);
   mapLib("maplibre").then(() => {
     if (!mapAlive(map)) return;
     const plain = addOpenFreeMapNow(map, !wantTopo);
-    if (topo) mapSwitch(map, topo, plain, wantTopo);
+    if (topo) mapSwitch(map, topo, plain, startMode);
   }).catch(() => { if (topo && !wantTopo) topo.addTo(map); });
 }
-// Two buttons on the map, Topografisk | Karta, instead of Leaflet's layer menu behind an icon
-function mapSwitch(map, topo, plain, onTopo){
+// Three buttons on the map, Topo | Karta | Lutning, instead of Leaflet's layer menu behind an icon. Lutning is the
+// topographic map with the steepness of the ground coloured over it, for finding tours and lines.
+function mapSwitch(map, topo, plain, mode){
   const ctl = L.control({position: "topright"});
+  let slope = null, key = null;
+  const apply = m => {
+    if (m === "map"){ map.removeLayer(topo); if (!map.hasLayer(plain)) plain.addTo(map); }
+    else { map.removeLayer(plain); if (!map.hasLayer(topo)) topo.addTo(map); }
+    if (m === "slope"){
+      if (!slope){ if (!map.getPane("slope")) map.createPane("slope").style.zIndex = 350;
+        slope = new SlopeLayer({pane: "slope", minZoom: SLOPE_MINZ, maxZoom: 19, attribution: DEM_ATTR}); }
+      if (!map.hasLayer(slope)) slope.addTo(map);
+      if (!key) key = slopeKey(map);
+    } else {
+      if (slope && map.hasLayer(slope)) map.removeLayer(slope);
+      if (key){ key._off(); key = null; }
+    }
+  };
   ctl.onAdd = () => {
     const box = L.DomUtil.create("div", "mapswitch");
     box.setAttribute("role", "group"); box.setAttribute("aria-label", T("Kartsort", "Map type"));
-    const show = top => {
-      box.innerHTML = `<button type="button" data-t="1" aria-pressed="${top}">${T("Topo", "Topo")}</button><button type="button" data-t="0" aria-pressed="${!top}">${T("Karta", "Map")}</button>`;
+    const show = () => {
+      box.innerHTML = [["topo", "Topo", ""], ["map", T("Karta", "Map"), ""], ["slope", T("Lutning", "Slope"), T("Brantheten i terrängen, för att leta efter toppturer och linjer", "How steep the ground is, for finding tours and lines")]]
+        .map(([k, t, tip]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}"${tip ? ` title="${tip}"` : ""}>${t}</button>`).join("");
     };
-    show(onTopo);
+    show();
     L.DomEvent.disableClickPropagation(box);
     box.onclick = e => {
-      const b = e.target.closest("button"); if (!b) return;
-      const top = b.dataset.t === "1";
-      if (top === map.hasLayer(topo)) return;
-      if (top){ map.removeLayer(plain); topo.addTo(map); } else { map.removeLayer(topo); plain.addTo(map); }
-      store.set("yr-basemap", top ? "topo" : "map");
-      show(top);
+      const b = e.target.closest("button"); if (!b || b.dataset.m === mode) return;
+      mode = b.dataset.m; apply(mode); store.set("yr-basemap", mode); show();
+      if (mode === "slope" && map.getZoom() < SLOPE_MINZ) map.setZoom(SLOPE_MINZ);   // the slopes only show from here in
     };
     return box;
   };
   ctl.addTo(map);
+  if (mode === "slope") apply(mode);
 }
 function addOpenFreeMapNow(map, show = true){
   const layer = L.maplibreGL({style: "https://tiles.openfreemap.org/styles/liberty",
