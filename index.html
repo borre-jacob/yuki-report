@@ -644,6 +644,8 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .poimapbox.big{position:fixed;inset:0;z-index:1500;height:auto;border-radius:0;border:0}
 html.bigmap,html.bigmap body{overflow:hidden}
 .poimapbox.big{display:flex;flex-direction:column}.poimapbox.big #poimap{flex:1;height:auto;min-height:0}
+.audit.stale{opacity:.6}
+.audit.stale .audhead b::after{content:" · " var(--upd);font-weight:400;color:var(--muted)}
 .poimapbox.big>.audit{flex:none;margin:0;border-width:1px 0 0;border-radius:14px 14px 0 0;max-height:32vh;overflow:auto}
 .poimapbox.big .pinnote{display:none}
 .poimapbox:not(.big) .mapdraw,.drawing .mapdraw{display:none}
@@ -4747,24 +4749,33 @@ function audText(f, kind){
     T("Så långt är det härifrån till rutten börjar eller slutar, eller till närmaste lift eller parkering i kartdata.", "That is how far it is from here to where the route starts or ends, or to the nearest lift or car park in the map data."),
     T("Berätta för någon var du går, ha mobil, första hjälpen och extra kläder med dig.", "Tell someone where you are going, and bring a phone, first aid and extra clothes.")];
 }
-let auditLayer = null, auditRun = 0, auditData = null;
+let auditLayer = null, auditRun = 0, auditData = null, auditTimer = null;
 function auditClose(){
-  auditRun++; auditData = null;
+  auditRun++; auditData = null; clearTimeout(auditTimer);
+  if (drawing) drawing.review = false;
   if (auditLayer){ auditLayer.remove(); auditLayer = null; }
-  const b = $("#audit"); if (b){ b.hidden = true; b.innerHTML = ""; b.closest(".dgrid")?.classList.remove("auditing"); poiMap?.invalidateSize(); }
+  const b = $("#audit"); if (b){ b.hidden = true; b.innerHTML = ""; b.classList.remove("stale"); b.closest(".dgrid")?.classList.remove("auditing"); poiMap?.invalidateSize(); }
 }
-async function auditShow({name, kind, pts, c, r}){
+// keep: refresh a review that is already showing (the track was changed while planning) without closing it: the old one
+// stays, dimmed, until the new one is ready, and the list keeps its scroll position
+async function auditShow({name, kind, pts, c, r, keep}){
   const box = $("#audit"); if (!box || !poiMap || pts.length < 2) return;
-  auditClose();
+  const old = keep && auditData ? {top: box.scrollTop, layer: auditLayer} : null;
+  if (old){ auditRun++; auditStale(box); }
+  else {
+    auditClose();
+    box.hidden = false; box.innerHTML = `<div class="msg">${T("Granskar rutten…", "Reviewing the route…")}</div>`;
+    box.closest(".dgrid")?.classList.add("auditing"); poiMap.invalidateSize();
+    box.scrollIntoView({block: "nearest", behavior: "smooth"});
+  }
   const key = auditRun;
-  box.hidden = false; box.innerHTML = `<div class="msg">${T("Granskar rutten…", "Reviewing the route…")}</div>`;
-  box.closest(".dgrid")?.classList.add("auditing"); poiMap.invalidateSize();
-  box.scrollIntoView({block: "nearest", behavior: "smooth"});
   const rr = r || RESORTS.find(x => x.id === curId());
   const res = await auditTrack(pts, kind, {r: rr, bul: avalCur && avalCur.id === rr?.id ? avalCur.B : null});
   if (key !== auditRun || !$("#audit") || !poiMap) return;
+  if (!res && old){ box.classList.remove("stale"); return; }
   if (!res){ box.innerHTML = `<div class="msg">${T("Kunde inte hämta terrängdata för den här rutten. Försök igen när du har uppkoppling.", "Could not get terrain data for this route. Try again when you are online.")}</div>`; return; }
   auditData = res;
+  if (old?.layer) old.layer.remove();
   const {S, F, st} = res, total = S[S.length - 1].d || 1;
   // On the map: a coloured band under the track for each stretch, with a numbered badge that matches the list
   if (!poiMap.getPane("audit")) poiMap.createPane("audit").style.zIndex = 395;
@@ -4825,9 +4836,12 @@ async function auditShow({name, kind, pts, c, r}){
   box.querySelectorAll(".audlist li").forEach(li => li.querySelector("button").onclick = () => auditPick(+li.dataset.n, true));
   box.querySelectorAll(".audprof polyline[data-n]").forEach(pl => { pl.style.cursor = "pointer"; pl.onclick = () => auditPick(+pl.dataset.n, true); });
   poiMap.invalidateSize();
+  box.classList.remove("stale");
+  if (old){ box.scrollTop = old.top; return; }
   const all = L.latLngBounds(S.map(q => [q.lat, q.lon]));
   if (!poiMap.getBounds().contains(all)) poiMap.flyToBounds(all.pad(0.15), {maxZoom: 15, duration: .6});
 }
+const auditStale = box => { box.classList.add("stale"); box.style.setProperty("--upd", JSON.stringify(T("uppdaterar…", "updating…"))); };
 function auditPick(n, fromList){
   if (!auditData || !poiMap) return;
   auditData.alt?.remove(); auditData.alt = null;
@@ -4860,7 +4874,15 @@ function drawStart(r, track = null, kind = null){
 function drawClick(e){
   if (!drawing) return;
   drawing.pts.push([+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)]);
-  auditClose(); drawPaint(); drawBar();
+  auditAfterEdit(); drawPaint(); drawBar();
+}
+// A review that is showing while you plan follows the track: it is worked out again a moment after the last change
+const drawAudit = keep => { const p = auditShow({name: T("Din skiss", "Your sketch"), kind: drawing.kind || drawing.track?.kind || "hike", pts: drawing.pts.map(p => [p[0], p[1], null]), c: "#e11d48", r: drawing.r, keep}); drawing.review = true; return p; };
+function auditAfterEdit(){
+  if (!drawing?.review || drawing.pts.length < 2) return auditClose();
+  clearTimeout(auditTimer);
+  const box = $("#audit"); if (box) auditStale(box);
+  auditTimer = setTimeout(() => { if (drawing?.review) drawAudit(true); }, 700);
 }
 function drawPaint(){
   drawing.layer.clearLayers();
@@ -4887,8 +4909,8 @@ function drawBar(){
     <p class="pinmsg" id="pinmsg" role="status">${n ? T(`${n} ${n === 1 ? "punkt" : "punkter"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Fortsätt trycka längs vägen, och tryck Klar när du är framme.`,
         `${n} ${n === 1 ? "point" : "points"} · ${kmText(n > 1 ? trackStats(drawing.pts.map(p => [...p, null])).len : 0)}. Keep tapping along the way, and tap Done when you are there.`)
       : T("Tryck på kartan där spåret börjar, och sedan längs vägen upp eller ner.", "Tap the map where the track starts, then along the way up or down.")}</p>`;
-  $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); auditClose(); drawPaint(); drawBar(); };
-  $("#drawaudit").onclick = () => auditShow({name: T("Din skiss", "Your sketch"), kind: drawing.kind || drawing.track?.kind || "hike", pts: drawing.pts.map(p => [p[0], p[1], null]), c: "#e11d48", r: drawing.r});
+  $("#drawundo").onclick = () => { if (drawing.pts.length > (drawing.track ? 1 : 0)) drawing.pts.pop(); auditAfterEdit(); drawPaint(); drawBar(); };
+  $("#drawaudit").onclick = () => drawAudit(false);
   $("#drawcancel").onclick = drawEnd;
   $("#drawdone").onclick = async () => {
     const {r, pts, track, kind} = drawing;
