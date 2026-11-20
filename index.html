@@ -409,7 +409,9 @@ details.how .hint{margin-top:6px}
 .audhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14.5px}
 .audx{border:0;background:none;font-size:16px;cursor:pointer;color:var(--muted);padding:4px 6px}
 .audsum{margin:0;font-size:13px;color:var(--muted)}
-.audprof{width:100%;height:64px;display:block;background:color-mix(in srgb,var(--line) 35%,transparent);border-radius:8px}
+.audprof{width:100%;height:auto;display:block;background:color-mix(in srgb,var(--line) 35%,transparent);border-radius:8px}
+.audlabel{font:600 12px var(--body);color:var(--ink);margin-top:4px}.audlabel span{font-weight:400;color:var(--muted)}
+.audkey{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted)}.audkey span{display:inline-flex;align-items:center;gap:5px}.audkey i{width:10px;height:10px;border-radius:2px}
 .audprofk{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--muted);margin-top:-4px}
 .audlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
 .audlist li{border-radius:10px}.audlist li.sel{background:color-mix(in srgb,var(--snow) 12%,transparent)}
@@ -4569,11 +4571,24 @@ async function auditShow({name, kind, pts, c, r}){
     f.badge = L.marker([mid.lat, mid.lon], {zIndexOffset: 1300, icon: L.divIcon({className: "audbadgew", iconSize: [24, 24], iconAnchor: [12, 12], html: `<b style="--c:${col}">${f.n}</b>`})}).addTo(auditLayer);
     f.badge.on("click", () => auditPick(f.n, false));
   });
-  // The profile: height along the route, with the stretches in their colours
-  const zs = S.map(q => q.z).filter(v => v != null), zmin = Math.min(...zs), zmax = Math.max(...zs), W = 300, H = 64;
-  const X = d => (d / total * W).toFixed(1), Y = z => (H - 6 - (z - zmin) / Math.max(1, zmax - zmin) * (H - 14)).toFixed(1);
+  // The profile, drawn to scale where it fits (so a steep route looks steep), with the stretches in their colours; and under
+  // it how steep the ground itself is, bar by bar, with lines at 30 and 40 degrees
+  const zs = S.map(q => q.z).filter(v => v != null), zmin = Math.min(...zs), zmax = Math.max(...zs), W = 300, zr = Math.max(1, zmax - zmin);
+  const span = Math.min(140, Math.max(30, W * zr / total)), H = Math.round(span + 14), exag = span * total / (zr * W);
+  const X = d => (d / total * W).toFixed(1), Y = z => (H - 6 - (z - zmin) / zr * span).toFixed(1);
   const prof = S.filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ");
   const bands = F.map(f => `<polyline data-n="${f.n}" points="${S.slice(f.i0, Math.max(f.i1, f.i0 + 1) + 1).filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ")}" fill="none" stroke="${audColor(f)}" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("");
+  const bins = Math.min(S.length, 150), per = S.length / bins, SH = 72, SY = v => SH - 4 - Math.min(60, v) / 60 * (SH - 8);
+  const barCol = v => v >= 45 ? "#7f1d1d" : v >= 40 ? "#dc2626" : v >= 35 ? "#f59e0b" : v >= 30 ? "#fcd34d" : "#94a3b8";
+  let bars = "";
+  for (let k = 0; k < bins; k++){
+    const a = Math.floor(k * per), b = Math.max(a + 1, Math.floor((k + 1) * per)), sl = S.slice(a, b).map(q => q.slope).filter(v => v != null);
+    if (!sl.length) continue;
+    const v = Math.max(...sl), x0 = +X(S[a].d), x1 = +X(S[Math.min(S.length - 1, b)].d);
+    bars += `<rect x="${x0}" y="${SY(v).toFixed(1)}" width="${Math.max(0.9, x1 - x0).toFixed(1)}" height="${(SH - 4 - SY(v)).toFixed(1)}" fill="${barCol(v)}"><title>${Math.round(v)}°</title></rect>`;
+  }
+  const lineAt = v => `<line x1="0" x2="${W}" y1="${SY(v).toFixed(1)}" y2="${SY(v).toFixed(1)}" stroke="var(--ink)" stroke-opacity=".45" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/><text x="2" y="${(SY(v) - 2).toFixed(1)}" font-size="8" fill="var(--muted)">${v}°</text>`;
+  const avg = Math.round(Math.atan(Math.abs((S.at(-1).z ?? 0) - (S[0].z ?? 0)) / Math.max(1, total)) * 180 / Math.PI);
   const nW = F.filter(f => f.sev === 2).length, nN = F.length - nW;
   const summary = [kmText(res.len), st.ele ? `↑ ${uH(st.up)} ↓ ${uH(st.down)}` : "", res.max != null ? T(`brantast ${res.max}°`, `steepest ${res.max}°`) : "",
     res.share ? T(`${res.share} % över 30°`, `${res.share} % over 30°`) : ""].filter(Boolean).join(" · ");
@@ -4581,8 +4596,14 @@ async function auditShow({name, kind, pts, c, r}){
   box.innerHTML = `<div class="audhead"><b>${T("Granskning", "Route review")} · ${esc(name)}</b><button type="button" class="audx" aria-label="${T("Stäng granskningen", "Close the review")}">✕</button></div>
     <p class="audsum">${summary}</p>
     ${res.grade ? `<p class="audsum">${T("Föreslagen svårighetsgrad", "Suggested difficulty")}: ${gradeTag(res.grade)} <span>${T("(du ändrar den själv under Ändra)", "(you change it yourself under Edit)")}</span></p>` : ""}
-    <svg class="audprof" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${T("Höjdprofil med de markerade styckena", "Height profile with the marked stretches")}"><polyline points="${prof}" fill="none" stroke="var(--muted)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${bands}</svg>
-    <div class="audprofk"><span>${uH(Math.round(zmin))}</span><span>${kmText(total)}</span></div>
+    <div class="audlabel">${T("Höjdprofil", "Height profile")} <span>${exag > 1.15 ? T(`höjden är förstorad ${numTxt(Math.round(exag * 10) / 10)} gånger`, `height exaggerated ${numTxt(Math.round(exag * 10) / 10)} times`) : T("i skala 1:1", "to scale 1:1")}</span></div>
+    <svg class="audprof" viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Höjdprofil med de markerade styckena", "Height profile with the marked stretches")}"><polyline points="${prof}" fill="none" stroke="var(--muted)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${bands}</svg>
+    <div class="audprofk"><span>${uH(Math.round(zmin))}–${uH(Math.round(zmax))}</span><span>${kmText(total)}</span></div>
+    <div class="audlabel">${T("Lutning i terrängen längs rutten", "Steepness of the ground along the route")}</div>
+    <svg class="audprof" viewBox="0 0 ${W} ${SH}" role="img" aria-label="${T("Lutningen i terrängen längs rutten", "The steepness of the ground along the route")}">${lineAt(30)}${lineAt(40)}${bars}</svg>
+    <div class="audkey"><span><i style="background:#94a3b8"></i>${T("under 30°", "under 30°")}</span><span><i style="background:#fcd34d"></i>30–35°</span><span><i style="background:#f59e0b"></i>35–40°</span><span><i style="background:#dc2626"></i>40–45°</span><span><i style="background:#7f1d1d"></i>${T("över 45°", "over 45°")}</span></div>
+    <p class="audinfo">${T(`Profilen visar linjens egen lutning (i snitt ${avg}°). Varningarna gäller sluttningens lutning, och den är brantare än linjen när du går eller åker diagonalt över sluttningen.`,
+      `The profile shows the line's own gradient (${avg}° on average). The warnings are about the slope of the ground, which is steeper than the line when you go diagonally across the slope.`)}</p>
     ${verdict ? `<p class="audsum">${verdict}</p>` : ""}
     ${res.notes.map(n => `<p class="audinfo">ⓘ ${n}</p>`).join("")}
     ${F.length ? `<ol class="audlist">${F.map(f => { const [t, d, sg] = audText(f, kind);
