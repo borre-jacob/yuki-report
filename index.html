@@ -673,7 +673,13 @@ html.bigmap,html.bigmap body{overflow:hidden}
 #drawdone{background:var(--snow);border-color:var(--snow);color:#fff}
 #drawdone:disabled{opacity:.45}
 .pinbtn.gpx:disabled{opacity:.45}
-.poimapbox.big #mypin .minebtns{justify-content:flex-start}
+.mineh{display:none}
+.poimapbox.big #mypin .mineh{display:flex}
+.poimapbox.big #mypin .minebtns.own,.poimapbox.big #mypin .minechoice{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.poimapbox.big #mypin .minechoice{border:0;padding:0;margin:0}
+.poimapbox.big #mypin .minechoice #chdraw{grid-column:1/-1}
+.poimapbox.big #mypin .minechoice[hidden]{display:none}
+.poimapbox.big #mypin .minebtns.own .pinbtn,.poimapbox.big #mypin .minechoice .pinbtn{padding:9px 12px}
 @media (max-width:520px){.poimapbox.big #mypin .pinbtn{padding:6px 8px;font-size:12px}.poimapbox.big #mypin .minebtns{gap:5px}.poimapbox.big #mypin{padding:14px 14px}}
 /* ===== Himmel-design: bergshimmel överst, vita kort, lätta stora siffror ===== */
 body{position:relative;background:var(--bg)}
@@ -4422,7 +4428,8 @@ async function drawMine(r, fitTo = null){
     return;
   }
   const busy = rec && !rec.done, others = tracks.filter(t => t.user_id !== sbUser.id).length;
-  box.innerHTML = `<div class="minebtns">
+  box.innerHTML = `<div class="plhead mineh"><b>${T("Lägg till en tur", "Add a route")}</b></div>
+    <div class="minebtns own">
       <button type="button" class="pinbtn hike" id="addhike"${busy ? " disabled" : ""}>▲ ${T("Topptur", "Ski tour")}</button>
       <button type="button" class="pinbtn line" id="addline"${busy ? " disabled" : ""}>▼ ${T("Offpiståk", "Off-piste line")}</button>
     </div>
