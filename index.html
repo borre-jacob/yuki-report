@@ -649,6 +649,13 @@ html.bigmap,html.bigmap body{overflow:hidden}
 .audit.stale .audhead b::after{content:" · " var(--upd);font-weight:400;color:var(--muted)}
 .poimapbox.big>.audit{flex:none;margin:0;border-width:1px 0 0;border-radius:14px 14px 0 0;max-height:32vh;overflow:auto}
 .poimapbox.big .pinnote{display:none}
+/* The review's header on the big map is a band like the planning card's: the page's sky and ridge, with the title in white */
+.poimapbox.big>.audit{padding:0 0 14px}
+.poimapbox.big>.audit>*:not(.audhead){margin-left:16px;margin-right:16px}
+.poimapbox.big>.audit .audhead{position:sticky;top:0;z-index:2;margin:0 0 2px;padding:15px 16px 26px;color:#fff;background:var(--ridge) bottom/100% 44px no-repeat,linear-gradient(180deg,var(--sky-a) 0%,var(--sky-b) 62%,var(--sky-c) 100%)}
+.poimapbox.big>.audit .audhead b{font:700 17px var(--display);color:#fff}
+.poimapbox.big>.audit .audx{color:#fff;opacity:.85}
+.poimapbox.big>.audit.stale .audhead b::after{color:rgba(255,255,255,.8)}
 /* On a wide screen the review sits in a column to the right of the big map instead of under it */
 @media (min-width:900px){.poimapbox.big{flex-direction:row;align-items:stretch}.poimapbox.big>.audit{width:min(440px,38vw);max-height:none;height:auto;border-width:0 0 0 1px;border-radius:0}}
 .poimapbox:not(.big) .mapdraw,.drawing .mapdraw{display:none}
