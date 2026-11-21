@@ -528,10 +528,10 @@ footer .copy{color:var(--ink);font-weight:600}
 .gform button,.dirbtn{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
 .dirbtn{border-color:var(--snow);color:var(--snow);font-weight:600}
 .dlinks{display:flex;flex-wrap:wrap;gap:6px}
-.liftstat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.32);color:#fff}
+.liftstat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.32);color:#fff;text-decoration:none}
 .liftstat::before{content:"";width:9px;height:9px;border-radius:50%;background:#9aa8bd}
 .liftstat.open::before{background:#4ade80}.liftstat.soon::before{background:#fbbf24}
-.liftstat a{color:inherit;font-weight:500;opacity:.75;font-size:11.5px;text-decoration:underline}
+.liftstat:hover{background:rgba(255,255,255,.22)}
 /* Avalanche panel: the answer, then where, problems, the source's text, weather and one disclaimer */
 .dlvl{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;font:600 15px var(--mono);flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .dlvl.big{width:62px;height:62px;border-radius:12px;font-size:30px}
@@ -926,6 +926,8 @@ if (location.hostname === "yukireport.com"){
       Kartstil: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>. Topografisk karta: <a href="https://www.kartverket.no/" target="_blank" rel="noopener">Kartverket</a>, <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI</a>, <a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">swisstopo</a> och <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a>.
       Lavinprognoser: Japan Avalanche Network, Varsom (NVE), Naturvårdsverket och de europeiska lavinvarningstjänsterna i
       <a href="https://www.avalanches.org/" target="_blank" rel="noopener">EAWS</a>.
+      Liftstatus och öppningsdatum för norska orter: <a href="https://fnugg.no/" target="_blank" rel="noopener">fnugg.no</a>.
+      Snittet nysnö per säsong är modellerat av Open-Meteo (ERA5) på ortens mellanhöjd, snitt för tio säsonger.
       Koordinater för orterna är ungefärliga.</p>
     <p class="src"><b>Ansvar:</b> Yuki Report är en privat hobbyapp och ingen officiell källa. Snö-, väder- och lavininformationen
       kommer från källorna ovan, hämtas automatiskt och kan vara fel eller inaktuell. Kontrollera alltid den officiella
@@ -941,6 +943,8 @@ if (location.hostname === "yukireport.com"){
       Map style: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>. Topographic map: <a href="https://www.kartverket.no/" target="_blank" rel="noopener">Kartverket</a>, <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI</a>, <a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">swisstopo</a> and <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a>.
       Avalanche bulletins: Japan Avalanche Network, Varsom (NVE), the Swedish Environmental Protection Agency and the European avalanche warning services in
       <a href="https://www.avalanches.org/" target="_blank" rel="noopener">EAWS</a>.
+      Lift status and opening dates for Norwegian resorts: <a href="https://fnugg.no/" target="_blank" rel="noopener">fnugg.no</a>.
+      The average new snow per season is modelled by Open-Meteo (ERA5) at the resort's mid height, averaged over ten seasons.
       Resort coordinates are approximate.</p>
     <p class="src"><b>Disclaimer:</b> Yuki Report is a private hobby app and not an official source. The snow, weather and avalanche information
       comes from the sources above, is fetched automatically and may be wrong or out of date. Always check the official
@@ -2589,7 +2593,7 @@ async function renderDetail(id){
         <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span><button type="button" class="favbtn" id="favbtn" aria-pressed="${favs.has(r.id)}"></button></h2>
         <div class="dlinks">
           <a class="dirbtn" href="${isTour(r) ? gmapsDir(r.slat, r.slon) : gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${isTour(r) ? T("Vägbeskrivning till startplatsen", "Directions to the start") : T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
-          <span class="liftstat" id="liftstat" hidden></span>
+          <a class="liftstat" id="liftstat" target="_blank" rel="noopener" hidden></a>
         </div>
       </div>
       <nav class="jumps dtabs" id="dtabs" role="tablist" aria-label="${T("Ortens sida", "The resort page")}">
@@ -2846,7 +2850,8 @@ async function loadLifts(r){
     : opens && opens > today ? ["soon", T(`Öppnar ${dm(opens)}`, `Opens ${dm(opens)}`)]
     : ["", T("Stängt just nu", "Closed right now")];
   el.className = "liftstat " + cls; el.hidden = false;
-  el.innerHTML = `${esc(txt)} <a href="https://fnugg.no${d.path || "/"}" target="_blank" rel="noopener" title="${esc(T("Källa: fnugg.no", "Source: fnugg.no"))}">fnugg.no</a>`;
+  el.href = "https://fnugg.no" + (d.path || "/"); el.title = T("Källa: fnugg.no", "Source: fnugg.no");
+  el.textContent = txt;
 }
 
 // ---------- About the resort (the "Om orten" page) ----------
@@ -2882,8 +2887,8 @@ async function loadAbout(r){
       <div class="aboutmon" role="img" aria-label="${esc(T("Snitt nysnö per månad: ", "Average new snow by month: ") + SNOW_MONTHS.map(([sv, en], i) => `${T(sv, en)} ${snowCm(c.m[i])}`).join(", "))}">
         ${c.m.map((v, i) => `<div><span>${uSnowN(v, 0)}</span><i style="height:${Math.max(2, Math.round(v / peak * 100))}%"></i><em>${T(SNOW_MONTHS[i][0], SNOW_MONTHS[i][1])}</em></div>`).join("")}
       </div>
-      <p class="aboutnote">${T(`Modellerat nysnöfall på ortens mellanhöjd (${uH(Math.round((r.base + r.top) / 2))}), snitt för ${cl.n} säsonger (${cl.seasons}) från Open-Meteo och ERA5. Det är nysnö, inte snödjup, och en grov uppskattning eftersom modellen jämnar ut bergen.`,
-         `Modelled new snow at the resort's mid height (${uH(Math.round((r.base + r.top) / 2))}), averaged over ${cl.n} seasons (${cl.seasons}) from Open-Meteo and ERA5. It is new snow, not snow depth, and a rough estimate since the model smooths out the mountains.`)}</p></div>` : "";
+      <p class="aboutnote">${T(`Modellerad nysnö på ortens mellanhöjd (${uH(Math.round((r.base + r.top) / 2))}), snitt ${cl.seasons}. Inte snödjup.`,
+         `Modelled new snow at the resort's mid height (${uH(Math.round((r.base + r.top) / 2))}), average ${cl.seasons}. Not snow depth.`)}</p></div>` : "";
   $("#about").innerHTML = `<div class="aboutband"><h3>${T("Om", "About")} ${esc(r.name)}</h3><span>${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}</span></div>
     <div class="aboutbody">
       <div class="aboutfacts">${tiles.join("")}</div>
