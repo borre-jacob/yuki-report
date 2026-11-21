@@ -632,6 +632,7 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .tourcard button{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
 .tourcard button.primary{background:var(--snow);border-color:var(--snow);color:#fff;font-weight:700}
 @media (prefers-reduced-motion:reduce){.tourhole{transition:none}}
+.tourbtn.mini{font-size:12px;padding:3px 10px}
 .tourbtn{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;align-self:flex-start}
 .mapswitch{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .mapswitch button{font:600 12.5px var(--body);border:0;background:none;color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
@@ -837,6 +838,7 @@ if (location.hostname === "yukireport.com"){
       <section class="acct" id="acct" aria-labelledby="acct-t"></section>
       <form id="menuopts" class="opts"></form>
       <button type="button" id="tourbtn" class="tourbtn"><span class="t-sv">Visa rundturen</span><span class="t-en">Take the tour</span></button>
+      <button type="button" id="maptourbtn" class="tourbtn" hidden><span class="t-sv">Guide: kartan och planering</span><span class="t-en">Guide: the map and planning</span></button>
       <p class="mnote"><span class="t-sv">Valen sparas bara på den här enheten.</span><span class="t-en">Your choices are saved on this device only.</span></p>
       <details class="gset" id="gset">
         <summary><span class="t-sv">Kartinställning:</span><span class="t-en">Map setting:</span> <span id="gstatus">OpenFreeMap</span></summary>
@@ -2562,7 +2564,7 @@ async function renderDetail(id){
       <div class="panel" id="cams" hidden></div>
       <div class="panel" id="karta">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <h3>${T("Karta", "Map")}</h3>
+          <div style="display:flex;align-items:center;gap:10px"><h3>${T("Karta", "Map")}</h3><button type="button" class="tourbtn mini" id="maptourlink">? Guide</button></div>
           <div class="chips" id="chips">
             <button class="chip" id="chip-lift" aria-pressed="${liftOn}" style="--c:var(--lift)"><i></i>${T("Liftar", "Lifts")} <span class="num" id="cnt-lift"></span></button>
             ${poiTypesFor(r).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
@@ -5542,12 +5544,44 @@ const TOURS = {
      p: T("Den officiella lavinprognosen där den finns, och vad vädret säger om snötäcket.", "The official avalanche forecast where there is one, and what the weather says about the snowpack.")},
     {el: "#cams", tab: "cams", t: T("Kameror", "Webcams"), p: T("Webbkameror vid orten.", "Webcams at the resort.")},
     {el: "#karta", tab: "karta", t: T("Kartan", "The map"),
-     p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning.",
-          "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions.")},
+     p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning. Kartguiden går igenom kartvyerna, planering och granskning.",
+          "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions. The map guide goes through the map views, planning and review.")},
     {el: "#mypin", tab: "karta", t: T("Toppturer och offpiståk", "Ski tours and off-piste lines"),
-     p: T("Medlemmar spelar in eller sätter ut toppturer (grön streckad) och offpiståk från liftarna (lila), och delar dem med varandra.",
-          "Members record or pin ski tours (dashed green) and off-piste lines from the lifts (purple), and share them with each other.")},
+     p: T("Som medlem planerar, spelar in eller laddar du upp toppturer (grön streckad) och offpiståk från liftarna (lila), och delar dem med andra.",
+          "As a member you plan, record or upload ski tours (dashed green) and off-piste lines from the lifts (purple), and share them with others.")},
     {el: "#favbtn", tab: "ov", t: T("Favorit", "Favourite"), p: T("Spara orten bland dina favoriter (för medlemmar).", "Keep the resort among your favourites (for members).")},
+  ],
+  map: () => [
+    {tab: "karta", t: T("Guide: kartan, planering och granskning", "Guide: the map, planning and review"),
+     p: T("Kartvyerna, hur du planerar en topptur eller ett offpiståk, och hur granskningen hjälper dig. Det tar en minut.",
+          "The map views, how to plan a ski tour or an off-piste line, and how the review helps you. It takes a minute."), first: true},
+    {el: ".mapswitch", tab: "karta", t: T("Tre kartvyer", "Three map views"),
+     p: T("Topo visar höjdkurvor och stigar, bra för att läsa terrängen. Karta är en vanlig vägkarta. Lutning färgar sluttningarna efter hur branta de är. Valet sparas till nästa gång.",
+          "Topo shows contour lines and trails, good for reading the terrain. Map is a plain road map. Slope colours the hillsides by how steep they are. Your choice is remembered.")},
+    {el: ".mapswitch", tab: "karta", t: T("Lutningsvyn", "The slope view"),
+     p: T("Under 20° är kartan oförändrad. Sedan: turkos 20–25°, blå 25–30°, gul 30–35°, orange 35–40°, röd 40–45° och lila över 45°. Lavinterräng är oftast 30–45°, så gult till rött är det du ser upp med. Zooma in en bit för att se den.",
+          "Below 20° the map is unchanged. Then: turquoise 20–25°, blue 25–30°, yellow 30–35°, orange 35–40°, red 40–45° and purple over 45°. Avalanche terrain is mostly 30–45°, so yellow to red is what to watch. Zoom in a bit to see it.")},
+    {el: "#chips", tab: "karta", t: T("Vad som visas", "What is shown"),
+     p: T("Slå av och på liftar, parkering, toppturer, offpiståk och riktningspilar. Siffran är antalet. Tryck på en linje eller plats för mer.",
+          "Turn lifts, parking, ski tours, off-piste lines and direction arrows on and off. The number is how many there are. Tap a line or a place for more.")},
+    {el: "#mt-big", tab: "karta", t: T("Stor karta", "Big map"),
+     p: T("⤢ öppnar kartan över hela skärmen. Där finns knapparna för att planera. ◎ visar var du är.",
+          "⤢ opens the map over the whole screen. That is where the planning buttons are. ◎ shows where you are.")},
+    {el: "#mypin", tab: "karta", t: T("Medlemmar", "Members"),
+     p: T("Planera en rutt, spela in en med GPS eller ladda upp en GPX-fil från klockan eller Strava. Allt detta kräver att du är inloggad (gratis).",
+          "Plan a route, record one with GPS or upload a GPX file from a watch or Strava. All of this needs you to be logged in (free).")},
+    {t: T("Planera en rutt", "Plan a route"),
+     p: T("Öppna stora kartan och tryck Planera topptur eller Planera offpiståk. Tryck sedan på kartan där rutten börjar och längs vägen. Kortet nere visar längd, starthöjd, högsta punkt och höjdmeter upp och ned medan du ritar. Ångra tar bort sista punkten, Klar sparar.",
+          "Open the big map and tap Plan ski tour or Plan off-piste line. Then tap the map where the route starts and along the way. The card at the bottom shows length, start height, highest point and metres up and down while you draw. Undo removes the last point, Done saves.")},
+    {t: T("Granska rutten", "Review the route"),
+     p: T("Tryck Granska medan du planerar, eller på en sparad rutt. Du får ett förslag på svårighetsgrad efter hur brant terrängen är, en höjdprofil, en lutningsprofil med samma färger som lutningskartan, och en lista med varningar och sådant att notera. Tryck på en punkt i listan så visas den på kartan.",
+          "Tap Review while you plan, or on a saved route. You get a suggested difficulty based on how steep the ground is, a height profile, a slope profile in the same colours as the slope map, and a list of warnings and things to note. Tap an item in the list to see it on the map.")},
+    {t: T("Granska, justera, granska igen", "Review, adjust, review again"),
+     p: T("Granskningen följer med när du ändrar rutten. Dyker en varning upp kan du gå tillbaka, flytta eller lägga till punkter, och se den räknas om. Varje varning har ett förslag på vad du kan göra.",
+          "The review follows when you change the route. If a warning appears you can go back, move or add points, and see it recalculated. Every warning comes with a suggestion for what to do.")},
+    {t: T("Det här kan granskningen inte", "What the review cannot do"),
+     p: T("Den räknar på en terrängmodell, så korta klippor och träd syns inte, och den vet inget om vädret, snön eller lavinläget. Det är ett hjälpmedel för planeringen, inte en bedömning av om det är säkert. Kolla alltid lavinprognosen och bedöm terrängen på plats.",
+          "It works from a terrain model, so short cliffs and trees do not show, and it knows nothing about the weather, the snow or the avalanche conditions. It is an aid for planning, not a judgement that it is safe. Always check the avalanche forecast and judge the terrain on the spot.")},
   ],
 };
 let tour = null;
@@ -5613,6 +5647,8 @@ function tourEnd(){
   tour.veil.remove(); tour.hole.remove(); tour.card.remove(); tour = null;
 }
 $("#tourbtn").onclick = () => { $("#menu").close(); tourStart(curId() ? "resort" : "start"); };
+$("#maptourbtn").onclick = () => { $("#menu").close(); if (curId()) tourStart("map"); };
+document.addEventListener("click", e => { if (e.target.closest("#maptourlink")) tourStart("map"); });
 
 // ---------- Settings menu ----------
 // Language and units reload the page (every number is formatted when drawn); the theme changes at once.
@@ -5645,7 +5681,7 @@ $("#menuopts").onchange = e => {
 const menu = $("#menu");
 $("#menubtn").setAttribute("aria-label", T("Inställningar", "Settings"));
 $("#menuclose").setAttribute("aria-label", T("Stäng", "Close"));
-$("#menubtn").onclick = () => { buildMenu(); renderAcct(); menu.showModal(); };
+$("#menubtn").onclick = () => { buildMenu(); renderAcct(); $("#maptourbtn").hidden = !curId(); menu.showModal(); };
 // The logo leads back to the start page (a plain link without scripts, and for open-in-new-tab)
 $("#brand").addEventListener("click", e => {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
