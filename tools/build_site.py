@@ -74,6 +74,15 @@ snow = {a: load("snow", a) for a in AREA}
 obs = {a: load("obs", a) for a in AREA}
 cams = {a: load("cams", a) for a in AREA}
 
+# One small webcam file per resort (data/cams/r/<id>.json), so the app does not download a whole area's list for one
+# resort. Every resort gets one, empty when it has no cameras, so the app never asks for a file that is not there. The
+# area files stay as they are: the workflow restores them from the published site before the next daily fetch.
+os.makedirs(os.path.join(out, "data", "cams", "r"), exist_ok=True)
+for r in resorts:
+    c = cams[r["area"]]
+    json.dump({"tpl": c.get("tpl", {}), "cams": c.get("resorts", {}).get(r["id"], [])},
+              open(os.path.join(out, "data", "cams", "r", r["id"] + ".json"), "w"), separators=(",", ":"), ensure_ascii=False)
+
 
 def snow_numbers(r):
     """New snow at mid height: the next 3 days from today and the 3 days before, from the central snow file."""

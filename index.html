@@ -2744,23 +2744,24 @@ function measuredDepth(r){
   return Date.now() - t > 36 * 3600e3 ? null : {cm: s.v[i], name: s.n, alt: s.a, src: OBS_SRC[s.src] || s.src, t};
 }
 
-// Webcams at the resort from Windy (tools/fetch_cams.py, once a day): data/cams/<area>.json. Only cameras at most
-// 3 km from a lift, at most four, the highest first. The still image links to Windy's day timelapse player, which
-// opens in place; Windy asks for the credit line under the pictures. The resort's own camera pages (CAMS) are
-// linked in the same panel, so every camera is in one place.
+// Webcams at the resort from Windy (tools/fetch_cams.py, once a day). Only cameras at most 3 km from a lift, at most
+// four, the highest first. The site build (tools/build_site.py) cuts the area lists into one small file per resort,
+// data/cams/r/<id>.json = {tpl, cams}. The still image links to Windy's day timelapse player, which opens in place;
+// Windy asks for the credit line under the pictures. The resort's own camera pages (CAMS) are linked in the same
+// panel, so every camera is in one place.
 const camFiles = {};
-function camData(area){
-  const c = camFiles[area];
+function camData(id){
+  const c = camFiles[id];
   if (c && Date.now() - c.t < 30 * 60e3) return c.p;
-  const p = netFetch(`data/cams/${area}.json`).then(res => res.ok ? res.json() : null).catch(() => null);
-  camFiles[area] = {p, t: Date.now()};
-  p.then(d => { if (!d) delete camFiles[area]; });
+  const p = netFetch(`data/cams/r/${id}.json`).then(res => res.ok ? res.json() : null).catch(() => null);
+  camFiles[id] = {p, t: Date.now()};
+  p.then(d => { if (!d) delete camFiles[id]; });
   return p;
 }
 async function loadCams(r){
-  const d = await camData(r.area), box = $("#cams");
+  const d = await camData(r.id), box = $("#cams");
   if (!box || curId() !== r.id) return;
-  const cams = d?.resorts?.[r.id] || [], links = CAMS[r.id] || [];
+  const cams = d?.cams || [], links = CAMS[r.id] || [];
   const jump = $('#dtabs a[data-t="cams"]'), ov = $("#ov-cam");
   if (!cams.length && !links.length){
     box.hidden = true; if (jump) jump.hidden = true; if (ov) ov.hidden = true;
