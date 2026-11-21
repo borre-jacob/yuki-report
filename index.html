@@ -4787,16 +4787,47 @@ async function auditTrack(pts, kind, ctx = {}){
   const slopes = S.map(q => q.slope).filter(v => v != null), top = S.reduce((m, q) => q.slope != null && (!m || q.slope > m.slope) ? q : m, null);
   const st = trackStats(S.map(q => [q.lat, q.lon, q.z == null ? null : Math.round(q.z)]));
   const res = {S, F: keep, all: F.length, st, notes, len: dist, max: top ? Math.round(top.slope) : null, topAt: top, share: slopes.length ? Math.round(slopes.filter(v => v >= 30).length / slopes.length * 100) : 0, kind, bul};
-  res.grade = suggestGrade(res);
+  const sg = suggestGrade(res);
+  res.grade = sg.g; res.gradeWhy = sg;
   return res;
 }
-// A suggested difficulty in the app's own scale (1 easy to 4 expert), from how steep the ground gets and for how long
+// A suggested difficulty in the app's own scale (1 green to 4 black, the colours of the piste grades) from how steep the ground is
+// along the route. The piste limits (about 11, 14 and 22 degrees) are for prepared runs and would make almost every mountain
+// route black, so for tours they are raised: the typical slope (the middle of the route) sets the base, and stretches
+// (at least two samples, about 40 m) of steeper ground raise it: 30 degrees at least blue, 35 at least red, 40 (or 35 on 100 m
+// or more in all) black.
 function suggestGrade(res){
-  const long2 = Math.max(0, ...res.F.filter(f => f.type === "steep" && f.lvl >= 2).map(f => f.d1 - f.d0));
-  if (res.max == null) return 0;
-  if (res.max >= 45 || long2 >= 100) return 4;
-  if (res.max >= 40 || (res.max >= 35 && res.share >= 25)) return 3;
-  return res.max >= 30 ? 2 : 1;
+  const sl = res.S.map(q => q.slope).filter(v => v != null).sort((a, b) => a - b);
+  if (!sl.length || res.max == null) return {g: 0};
+  const med = sl[Math.floor(sl.length / 2)];
+  const stretches = min => { const out = []; let cur = 0, gap = 0;
+    res.S.forEach(q => {
+      if (q.slope != null && q.slope >= min){ cur += 1 + gap; gap = 0; }
+      else if (cur && !gap && q.slope != null) gap = 1;
+      else { if (cur) out.push(cur); cur = 0; gap = 0; }
+    });
+    if (cur) out.push(cur);
+    return out.filter(n => n >= 2); };
+  const s30 = stretches(30), s35 = stretches(35), s40 = stretches(40), m35 = s35.reduce((a, b) => a + b, 0) * 20;
+  let g = med <= 15 ? 1 : med <= 22 ? 2 : 3, why = g === 1 ? "typ1" : g === 2 ? "typ2" : "typ3";
+  if (s30.length && g < 2){ g = 2; why = "s30"; }
+  if (s35.length && g < 3){ g = 3; why = "s35"; }
+  if ((s40.length || m35 >= 100) && g < 4){ g = 4; why = s40.length ? "s40" : "m35"; }
+  return {g, why, med: Math.round(med)};
+}
+// Why the suggestion is what it is, and what the grades stand for
+function gradeWhy(w, max){
+  const why = {
+    typ1: T(`Typisk lutning ${w.med}° och inga stycken över 30°.`, `Typical slope ${w.med}° and no stretches over 30°.`),
+    typ2: T(`Typisk lutning ${w.med}°.`, `Typical slope ${w.med}°.`),
+    typ3: T(`Typisk lutning ${w.med}°, över 22°.`, `Typical slope ${w.med}°, over 22°.`),
+    s30: T(`Stycken över 30° (brantast ${max}°).`, `Stretches over 30° (steepest ${max}°).`),
+    s35: T(`Stycken över 35° (brantast ${max}°).`, `Stretches over 35° (steepest ${max}°).`),
+    s40: T(`Stycken på 40° eller mer (brantast ${max}°).`, `Stretches of 40° or more (steepest ${max}°).`),
+    m35: T(`Över 35° på sammanlagt 100 m eller mer (brantast ${max}°).`, `Over 35° for 100 m or more in all (steepest ${max}°).`),
+  }[w.why];
+  return `${why} ${T("Grön: typiskt under 15°. Blå: till 22° eller stycken över 30°. Röd: över 22° eller stycken över 35°. Svart: stycken på 40° eller mer, eller över 35° på 100 m eller mer. Beräknat på terrängmodellen, så korta klippor syns inte.",
+    "Green: typically under 15°. Blue: up to 22° or stretches over 30°. Red: over 22° or stretches over 35°. Black: stretches of 40° or more, or over 35° for 100 m or more. Worked out on the terrain model, so short cliffs do not show.")}`;
 }
 const AUD_C = {steep: {1: "#f59e0b", 2: "#dc2626", 3: "#7f1d1d"}, climb: "#2563eb", uphill: "#2563eb", flat: "#64748b", convex: "#7c3aed", gully: "#0f766e",
   ridge: "#65a30d", expo: "#0e7490", bulletin: "#c2410c", lift: "#475569", help: "#16a34a"};
@@ -4916,7 +4947,8 @@ async function auditShow({name, kind, pts, c, r, keep}){
   const verdict = F.length ? `${nW ? `<b class="audwarn">${nW} ${nW === 1 ? T("varning", "warning") : T("varningar", "warnings")}</b>` : ""}${nW && nN ? " · " : ""}${nN ? `${nN} ${T("att notera", "to note")}` : ""}${res.all > F.length ? ` · ${T(`visar de ${F.length} viktigaste av ${res.all}`, `showing the ${F.length} most important of ${res.all}`)}` : ""}` : "";
   box.innerHTML = `<div class="audhead"><b>${T("Granskning", "Route review")} · ${esc(name)}</b><button type="button" class="audx" aria-label="${T("Stäng granskningen", "Close the review")}">✕</button></div>
     <p class="audsum">${summary}</p>
-    ${res.grade ? `<p class="audsum">${T("Föreslagen svårighetsgrad", "Suggested difficulty")}: ${gradeTag(res.grade)} <span>${T("(du ändrar den själv under Ändra)", "(you change it yourself under Edit)")}</span></p>` : ""}
+    ${res.grade ? `<p class="audsum">${T("Föreslagen svårighetsgrad", "Suggested difficulty")}: ${gradeTag(res.grade)} <span>${T("(du ändrar den själv under Ändra)", "(you change it yourself under Edit)")}</span></p>
+    <p class="audinfo">${gradeWhy(res.gradeWhy, res.max)}</p>` : ""}
     <div class="audlabel">${T("Höjdprofil", "Height profile")} <span>${exag > 1.15 ? T(`höjden är förstorad ${numTxt(Math.round(exag * 10) / 10)} gånger`, `height exaggerated ${numTxt(Math.round(exag * 10) / 10)} times`) : T("i skala 1:1", "to scale 1:1")}</span></div>
     <svg class="audprof" viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Höjdprofil med de markerade styckena", "Height profile with the marked stretches")}"><polyline points="${prof}" fill="none" stroke="var(--muted)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${bands}</svg>
     <div class="audprofk"><span>${uH(Math.round(zmin))}–${uH(Math.round(zmax))}</span><span>${kmText(total)}</span></div>
