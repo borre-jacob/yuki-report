@@ -632,7 +632,7 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .tourcard button{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
 .tourcard button.primary{background:var(--snow);border-color:var(--snow);color:#fff;font-weight:700}
 @media (prefers-reduced-motion:reduce){.tourhole{transition:none}}
-.tourbtn.mini{font-size:12px;padding:3px 10px}
+.tourbtn.mini{font-size:12.5px;font-weight:600;padding:5px 13px;color:var(--snow-ink);border-color:color-mix(in srgb,var(--snow) 45%,var(--line));background:color-mix(in srgb,var(--snow) 8%,var(--surface))}
 .tourbtn{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;align-self:flex-start}
 .mapswitch{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .mapswitch button{font:600 12.5px var(--body);border:0;background:none;color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
@@ -2586,7 +2586,7 @@ async function renderDetail(id){
       <div class="panel" id="cams" hidden></div>
       <div class="panel" id="karta">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:10px"><h3>${T("Karta", "Map")}</h3><button type="button" class="tourbtn mini" id="maptourlink">? Guide</button></div>
+          <div style="display:flex;align-items:center;gap:16px"><h3>${T("Karta", "Map")}</h3><button type="button" class="tourbtn mini" id="maptourlink">${T("Kartguide", "Map guide")}</button></div>
           <div class="chips" id="chips">
             <button class="chip" id="chip-lift" aria-pressed="${liftOn}" style="--c:var(--lift)"><i></i>${T("Liftar", "Lifts")} <span class="num" id="cnt-lift"></span></button>
             ${poiTypesFor(r).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
