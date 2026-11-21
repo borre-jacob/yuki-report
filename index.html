@@ -759,6 +759,8 @@ header.top .acctbtn{border-width:1px;font-weight:700}
 #dview[data-tab="karta"]>:is(#stats,#ovextra,#fc,#aval,#cams){display:none}
 #dview[data-tab="om"]>:is(#stats,#ovextra,#fc,#aval,#cams,#karta),#dview:not([data-tab="om"])>#about{display:none}
 /* Om orten: facts from our own data, with a header band like the planning card */
+#dview:not([data-tab="ov"])>#ov-about{display:none}
+#ov-about p{margin:0;font-size:14.5px;line-height:1.6;color:var(--muted-2)}
 .panel.about{padding:0;overflow:hidden;gap:0}
 .aboutband{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 22px 28px;color:#fff;background:var(--ridge) bottom/100% 46px no-repeat,linear-gradient(180deg,var(--sky-a) 0%,var(--sky-b) 62%,var(--sky-c) 100%)}
 .aboutband h3{font:700 19px var(--display);color:#fff;margin:0}.aboutband span{font-size:13px;color:rgba(255,255,255,.82)}
@@ -2625,6 +2627,7 @@ async function renderDetail(id){
         <button type="button" class="ovgo ovmore" data-go="karta"><span>${T("Med liftar, parkering, toppturer och planering", "With lifts, parking, ski tours and planning")}</span><span class="more">${T("Öppna hela kartan", "Open the full map")} →</span></button>
       </div>
       <div class="panel about" id="about"></div>
+      <div class="panel ovcard" id="ov-about"></div>
     </div>`;
   $("#back").onclick = () => go("");
   requestAnimationFrame(fitSky);
@@ -2864,6 +2867,11 @@ async function loadAbout(r, pl){
      T(`${parks.length === 1 ? "Det finns en parkering" : `Det finns ${parks.length} parkeringar`}${near && near.d != null ? `, den närmaste ${near.d < 0.3 ? "vid liftarna" : kmText(near.d * 1000) + " från orten"}` : ""}. Se kartan för platserna.`,
        `${parks.length === 1 ? "There is one car park" : `There are ${parks.length} car parks`}${near && near.d != null ? `, the nearest ${near.d < 0.3 ? "by the lifts" : kmText(near.d * 1000) + " from the resort"}` : ""}. See the map for where.`)] : null,
   ].filter(Boolean);
+  // The short version on the overview, with a way to the whole page
+  const ov = $("#ov-about");
+  if (ov) ov.innerHTML = `<h3>${T("Om", "About")} ${esc(r.name)}</h3>${text[0] ? `<p>${esc(text[0])}</p>` : ""}
+    <div class="aboutfacts">${tiles.join("")}</div>
+    <button type="button" class="ovgo" data-go="om"><span>${T("Liftar, hitta hit och vanliga frågor", "Lifts, getting there and common questions")}</span><span class="more">${T("Mer om orten", "More about the resort")} →</span></button>`;
   box.innerHTML = `<div class="aboutband"><h3>${T("Om", "About")} ${esc(r.name)}</h3><span>${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}</span></div>
     <div class="aboutbody">
       <div class="aboutfacts">${tiles.join("")}</div>
