@@ -3,7 +3,7 @@
      network-first so the daily avalanche update is picked up.
    - Lifts and facilities per resort (data/osm/places/): stale-while-revalidate. A resort is kept once it
      has been opened, and the app's "Spara offline" button fetches a whole area.
-   - Snow, avalanche bulletins and measured snow for all resorts (data/snow/, data/avalanche/, data/obs/, fetched
+   - Snow, avalanche bulletins and measured snow for all resorts (data/snow/, data/avalanche/, data/obs/, data/lifts/, fetched
      centrally every 3 hours) and the webcam list (data/cams/, daily),
      Open-Meteo, Varsom and EAWS: network-first,
      falling back to the last cached answer.
@@ -14,7 +14,7 @@
    - Cloudflare Web Analytics (static.cloudflareinsights.com) and Windy's webcam images and players are never cached:
      other hosts go straight to the network.
    Bump VERSION when this file or the precache list changes; the app then offers "Ny version finns". */
-const VERSION = "v81";
+const VERSION = "v82";
 const SHELL = "yuki-shell-" + VERSION;
 const LIBS = "yuki-libs-" + VERSION;
 const DATA = "yuki-data";
@@ -88,7 +88,7 @@ self.addEventListener("fetch", e => {
 
   if (req.mode === "navigate") return e.respondWith(page(req));
   if (url.origin === location.origin && url.pathname.includes("/data/osm/places/")) return e.respondWith(staleWhileRevalidate(req, PLACES));
-  if (url.origin === location.origin && /\/data\/(snow|avalanche|obs|cams)\//.test(url.pathname)) return e.respondWith(networkFirst(req, DATA));
+  if (url.origin === location.origin && /\/data\/(snow|avalanche|obs|cams|lifts)\//.test(url.pathname)) return e.respondWith(networkFirst(req, DATA));
   if (url.origin === location.origin) return e.respondWith(cacheFirst(req, SHELL));
   // Weather and avalanche bulletins: fresh when online, the last answer offline (out in the mountains)
   if (h === "api.open-meteo.com" || h === "api01.nve.no" || h === "static.avalanche.report") return e.respondWith(networkFirst(req, DATA));

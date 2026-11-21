@@ -76,6 +76,12 @@ jobs:
             curl -sSf "${{ steps.pages.outputs.base_url }}/data/obs/$area.json" -o "data/obs/$area.json" || rm -f "data/obs/$area.json"
           done
           python3 tools/fetch_obs.py index.html data/obs || echo "Hämtningen av mätvärden misslyckades, behåller de senast publicerade filerna."
+      - name: Hämta liftstatus och öppningsdatum för norska orter (Fnugg)
+        run: |
+          mkdir -p data/lifts
+          # Start from the published file, so a failed fetch keeps the last status
+          curl -sSf "${{ steps.pages.outputs.base_url }}/data/lifts/norway.json" -o "data/lifts/norway.json" || rm -f "data/lifts/norway.json"
+          python3 tools/fetch_lifts.py index.html data/lifts || echo "Hämtningen av liftstatus misslyckades, behåller den senast publicerade filen."
       - name: Hämta webbkameror vid backarna (en gång om dygnet)
         env:
           WINDY_KEY: ${{ secrets.WINDY_KEY }}

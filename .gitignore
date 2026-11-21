@@ -9,3 +9,4 @@ data/cams/
 _site/
 data/osm/parking_cache.json
 about/ids.json
+data/lifts/

@@ -1,53 +1,52 @@
-"""Fetch ski lift lines around every resort.
+"""Fetch which lifts are open and when the season opens, for the Norwegian resorts, from Fnugg (run with the snow data on GitHub).
 
-Usage: python3 tools/fetch_lifts.py index.html data/osm/lifts.json [resorts per query, default 20]
-Resorts already in data/osm/lifts.json with lifts are kept; the rest are fetched in groups (20 unless given; fewer when the servers are busy)
-(one Overpass query for all resorts at once is too big for the servers).
+Usage: python3 tools/fetch_lifts.py index.html data/lifts
+Writes <dir>/norway.json = {"at": fetch time (UTC), "source": "fnugg.no", "resorts": {resort id: {...}}} where a resort is
+{"open": lifts open, "count": lifts in all, "path": Fnugg's page for the resort, "isOpen": the resort's open flag, "opens": "YYYY-MM-DD", "closes": "YYYY-MM-DD", "upd": Fnugg's update time}.
+Fnugg (https://api.fnugg.no/docs/v1) is Norway's ski status service; its terms ask for a credit to fnugg.no wherever the data is
+shown (the app does that) and forbid copying fnugg.no itself. One request lists every resort; each of ours is matched to the
+nearest Fnugg resort within MAX_KM. Without an answer the file already in <dir> is kept (the workflow puts the published one there).
 """
-import json, math, os, re, subprocess, sys, time
+import json, math, os, re, subprocess, sys
+from datetime import datetime, timezone
 
+UA = "YukiReport/1.0 (ski trip app; github.com/borre-jacob/yuki-report)"
+MAX_KM = 4
 html = open(sys.argv[1], encoding="utf-8").read()
-resorts = [(i, float(a), float(b)) for i, a, b in re.findall(r'\{id:"(\w+)",name:"[^"]+",jp:"[^"]*",region:"[^"]+",lat:([\d.]+),lon:([\d.]+)', html)]
-KINDS = "chair_lift|gondola|cable_car|mixed_lift|drag_lift|t-bar|j-bar|platter|rope_tow|magic_carpet"
-URLS = ["https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass-api.de/api/interpreter"]
-out = json.load(open(sys.argv[2], encoding="utf-8")) if os.path.exists(sys.argv[2]) else {}
-todo = [r for r in resorts if not out.get(r[0])]
+out_dir = sys.argv[2]
+os.makedirs(out_dir, exist_ok=True)
+
+ours = []
+for row in re.findall(r'^  \{id:"\w+".*\},$', html, re.M):
+    f = dict(re.findall(r'(\w+):("[^"]*"|-?[\d.]+)', row))
+    if json.loads(f.get("country", '""')) == "Norge" and "kind" not in f:   # not the ski tours
+        ours.append({"id": json.loads(f["id"]), "name": json.loads(f["name"]), "lat": float(f["lat"]), "lon": float(f["lon"])})
 
 
-def dist(a, b, c, d):
-    t = math.radians; h = math.sin(t(c-a)/2)**2 + math.cos(t(a))*math.cos(t(c))*math.sin(t(d-b)/2)**2
-    return 2*6371*math.asin(math.sqrt(h))
+def km(a, b, c, d):
+    p1, p2 = math.radians(a), math.radians(c)
+    h = math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(math.radians(d - b) / 2) ** 2
+    return 2 * 6371 * math.asin(math.sqrt(h))
 
 
-def fetch(group):
-    q = "[out:json][timeout:170];(" + "".join(f'way["aerialway"~"^({KINDS})$"](around:7000,{la},{lo});' for _, la, lo in group) + ");out geom tags;"
-    for attempt in range(6):
-        r = subprocess.run(["curl", "-s", "-m", "200", "-A", "YukiReport/1.0 (personal ski trip planner)", URLS[attempt % 2],
-                            "--data-urlencode", "data=" + q], capture_output=True, text=True)
-        try:
-            return json.loads(r.stdout)["elements"]
-        except Exception:
-            print("retry", attempt, file=sys.stderr); time.sleep(15 * (attempt + 1))
-    return None
+raw = subprocess.run(["curl", "-sS", "-m", "60", "-A", UA, "https://api.fnugg.no/search?q=&size=300"], capture_output=True, text=True).stdout
+try:
+    hits = [h["_source"] for h in json.loads(raw)["hits"]["hits"] if h.get("_type") == "resort"]
+    assert hits
+except Exception as e:
+    print("No answer from Fnugg, keeping the file as it is:", str(e)[:100], file=sys.stderr)
+    sys.exit(0)
 
-
-GROUP = int(sys.argv[3]) if len(sys.argv) > 3 else 20
-todo.sort(key=lambda r: (round(r[1]), r[2]))
-for n in range(0, len(todo), GROUP):
-    group = todo[n:n + GROUP]
-    els = fetch(group)
-    if els is None:
-        print("group failed:", [g[0] for g in group], file=sys.stderr); continue
-    for rid, la, lo in group:
-        out[rid] = []
-        for w in els:
-            g = w.get("geometry") or []
-            if len(g) < 2: continue
-            pts = [[round(p["lat"], 5), round(p["lon"], 5)] for p in g]
-            mid = pts[len(pts)//2]
-            if dist(la, lo, mid[0], mid[1]) <= 7.5:
-                t = w.get("tags", {})
-                out[rid].append([t["aerialway"], t.get("name:en") or t.get("name") or "", pts])
-    json.dump(out, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print(f"{n + len(group)}/{len(todo)}", [(g[0], len(out[g[0]])) for g in group], file=sys.stderr)
-    time.sleep(3)
+day = lambda s: (s or "")[:10] or None
+res = {}
+for r in ours:
+    best = min(((km(r["lat"], r["lon"], h["location"]["lat"], h["location"]["lon"]), h) for h in hits if h.get("location")), key=lambda x: x[0], default=None)
+    if not best or best[0] > MAX_KM:
+        continue
+    h = best[1]
+    lifts = h.get("lifts") or {}
+    res[r["id"]] = {"fnugg": h.get("name"), "path": h.get("site_path"), "open": lifts.get("open", 0), "count": lifts.get("count", 0), "isOpen": bool(h.get("resort_open")),
+                    "opens": day(h.get("resort_opening_date")), "closes": day(h.get("resort_closing_date")), "upd": h.get("last_updated")}
+at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+json.dump({"at": at, "source": "fnugg.no", "resorts": res}, open(os.path.join(out_dir, "norway.json"), "w"), separators=(",", ":"), ensure_ascii=False)
+print(len(res), "of", len(ours), "Norwegian resorts matched,", len(hits), "in Fnugg", file=sys.stderr)

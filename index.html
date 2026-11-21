@@ -528,6 +528,10 @@ footer .copy{color:var(--ink);font-weight:600}
 .gform button,.dirbtn{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
 .dirbtn{border-color:var(--snow);color:var(--snow);font-weight:600}
 .dlinks{display:flex;flex-wrap:wrap;gap:6px}
+.liftstat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.32);color:#fff}
+.liftstat::before{content:"";width:9px;height:9px;border-radius:50%;background:#9aa8bd}
+.liftstat.open::before{background:#4ade80}.liftstat.soon::before{background:#fbbf24}
+.liftstat a{color:inherit;font-weight:500;opacity:.75;font-size:11.5px;text-decoration:underline}
 /* Avalanche panel: the answer, then where, problems, the source's text, weather and one disclaimer */
 .dlvl{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;font:600 15px var(--mono);flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .dlvl.big{width:62px;height:62px;border-radius:12px;font-size:30px}
@@ -2585,6 +2589,7 @@ async function renderDetail(id){
         <h2>${esc(r.name)}<span class="jp">${esc(r.jp)}</span><button type="button" class="favbtn" id="favbtn" aria-pressed="${favs.has(r.id)}"></button></h2>
         <div class="dlinks">
           <a class="dirbtn" href="${isTour(r) ? gmapsDir(r.slat, r.slon) : gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${isTour(r) ? T("Vägbeskrivning till startplatsen", "Directions to the start") : T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>
+          <span class="liftstat" id="liftstat" hidden></span>
         </div>
       </div>
       <nav class="jumps dtabs" id="dtabs" role="tablist" aria-label="${T("Ortens sida", "The resort page")}">
@@ -2702,6 +2707,7 @@ async function renderDetail(id){
       : `<div class="msg err">${T(`Kunde inte hämta prognosen: ${esc(e.message)}. Kontrollera uppkopplingen och ladda om.`, `Could not fetch the forecast: ${esc(e.message)}. Check your connection and reload.`)}</div>`;
   });
   loadAbout(r);
+  loadLifts(r);
   loadPlaces(r).then(pl => {
     if (!poiMap || curId() !== r.id) return;
     liftLayer = drawLifts(r);
@@ -2824,6 +2830,25 @@ async function loadCams(r){
     }
   }
 }
+// ---------- Lifts open and the season opening (Norway, from Fnugg) ----------
+// data/lifts/norway.json is fetched every few hours by the workflow (tools/fetch_lifts.py) from fnugg.no, which asks for a credit
+// wherever its data is shown. A resort that is open shows how many lifts are open; one that is not shows when it opens (Fnugg
+// uses 2050-01-01 for "not decided", and an opening date that has passed means the data is last season's), else just "closed".
+let liftsP = null;
+const liftsData = () => liftsP ||= fetch("data/lifts/norway.json").then(r => r.ok ? r.json() : null).catch(() => null);
+async function loadLifts(r){
+  const d = (await liftsData())?.resorts?.[r.id];
+  const el = $("#liftstat");
+  if (!d || !el || curId() !== r.id) return;
+  const today = new Date().toISOString().slice(0, 10), opens = d.opens && d.opens < "2049" ? d.opens : null;
+  const dm = iso => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]}`;
+  const [cls, txt] = d.isOpen ? ["open", T(`${d.open} av ${d.count} liftar öppna`, `${d.open} of ${d.count} lifts open`)]
+    : opens && opens > today ? ["soon", T(`Öppnar ${dm(opens)}`, `Opens ${dm(opens)}`)]
+    : ["", T("Stängt just nu", "Closed right now")];
+  el.className = "liftstat " + cls; el.hidden = false;
+  el.innerHTML = `${esc(txt)} <a href="https://fnugg.no${d.path || "/"}" target="_blank" rel="noopener" title="${esc(T("Källa: fnugg.no", "Source: fnugg.no"))}">fnugg.no</a>`;
+}
+
 // ---------- About the resort (the "Om orten" page) ----------
 // Every resort gets the heights and the average snowfall (data/climate.json, from tools/fetch_climate.py: modelled new snow at the
 // mid height, averaged over ten seasons, in total and per month). What the app has no data for, such as who the resort suits, comes
