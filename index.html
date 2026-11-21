@@ -2869,7 +2869,7 @@ const snowCm = v => uSnow(v, 0);
 async function loadAbout(r){
   const [d, cl] = await Promise.all([aboutData(r.id), climateData()]);
   if (curId() !== r.id || !$("#about")) return;
-  const c = cl?.resorts?.[r.id], tour = isTour(r), vert = r.top - r.base;
+  const c = r.area === "japan" ? null : cl?.resorts?.[r.id], tour = isTour(r), vert = r.top - r.base;   // no snow figures for Japan: the reanalysis gives far too little there
   const who = d?.passar || [], pts = d?.bra || [], text = d?.text || [];
   const tile = (k, v) => `<div><span>${k}</span><b>${v}</b></div>`;
   const tiles = [

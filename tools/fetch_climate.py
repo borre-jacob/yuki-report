@@ -5,7 +5,7 @@ Run by hand now and then (the numbers hardly change), not by the workflow. Write
 {"seasons": "2015/16-2024/25", "n": 10, "resorts": {id: {"s": cm per season, "m": [cm in Oct, Nov, Dec, Jan, Feb, Mar, Apr, May]}}}.
 The figures are modelled new snow (snowfall) at the resort's mid height, averaged over the seasons (July to June), not measured
 snow depth; a reanalysis smooths the mountains, so they are indicative.
-Resumable: resorts already in the output file are skipped, a run does at most CLIMATE_BATCHES (20) batches of 10 resorts, and when Open-Meteo says the daily limit is used up the script
+CLIMATE_AREAS (default scandinavia,alps) limits which areas are fetched; Japan is left out because ERA5 gives far too little snow there (Niseko about 340 cm). Resumable: resorts already in the output file are skipped, a run does at most CLIMATE_BATCHES (20) batches of 10 resorts, and when Open-Meteo says the daily limit is used up the script
 saves what it has and stops; run it again later (the next day) to continue.
 """
 import json, os, re, subprocess, sys, time
@@ -17,9 +17,12 @@ BATCH = 10
 MAX_BATCHES = int(os.environ.get("CLIMATE_BATCHES", "20"))   # per run, to stay well inside Open-Meteo's daily limit
 html = open(sys.argv[1], encoding="utf-8").read()
 path = sys.argv[2]
+AREAS = set(os.environ.get("CLIMATE_AREAS", "scandinavia,alps").split(","))
 resorts = []
 for row in re.findall(r'^  \{id:"\w+".*\},$', html, re.M):
     f = dict(re.findall(r'(\w+):("[^"]*"|-?[\d.]+)', row))
+    if json.loads(f.get("area", '"japan"')) not in AREAS:
+        continue
     resorts.append({"id": json.loads(f["id"]), "lat": f["lat"], "lon": f["lon"], "mid": round((float(f["base"]) + float(f["top"])) / 2)})
 try:
     data = json.load(open(path))

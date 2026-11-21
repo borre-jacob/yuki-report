@@ -126,7 +126,7 @@ def about_facts(r, lang):
             if r.get("kind") == "tour" else
             T(lang, f"Dalnivån är {r['base']} m och toppen {r['top']} m, alltså {vert} m höjdskillnad.",
               f"The base is {r['base']} m and the top {r['top']} m, a vertical of {vert} m.")]
-    c = climate.get("resorts", {}).get(r["id"])
+    c = None if r["area"] == "japan" else climate.get("resorts", {}).get(r["id"])   # not for Japan: the reanalysis gives far too little there
     if c:
         months = ["oktober", "november", "december", "januari", "februari", "mars", "april", "maj"] if lang == "sv" else \
                  ["October", "November", "December", "January", "February", "March", "April", "May"]
