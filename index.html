@@ -4931,7 +4931,7 @@ async function auditShow({name, kind, pts, c, r, keep}){
   const prof = S.filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ");
   const bands = F.map(f => `<polyline data-n="${f.n}" points="${S.slice(f.i0, Math.max(f.i1, f.i0 + 1) + 1).filter(q => q.z != null).map(q => `${X(q.d)},${Y(q.z)}`).join(" ")}" fill="none" stroke="${audColor(f)}" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("");
   const bins = Math.min(S.length, 150), per = S.length / bins, SH = 72, SY = v => SH - 4 - Math.min(60, v) / 60 * (SH - 8);
-  const barCol = v => v >= 45 ? "#7f1d1d" : v >= 40 ? "#dc2626" : v >= 35 ? "#f59e0b" : v >= 30 ? "#fcd34d" : "#94a3b8";
+  const barCol = v => { const c = SLOPE_COL.find(([min]) => v >= min); return c ? `rgb(${c[1].join(",")})` : "#94a3b8"; };   // the same colours as the slope map
   let bars = "";
   for (let k = 0; k < bins; k++){
     const a = Math.floor(k * per), b = Math.max(a + 1, Math.floor((k + 1) * per)), sl = S.slice(a, b).map(q => q.slope).filter(v => v != null);
@@ -4953,8 +4953,8 @@ async function auditShow({name, kind, pts, c, r, keep}){
     <svg class="audprof" viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("Höjdprofil med de markerade styckena", "Height profile with the marked stretches")}"><polyline points="${prof}" fill="none" stroke="var(--muted)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${bands}</svg>
     <div class="audprofk"><span>${uH(Math.round(zmin))}–${uH(Math.round(zmax))}</span><span>${kmText(total)}</span></div>
     <div class="audlabel">${T("Lutning i terrängen längs rutten", "Steepness of the ground along the route")}</div>
-    <svg class="audprof" viewBox="0 0 ${W} ${SH}" role="img" aria-label="${T("Lutningen i terrängen längs rutten", "The steepness of the ground along the route")}">${lineAt(30)}${lineAt(40)}${bars}</svg>
-    <div class="audkey"><span><i style="background:#94a3b8"></i>${T("under 30°", "under 30°")}</span><span><i style="background:#fcd34d"></i>30–35°</span><span><i style="background:#f59e0b"></i>35–40°</span><span><i style="background:#dc2626"></i>40–45°</span><span><i style="background:#7f1d1d"></i>${T("över 45°", "over 45°")}</span></div>
+    <svg class="audprof" viewBox="0 0 ${W} ${SH}" role="img" aria-label="${T("Lutningen i terrängen längs rutten", "The steepness of the ground along the route")}">${lineAt(20)}${lineAt(30)}${lineAt(40)}${bars}</svg>
+    <div class="audkey"><span><i style="background:#94a3b8"></i>${T("under 20°", "under 20°")}</span>${[5, 4, 3, 2, 1, 0].map(k => `<span><i style="background:${barCol(SLOPE_COL[k][0])}"></i>${k === 0 ? T("över 45°", "over 45°") : `${SLOPE_COL[k][0]}–${SLOPE_COL[k - 1][0]}°`}</span>`).join("")}</div>
     <p class="audinfo">${T(`Profilen visar linjens egen lutning (i snitt ${avg}°). Varningarna gäller sluttningens lutning, och den är brantare än linjen när du går eller åker diagonalt över sluttningen.`,
       `The profile shows the line's own gradient (${avg}° on average). The warnings are about the slope of the ground, which is steeper than the line when you go diagonally across the slope.`)}</p>
     ${verdict ? `<p class="audsum">${verdict}</p>` : ""}
