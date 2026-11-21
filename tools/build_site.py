@@ -254,6 +254,8 @@ open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(p)
 # --- One page per resort and language ---
 for r in resorts:
     alt = {"sv": f"/sv/{r['id']}/", "en": f"/en/{r['id']}/", "x-default": f"/en/{r['id']}/"}
+    om_alt = {"sv": f"/sv/{r['id']}/om/", "en": f"/en/{r['id']}/om/", "x-default": f"/en/{r['id']}/om/"}
+    om_rich = bool(about_text(r, "sv")) or (r["area"] != "japan" and r["id"] in climate.get("resorts", {}))
     sn, dp, ncam = snow_numbers(r), depth(r), len(cams[r["area"]].get("resorts", {}).get(r["id"], []))
     mid = round((r["base"] + r["top"]) / 2)
     same = [x for x in resorts if x["region"] == r["region"] and x["id"] != r["id"]]
@@ -284,10 +286,11 @@ for r in resorts:
         if ncam:
             parts.append("<p>" + E(T(lang, f"{ncam} webbkameror vid backen." if ncam > 1 else "En webbkamera vid backen.",
                                      f"{ncam} webcams at the slopes." if ncam > 1 else "One webcam at the slopes.")) + "</p>")
+        # The facts are short here; the whole text is on the page of its own, /<lang>/<id>/om/
         ab = about_text(r, lang)
         parts.append(f"<h2>{E(T(lang, 'Om ' + r['name'], 'About ' + r['name']))}</h2>"
                      + "".join(f"<p>{E(t)}</p>" for t in about_facts(r, lang))
-                     + "".join(f"<h3>{E(h)}</h3>" + "".join(f"<p>{E(t)}</p>" for t in ps) for h, ps in ab))
+                     + f'<p><a href="{om_alt[lang]}">{E(T(lang, "Mer om " + r["name"] + ": passar för, säsong och snö per år", "More about " + r["name"] + ": who it suits, season and snowfall"))}</a></p>')
         parts.append("<p>" + E(T(lang, f"Yuki Report visar snöprognosen för {r['name']} timme för timme, snötyp och puderdagar, vad vädermodellerna säger, lavinläget, snödjupet och en karta med liftar och parkering.",
                                  f"Yuki Report shows the snow forecast for {r['name']} hour by hour, snow type and powder days, what the weather models say, the avalanche conditions, the snow depth and a map with lifts and parking.")) + "</p>")
         if same:
@@ -298,8 +301,25 @@ for r in resorts:
         p = with_app(p, "\n".join(parts))
         os.makedirs(os.path.join(out, lang, r["id"]), exist_ok=True)
         open(os.path.join(out, lang, r["id"], "index.html"), "w", encoding="utf-8").write(p)
+        # The page of its own: Om orten at /<lang>/<id>/om/ (the app opens the tab from that address). It goes in the
+        # sitemap only when there is something of its own on it (a text, or the snow average); else noindex.
+        facts = about_facts(r, lang)
+        om_title = T(lang, f"Om {r['name']}: passar för, säsong och snö per år | Yuki Report", f"About {r['name']}: who it suits, season and snowfall | Yuki Report")
+        om_desc = " ".join(facts)[:290].rsplit(" ", 1)[0] if facts else om_title
+        po = head(page, lang, om_title, om_desc, om_alt[lang], om_alt)
+        if not om_rich:
+            po = po.replace("<title>", '<meta name="robots" content="noindex, follow">\n<title>', 1)
+        om_parts = [f"<h1>{E(T(lang, 'Om ' + r['name'], 'About ' + r['name']))}</h1><p>{E(place)}</p>"] + [f"<p>{E(t)}</p>" for t in facts]
+        om_parts += [f"<h2>{E(h)}</h2>" + "".join(f"<p>{E(t)}</p>" for t in ps) for h, ps in ab]
+        om_parts.append(f'<p><a href="{alt[lang]}">{E(T(lang, r["name"] + ": snöprognos, puder och lavinläge", r["name"] + " snow forecast, powder and avalanche conditions"))}</a> · '
+                        f'<a href="{om_alt["en" if lang == "sv" else "sv"]}">{"English" if lang == "sv" else "Svenska"}</a></p>')
+        os.makedirs(os.path.join(out, lang, r["id"], "om"), exist_ok=True)
+        open(os.path.join(out, lang, r["id"], "om", "index.html"), "w", encoding="utf-8").write(with_app(po, "\n".join(om_parts)))
     urls.append((alt["sv"], alt))
     urls.append((alt["en"], alt))
+    if om_rich:
+        urls.append((om_alt["sv"], om_alt))
+        urls.append((om_alt["en"], om_alt))
 urls += [("/sv/", alt_start), ("/en/", alt_start)]
 
 # An unknown address gets the app, which shows the start page (GitHub Pages answers 404 with this file)

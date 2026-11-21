@@ -2584,7 +2584,7 @@ async function renderDetail(id){
   if (!r) return go("");
   const app = $("#app");
   shownId = id;
-  const tab0 = tabOfHash();
+  const tab0 = tabOfUrl();
   app.innerHTML = `
     <div id="dview" data-tab="${tab0}">
       <div><button class="back" id="back">${T("← Alla orter", "← All resorts")}</button></div>
@@ -2597,7 +2597,7 @@ async function renderDetail(id){
         </div>
       </div>
       <nav class="jumps dtabs" id="dtabs" role="tablist" aria-label="${T("Ortens sida", "The resort page")}">
-        ${DTABS.map(([k, hash, sv, en]) => `<a href="${pathOf(id)}${hash ? "#" + hash : ""}" role="tab" data-t="${k}" aria-selected="${k === tab0}"${k === "cams" && tab0 !== "cams" ? " hidden" : ""}>${T(sv, en)}</a>`).join("")}
+        ${DTABS.map(([k, hash, sv, en]) => `<a href="${tabHref(id, k)}" role="tab" data-t="${k}" aria-selected="${k === tab0}"${k === "cams" && tab0 !== "cams" ? " hidden" : ""}>${T(sv, en)}</a>`).join("")}
       </nav>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="ovx" id="ovextra">
@@ -5420,8 +5420,14 @@ document.addEventListener("click", e => {
 // One page at a time in the same address (#vader, #lavin, #kameror, #karta; the overview has no hash), so the back button
 // steps between them. All parts are built at once; the others are hidden with CSS (see #dview[data-tab]).
 const DTABS = [["ov", "", "Översikt", "Overview"], ["vader", "vader", "Väder", "Weather"], ["lavin", "lavin", "Lavin", "Avalanche"],
-  ["cams", "kameror", "Kameror", "Webcams"], ["karta", "karta", "Karta", "Map"], ["om", "om", "Om orten", "About"]];
+  ["cams", "kameror", "Kameror", "Webcams"], ["karta", "karta", "Karta", "Map"], ["om", "", "Om orten", "About"]];
 const tabOfHash = () => (DTABS.find(t => t[1] && t[1] === location.hash.slice(1)) || ["ov"])[0];
+// Om orten is a page of its own, /sv/<id>/om/, so search engines can index it; the other pages keep their #hash
+const tabOfUrl = () => curId() && /\/om\/?$/.test(location.pathname) ? "om" : tabOfHash();
+const tabHref = (id, t) => pathOf(id) + (t === "om" ? "om/" : DTABS.find(x => x[0] === t)?.[1] ? "#" + DTABS.find(x => x[0] === t)[1] : "");
+const resortTitle = (rr, t) => t === "om"
+  ? T(`Om ${rr.name}: passar för, säsong och snö per år | Yuki Report`, `About ${rr.name}: who it suits, season and snowfall | Yuki Report`)
+  : T(`${rr.name}: snöprognos, puder och lavinläge | Yuki Report`, `${rr.name} snow forecast, powder and avalanche conditions | Yuki Report`);
 let shownId = "", mapShow = () => {};
 function setTab(t, push = true){
   const view = $("#dview");
@@ -5431,9 +5437,10 @@ function setTab(t, push = true){
   document.querySelectorAll("#dtabs a").forEach(a => a.setAttribute("aria-selected", a.dataset.t === t));
   document.querySelector(`#dtabs a[data-t="${t}"]`)?.scrollIntoView({inline: "center", block: "nearest"});   // the bar scrolls sideways on a phone
   if (push && was !== t){
-    const hash = DTABS.find(x => x[0] === t)[1];
-    history.pushState(null, "", pathOf(curId()) + (hash ? "#" + hash : ""));
+    history.pushState(null, "", tabHref(curId(), t));
   }
+  const rr = RESORTS.find(x => x.id === curId());
+  if (rr) document.title = resortTitle(rr, t);
   if (t === "karta" || t === "ov") mapShow();
   if (t === "karta" && was !== "karta") tourAutoMap();
   if (was !== t){
@@ -5450,22 +5457,22 @@ document.addEventListener("click", e => { const b = e.target.closest("[data-go]"
 // are moved to the new address. curId() is the resort on screen, "" on the start page.
 const RESORT_IDS = new Set(RESORTS.map(r => r.id));
 function curId(){
-  const m = /^\/(?:(?:sv|en)\/)?([a-z0-9]+)\/?$/.exec(location.pathname);
+  const m = /^\/(?:(?:sv|en)\/)?([a-z0-9]+)(?:\/om)?\/?$/.exec(location.pathname);
   if (m && RESORT_IDS.has(m[1])) return m[1];
   const h = location.hash.slice(1);
   return RESORT_IDS.has(h) ? h : "";
 }
 const pathOf = (id, lang = LANG) => `/${lang}/${id ? id + "/" : ""}`;
 function go(id, tab){
-  const hash = tab && DTABS.find(x => x[0] === tab)?.[1];
-  if (curId() === id && location.pathname === pathOf(id)){ if (tab && $("#dview")) return setTab(tab); return route(); }
-  history.pushState(null, "", pathOf(id) + (hash ? "#" + hash : ""));
+  if (curId() === id && $("#dview") && tab) return setTab(tab);
+  if (curId() === id && location.pathname === pathOf(id)) return route();
+  history.pushState(null, "", tab ? tabHref(id, tab) : pathOf(id));
   route();
 }
 function route(){
   const id = curId(), rr = id && RESORTS.find(x => x.id === id);
   // The same titles as the pages built by tools/build_site.py
-  document.title = rr ? T(`${rr.name}: snöprognos, puder och lavinläge | Yuki Report`, `${rr.name} snow forecast, powder and avalanche conditions | Yuki Report`)
+  document.title = rr ? resortTitle(rr, tabOfUrl())
     : T("Yuki Report – snörapport, puder och lavinprognos för skidåkare", "Yuki Report – snow forecast, powder and avalanche conditions for skiers");
   tourEnd();
   if (overviewMap){ overviewMap.remove(); overviewMap = null; }
@@ -5475,7 +5482,7 @@ function route(){
   if (id) renderDetail(id); else renderOverview();
 }
 // Back and forward between the pages of the same resort only switch page
-addEventListener("popstate", () => { if (curId() && curId() === shownId && $("#dview")) return setTab(tabOfHash(), false); route(); });
+addEventListener("popstate", () => { if (curId() && curId() === shownId && $("#dview")) return setTab(tabOfUrl(), false); route(); });
 addEventListener("hashchange", () => { if (!RESORT_IDS.has(location.hash.slice(1))) return; history.replaceState(null, "", pathOf(curId())); route(); });
 
 function setupGoogleForm(){
@@ -5811,7 +5818,7 @@ function buildMenu(){
 }
 $("#menuopts").onchange = e => {
   const {name: k, value: v} = e.target;
-  if (k === "lang"){ store.set("yr-lang", v); location.href = pathOf(curId(), v); return; }
+  if (k === "lang"){ store.set("yr-lang", v); location.href = pathOf(curId(), v) + (curId() && tabOfUrl() === "om" ? "om/" : ""); return; }
   if (k === "theme"){
     if (v === "auto"){ delete document.documentElement.dataset.theme; try { localStorage.removeItem("yr-theme"); } catch {} }
     else { document.documentElement.dataset.theme = v; try { localStorage.setItem("yr-theme", v); } catch {} }
