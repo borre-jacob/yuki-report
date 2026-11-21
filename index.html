@@ -632,7 +632,6 @@ html[lang="en"] .t-sv, html[lang="sv"] .t-en{display:none}
 .tourcard button{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
 .tourcard button.primary{background:var(--snow);border-color:var(--snow);color:#fff;font-weight:700}
 @media (prefers-reduced-motion:reduce){.tourhole{transition:none}}
-.tourbtn.mini{font-size:12.5px;font-weight:600;padding:5px 13px;color:var(--snow-ink);border-color:color-mix(in srgb,var(--snow) 45%,var(--line));background:color-mix(in srgb,var(--snow) 8%,var(--surface))}
 .tourbtn{font:inherit;font-size:14px;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;align-self:flex-start}
 .mapswitch{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .mapswitch button{font:600 12.5px var(--body);border:0;background:none;color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
@@ -2586,7 +2585,7 @@ async function renderDetail(id){
       <div class="panel" id="cams" hidden></div>
       <div class="panel" id="karta">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:16px"><h3>${T("Karta", "Map")}</h3><button type="button" class="tourbtn mini" id="maptourlink">${T("Kartguide", "Map guide")}</button></div>
+          <h3>${T("Karta", "Map")}</h3>
           <div class="chips" id="chips">
             <button class="chip" id="chip-lift" aria-pressed="${liftOn}" style="--c:var(--lift)"><i></i>${T("Liftar", "Lifts")} <span class="num" id="cnt-lift"></span></button>
             ${poiTypesFor(r).map(([k,t]) => `<button class="chip" data-k="${k}" aria-pressed="${poiOn[k]}" style="--c:var(${t.c})"><i></i>${t.label} <span class="num" id="cnt-${k}"></span></button>`).join("")}
@@ -5325,6 +5324,7 @@ function setTab(t, push = true){
     history.pushState(null, "", pathOf(curId()) + (hash ? "#" + hash : ""));
   }
   if (t === "karta" || t === "ov") mapShow();
+  if (t === "karta" && was !== "karta") tourAutoMap();
   if (was !== t){
     // The page starts under the tab bar, not wherever the last one was scrolled to
     const top = $(".dhead").getBoundingClientRect().bottom + scrollY + 6;
@@ -5570,8 +5570,8 @@ const TOURS = {
      p: T("Den officiella lavinprognosen där den finns, och vad vädret säger om snötäcket.", "The official avalanche forecast where there is one, and what the weather says about the snowpack.")},
     {el: "#cams", tab: "cams", t: T("Kameror", "Webcams"), p: T("Webbkameror vid orten.", "Webcams at the resort.")},
     {el: "#karta", tab: "karta", t: T("Kartan", "The map"),
-     p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning. Kartguiden går igenom kartvyerna, planering och granskning.",
-          "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions. The map guide goes through the map views, planning and review.")},
+     p: T("Liftar, parkering och mer. Slå av och på med knapparna, och tryck på en plats för vägbeskrivning. Första gången du öppnar kartan visas en kartguide, och den finns alltid i menyn.",
+          "Lifts, parking and more. Turn them on and off with the buttons, and tap a place for directions. The first time you open the map a map guide appears, and it is always in the menu.")},
     {el: "#mypin", tab: "karta", t: T("Toppturer och offpiståk", "Ski tours and off-piste lines"),
      p: T("Som medlem planerar, spelar in eller laddar du upp toppturer (grön streckad) och offpiståk från liftarna (lila), och delar dem med andra.",
           "As a member you plan, record or upload ski tours (dashed green) and off-piste lines from the lifts (purple), and share them with others.")},
@@ -5616,6 +5616,14 @@ function tourAuto(which){
   if (!TOUR_NEW || seen[which] || (which === "resort" && !seen.start)) return;
   store.set("yr-tour", {...seen, [which]: 1});
   setTimeout(() => { if ((which === "resort") === !!curId()) tourStart(which); }, which === "resort" ? 1800 : 900);
+}
+// The map guide comes up once, the first time the Map page of a resort is opened (never in the middle of another tour, nor
+// before a new visitor has had the resort tour); after that it is in the menu
+function tourAutoMap(){
+  const seen = store.get("yr-tour") || {};
+  if (seen.map || tour || (TOUR_NEW && !seen.resort)) return;
+  store.set("yr-tour", {...seen, map: 1});
+  setTimeout(() => { if (!tour && !bigBox && curId() && $("#dview")?.dataset.tab === "karta") tourStart("map"); }, 900);
 }
 function tourStart(which){
   tourEnd();
@@ -5674,7 +5682,6 @@ function tourEnd(){
 }
 $("#tourbtn").onclick = () => { $("#menu").close(); tourStart(curId() ? "resort" : "start"); };
 $("#maptourbtn").onclick = () => { $("#menu").close(); if (curId()) tourStart("map"); };
-document.addEventListener("click", e => { if (e.target.closest("#maptourlink")) tourStart("map"); });
 
 // ---------- Settings menu ----------
 // Language and units reload the page (every number is formatted when drawn); the theme changes at once.
