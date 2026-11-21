@@ -1,0 +1,62 @@
+{
+  "sv": {
+    "passar": [
+      [
+        "Familjer och de yngsta",
+        "Åre Björnen är för barn och nybörjare, och Tegefjäll passar familjer med små barn."
+      ],
+      [
+        "Avancerade åkare",
+        "Åre by har långa och ganska branta pister som avancerade åkare ofta föredrar."
+      ],
+      [
+        "Fria åkare",
+        "Åre utsågs av SkiStar till Sveriges bästa offpiståkningsberg säsongerna 2023/24 och 2024/25."
+      ],
+      [
+        "Åkare som vill ha lugn",
+        "Duved och Tegefjäll har långa, breda pister och ett barnområde."
+      ]
+    ],
+    "text": [
+      "Åre är Sveriges stora alpina centrum, grundat 1909 och med liftsystemet på Åreskutan. Här har VM i alpint hållits 1954, 2007 och 2019, och orten har värdat över hundra världscuptävlingar.",
+      "Skidområdet är uppdelat i flera delar med olika karaktär. Åre by har långa utmanande pister, Björnen är för barn och nybörjare, och Duved med Tegefjäll är lugnare. I byn finns många restauranger och ett aktivt nattliv."
+    ],
+    "bra": [
+      "Under högsäsong finns kvällsåkning varje kväll kl. 18–20, och vilka liftar som är öppna varierar med veckodag.",
+      "Det finns tre terrängparker och över 100 km längdspår.",
+      "Närmaste flygplats är Åre Östersund Airport på Frösön, cirka 99 km från Åre.",
+      "Tåg från Stockholm, Göteborg och Malmö stannar i Åre."
+    ]
+  },
+  "en": {
+    "passar": [
+      [
+        "Families and the youngest",
+        "Åre Björnen is for kids and beginners, and Tegefjäll suits families with small children."
+      ],
+      [
+        "Advanced skiers",
+        "Åre by has long, fairly steep runs that advanced skiers often prefer."
+      ],
+      [
+        "Freeriders",
+        "SkiStar named Åre Sweden's best off-piste mountain for the 2023/24 and 2024/25 seasons."
+      ],
+      [
+        "Skiers who want it relaxed",
+        "Duved and Tegefjäll have long, wide runs and a children's area."
+      ]
+    ],
+    "text": [
+      "Åre is the major centre for alpine skiing in Sweden, founded in 1909, with its lift system on Åreskutan. It has hosted the Alpine World Championships in 1954, 2007 and 2019, and over a hundred World Cup events.",
+      "The ski area is split into several parts with different characters. Åre by has long, challenging runs, Björnen is for kids and beginners, and Duved with Tegefjäll is more relaxed. The village has many restaurants and an active nightlife."
+    ],
+    "bra": [
+      "In the busy season there is night skiing every evening from 6 to 8 pm, and which lifts are open varies by weekday.",
+      "There are three terrain parks and over 100 km of cross-country trails.",
+      "The nearest airport is Åre Östersund Airport on Frösön, about 99 km from Åre.",
+      "Trains from Stockholm, Gothenburg and Malmö stop in Åre."
+    ]
+  }
+}

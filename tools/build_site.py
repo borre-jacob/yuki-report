@@ -11,7 +11,7 @@ The big inline style and script of index.html go to app.<hash>.css and app.<hash
 one cached copy. The name changes with the content, so a new version is never mixed with an old cached one.
 index.html in the repo stays one self-contained file for local testing.
 """
-import hashlib, html, json, math, os, re, shutil, subprocess, sys
+import hashlib, html, json, os, re, shutil, subprocess, sys
 from datetime import datetime, timedelta, timezone
 
 SITE = "https://yukireport.com"
@@ -103,8 +103,8 @@ for r in resorts:
               open(os.path.join(out, "data", "cams", "r", r["id"] + ".json"), "w"), separators=(",", ":"), ensure_ascii=False)
 
 
-# --- "Om orten": facts from the places file and a hand-written text (about/<id>.json) ---
-# The app builds the same page on the client (loadAbout in index.html); here the facts go into the page for search engines.
+# --- "Om orten": the hand-written content of a resort (about/<id>.json) ---
+# The app builds the same page on the client (loadAbout in index.html); here the text goes into the page for search engines.
 # about/ids.json tells the app which resorts have a hand-written text, so it never asks for a file that is not there.
 ABOUT_DIR = os.path.join(src, "about")
 about_ids = sorted(f[:-5] for f in os.listdir(ABOUT_DIR) if f.endswith(".json") and f != "ids.json") if os.path.isdir(ABOUT_DIR) else []
@@ -112,45 +112,22 @@ os.makedirs(os.path.join(out, "about"), exist_ok=True)
 json.dump(about_ids, open(os.path.join(out, "about", "ids.json"), "w"))
 
 
-def line_m(pts):
-    m = 0.0
-    for a, b in zip(pts, pts[1:]):
-        p1, p2 = math.radians(a[0]), math.radians(b[0])
-        h = math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(math.radians(b[1] - a[1]) / 2) ** 2
-        m += 2 * 6371000 * math.asin(math.sqrt(h))
-    return m
-
-
-def about_facts(r, lang):
-    """Paragraphs (plain text) about the resort: heights, lifts, parking and the hand-written text if there is one."""
-    vert = r["top"] - r["base"]
-    out_ = []
-    if r.get("kind") == "tour":
-        out_.append(T(lang, f"Turen startar på {r['base']} m och toppen är {r['top']} m: {vert} m höjdmeter upp.",
-                      f"The tour starts at {r['base']} m and the top is {r['top']} m: {vert} m of climbing."))
-    else:
-        out_.append(T(lang, f"Dalnivån är {r['base']} m och toppen {r['top']} m, alltså {vert} m höjdskillnad.",
-                      f"The base is {r['base']} m and the top {r['top']} m, a vertical of {vert} m."))
-        try:
-            pl = json.load(open(os.path.join(src, "data", "osm", "places", r["id"] + ".json")))
-        except Exception:
-            pl = {}
-        lifts = sorted(((line_m(pts), name, kind) for kind, name, pts in pl.get("lifts", [])), reverse=True)
-        if lifts:
-            km = sum(l[0] for l in lifts) / 1000
-            top = lifts[0]
-            kms = f"{km:.1f}"
-            out_.append(T(lang, f"Här finns {len(lifts)} liftar på sammanlagt {kms.replace('.', ',')} km" + (f", längst är {top[1]} på {round(top[0] / 5) * 5} m." if top[1] else "."),
-                          f"There are {len(lifts)} lifts with a total length of {kms} km" + (f", the longest is {top[1]} at {round(top[0] / 5) * 5} m." if top[1] else ".")))
-        parks = [p for p in pl.get("pois", []) if p[0] == "park"]
-        if parks:
-            out_.append(T(lang, "Det finns en parkering." if len(parks) == 1 else f"Det finns {len(parks)} parkeringar.",
-                          "There is one car park." if len(parks) == 1 else f"There are {len(parks)} car parks."))
+def about_text(r, lang):
+    """The hand-written Om orten content of a resort (about/<id>.json) as (heading, [paragraph]) pairs, or [] without one."""
     try:
-        out_ += json.load(open(os.path.join(ABOUT_DIR, r["id"] + ".json"), encoding="utf-8")).get(lang, [])
+        d = json.load(open(os.path.join(ABOUT_DIR, r["id"] + ".json"), encoding="utf-8")).get(lang) or {}
     except Exception:
-        pass
-    return out_
+        return []
+    blocks = []
+    if d.get("passar"):
+        blocks.append((T(lang, "Passar för", "Suits"), [f"{k}: {v}" for k, v in d["passar"]]))
+    if d.get("text"):
+        blocks.append((T(lang, "Om orten", "The resort"), d["text"]))
+    if d.get("sasong"):
+        blocks.append((T(lang, "Säsong", "Season"), [d["sasong"]]))
+    if d.get("bra"):
+        blocks.append((T(lang, "Bra att veta", "Good to know"), d["bra"]))
+    return blocks
 
 
 def snow_numbers(r):
@@ -281,7 +258,10 @@ for r in resorts:
         if ncam:
             parts.append("<p>" + E(T(lang, f"{ncam} webbkameror vid backen." if ncam > 1 else "En webbkamera vid backen.",
                                      f"{ncam} webcams at the slopes." if ncam > 1 else "One webcam at the slopes.")) + "</p>")
-        parts.append(f"<h2>{E(T(lang, 'Om ' + r['name'], 'About ' + r['name']))}</h2>" + "".join(f"<p>{E(t)}</p>" for t in about_facts(r, lang)))
+        ab = about_text(r, lang)
+        if ab:
+            parts.append(f"<h2>{E(T(lang, 'Om ' + r['name'], 'About ' + r['name']))}</h2>"
+                         + "".join(f"<h3>{E(h)}</h3>" + "".join(f"<p>{E(t)}</p>" for t in ps) for h, ps in ab))
         parts.append("<p>" + E(T(lang, f"Yuki Report visar snöprognosen för {r['name']} timme för timme, snötyp och puderdagar, vad vädermodellerna säger, lavinläget, snödjupet och en karta med liftar och parkering.",
                                  f"Yuki Report shows the snow forecast for {r['name']} hour by hour, snow type and powder days, what the weather models say, the avalanche conditions, the snow depth and a map with lifts and parking.")) + "</p>")
         if same:

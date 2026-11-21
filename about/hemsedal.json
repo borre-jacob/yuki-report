@@ -1,0 +1,64 @@
+{
+  "sv": {
+    "passar": [
+      [
+        "Familjer",
+        "Ett stort barnområde, som beskrivs som Norges största, och en barnskidskola vid liften Lodge Express."
+      ],
+      [
+        "Alla nivåer",
+        "Pisterna beskrivs som breda och välpreparerade, med gröna pister ner till basen och svårare längre upp."
+      ],
+      [
+        "Park- och snowboardåkare",
+        "En terrängpark med bland annat hopp, boxar och halfpipe, och en separat nybörjarpark."
+      ],
+      [
+        "Fria åkare",
+        "Det finns off-piste alldeles intill de preparerade pisterna."
+      ]
+    ],
+    "text": [
+      "Hemsedal i Hallingdal är Norges näst största skidort med ungefär 44 km pister, och drivs av SkiStar. Åkningen sker på tre toppar, med en höjdskillnad på 810 m.",
+      "Orten ligger omkring 22 mil nordväst om Oslo vid riksväg 52. Après-ski börjar ofta vid fyratiden på Skistua i backen och fortsätter senare på kvällen nere i byn."
+    ],
+    "sasong": "Vintern är huvudsäsong: cirka 70 % av besökarna kommer mellan december och maj.",
+    "bra": [
+      "Gratisbussar går mellan byn och liftarna under vintern.",
+      "Det finns över 250 km längdspår, bland annat belysta spår vid Gravset.",
+      "Skidskola finns, och barnens skidskola ligger vid Lodge Express.",
+      "Från Oslo tar bilen 3–4 timmar. Med tåg tar det ungefär 3 timmar till Gol och sedan cirka 40 minuter med buss till Hemsedal."
+    ]
+  },
+  "en": {
+    "passar": [
+      [
+        "Families",
+        "A large children's area, described as the biggest in Norway, and a children's ski school at the Lodge Express lift."
+      ],
+      [
+        "All levels",
+        "The pistes are described as wide and well groomed, with green runs down to the base and harder ones higher up."
+      ],
+      [
+        "Park and snowboard riders",
+        "A terrain park with jumps, boxes and a half pipe among other features, and a separate beginner park."
+      ],
+      [
+        "Freeriders",
+        "There is off-piste right next to the groomed slopes."
+      ]
+    ],
+    "text": [
+      "Hemsedal in Hallingdal is Norway's second largest ski resort with about 44 km of slopes, and it is run by SkiStar. The skiing is on three peaks, with a vertical drop of 810 m.",
+      "The resort lies about 220 km northwest of Oslo on national road 52. Après-ski often starts around 4 pm at Skistua on the slopes and continues later in the evening down in the village."
+    ],
+    "sasong": "Winter is the main season: about 70 % of visitors come between December and May.",
+    "bra": [
+      "Free buses run between the village and the lifts in winter.",
+      "There are over 250 km of cross-country trails, including lit trails at Gravset.",
+      "There is a ski school, and the children's ski school is at Lodge Express.",
+      "From Oslo it is a 3–4 hour drive. By train it takes about 3 hours to Gol and then about 40 minutes by bus to Hemsedal."
+    ]
+  }
+}

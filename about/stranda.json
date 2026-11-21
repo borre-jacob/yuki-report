@@ -1,0 +1,64 @@
+{
+  "sv": {
+    "passar": [
+      [
+        "Pudersugna åkare",
+        "Orten beskriver sig själv som pudersnöåkarens val i västra Norge."
+      ],
+      [
+        "Familjer",
+        "Här finns en barnpark och en skidskola."
+      ],
+      [
+        "Nybörjare",
+        "Skidskola, skiduthyrning och skidservice finns på plats."
+      ],
+      [
+        "Terrängparksåkare",
+        "Det finns en terrängpark."
+      ]
+    ],
+    "text": [
+      "Strandafjellet ligger ovanför Stranda i Møre og Romsdal och består av två berg på var sin sida av vägen, Roalden och Furset. Båda har stolsliftar, och på Roalden finns dessutom en gondol.",
+      "Orten beskriver området som snösäkert, och uppger att omkring 50 cm pudersnö på ett dygn inte är ovanligt under säsongen. Gondolen går att åka även utan skidor för utsikten över fjorden, och det finns en restaurang på toppen."
+    ],
+    "sasong": "För säsongen 2026/27 anger orten öppettider från julperioden och sista öppningsdag den 18 april. Från 1 februari till 4 april är det öppet varje dag 10–16, med kvällsåkning till 20 på torsdagar och fredagar. I januari är det stängt måndag och tisdag. Kolla alltid ortens egna öppettider.",
+    "bra": [
+      "Huset Stova 1957 vid parkeringen har biljettkontor, skiduthyrning, skidservice, restaurang och kafé.",
+      "Orten rekommenderar att du köper liftkortet online innan du kommer.",
+      "Närmaste samhälle är Stranda, några minuters bilfärd från backen.",
+      "Orten nämner en gratis skidbuss från Ålesund. Läs detaljerna hos orten."
+    ]
+  },
+  "en": {
+    "passar": [
+      [
+        "Powder skiers",
+        "The resort describes itself as the powder skier's choice in western Norway."
+      ],
+      [
+        "Families",
+        "There is a children's park and a ski school."
+      ],
+      [
+        "Beginners",
+        "A ski school, ski rental and ski service are on site."
+      ],
+      [
+        "Terrain park riders",
+        "There is a terrain park."
+      ]
+    ],
+    "text": [
+      "Strandafjellet lies above Stranda in Møre og Romsdal and is made up of two mountains on either side of the road, Roalden and Furset. Both have chairlifts, and Roalden also has a gondola.",
+      "The resort calls the area snow-safe and says about 50 cm of powder in a day is not unusual during the season. The gondola can also be ridden without skis for the fjord views, and there is a restaurant at the top."
+    ],
+    "sasong": "For the 2026/27 season the resort lists opening hours from the Christmas period and a last day on 18 April. From 1 February to 4 April it is open daily 10 am to 4 pm, with evening skiing until 8 pm on Thursdays and Fridays. In January it is closed on Mondays and Tuesdays. Always check the resort's own opening hours.",
+    "bra": [
+      "The Stova 1957 building by the car park has the ticket office, ski rental, ski service, a restaurant and a cafe.",
+      "The resort recommends buying your lift pass online before you arrive.",
+      "The nearest town is Stranda, a few minutes by car from the slopes.",
+      "The resort mentions a free ski bus from Ålesund. Check the details with the resort."
+    ]
+  }
+}

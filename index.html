@@ -766,17 +766,13 @@ header.top .acctbtn{border-width:1px;font-weight:700}
 .aboutband h3{font:700 19px var(--display);color:#fff;margin:0}.aboutband span{font-size:13px;color:rgba(255,255,255,.82)}
 .aboutbody{padding:18px 22px 22px;display:flex;flex-direction:column;gap:20px}
 .aboutbody h4{font:700 15px var(--display);margin:0 0 8px}
+.aboutbody p+p{margin-top:8px}
 .aboutbody p{margin:0;font-size:14.5px;line-height:1.6;color:var(--muted-2)}
-.aboutfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
-.aboutfacts>div{background:var(--pill);border-radius:10px;padding:9px 12px;display:flex;flex-direction:column;gap:1px;min-width:0}
-.aboutfacts span{font-size:10.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
-.aboutfacts b{font:700 17px var(--display)}
-.abouttbl{width:100%;border-collapse:collapse;font-size:14px}
-.abouttbl th{font-weight:600;font-size:12px;color:var(--muted);text-align:left;padding:4px 0}.abouttbl th:last-child,.abouttbl td:last-child{text-align:right;white-space:nowrap}
-.abouttbl td{padding:7px 0;border-top:1px solid var(--line)}.abouttbl tr:first-child td{border-top:0}
-.abouttbl .rest{color:var(--muted)}
-.aboutq{display:flex;flex-direction:column;gap:6px}
-.aboutq>div{background:var(--pill);border-radius:10px;padding:9px 12px}.aboutq b{font-size:14px}.aboutq p{font-size:13.5px;margin-top:2px}
+.aboutwho{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.aboutwho>div{background:var(--pill);border-radius:10px;padding:10px 12px}.aboutwho b{font-size:14px}.aboutwho p{font-size:13.5px;margin-top:2px}
+.aboutlist{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;line-height:1.55;color:var(--muted-2)}
+.aboutchips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}.aboutchips span{color:var(--muted);font-weight:600;margin-right:2px}
+.aboutchips i{font-style:normal;background:var(--snow-soft);color:var(--snow-ink);border-radius:999px;padding:3px 11px;font-weight:600}
 /* The overview shows the summary without the ten-day chart */
 #dview[data-tab="ov"] #stats :is(.mchart,.flg,.how){display:none}
 #dview{display:flex;flex-direction:column;gap:16px}
@@ -2582,7 +2578,7 @@ async function renderDetail(id){
         </div>
       </div>
       <nav class="jumps dtabs" id="dtabs" role="tablist" aria-label="${T("Ortens sida", "The resort page")}">
-        ${DTABS.map(([k, hash, sv, en]) => `<a href="${pathOf(id)}${hash ? "#" + hash : ""}" role="tab" data-t="${k}" aria-selected="${k === tab0}"${k === "cams" && tab0 !== "cams" ? " hidden" : ""}>${T(sv, en)}</a>`).join("")}
+        ${DTABS.map(([k, hash, sv, en]) => `<a href="${pathOf(id)}${hash ? "#" + hash : ""}" role="tab" data-t="${k}" aria-selected="${k === tab0}"${(k === "cams" || k === "om") && tab0 !== k ? " hidden" : ""}>${T(sv, en)}</a>`).join("")}
       </nav>
       <div id="stats"><div class="msg">${T("Hämtar detaljerad prognos…", "Fetching detailed forecast…")}</div></div>
       <div class="ovx" id="ovextra">
@@ -2627,7 +2623,7 @@ async function renderDetail(id){
         <button type="button" class="ovgo ovmore" data-go="karta"><span>${T("Med liftar, parkering, toppturer och planering", "With lifts, parking, ski tours and planning")}</span><span class="more">${T("Öppna hela kartan", "Open the full map")} →</span></button>
       </div>
       <div class="panel about" id="about"></div>
-      <div class="panel ovcard" id="ov-about"></div>
+      <div class="panel ovcard" id="ov-about" hidden></div>
     </div>`;
   $("#back").onclick = () => go("");
   requestAnimationFrame(fitSky);
@@ -2695,9 +2691,8 @@ async function renderDetail(id){
       ? `<div class="msg err">${T(`Ingen sparad prognos för ${esc(r.name)}. Öppna orten en gång med täckning, så finns den kvar offline.`, `No saved forecast for ${esc(r.name)}. Open the resort once with coverage and it stays available offline.`)}</div>`
       : `<div class="msg err">${T(`Kunde inte hämta prognosen: ${esc(e.message)}. Kontrollera uppkopplingen och ladda om.`, `Could not fetch the forecast: ${esc(e.message)}. Check your connection and reload.`)}</div>`;
   });
-  const placesP = loadPlaces(r);
-  placesP.then(pl => loadAbout(r, pl), () => loadAbout(r, null));
-  placesP.then(pl => {
+  loadAbout(r);
+  loadPlaces(r).then(pl => {
     if (!poiMap || curId() !== r.id) return;
     liftLayer = drawLifts(r);
     if (liftOn) liftLayer.addTo(poiMap);
@@ -2820,66 +2815,44 @@ async function loadCams(r){
   }
 }
 // ---------- About the resort (the "Om orten" page) ----------
-// Facts from our own data: heights from the resort list, lifts and parking from the places file, the number of webcams, and
-// questions answered from the same numbers. A text written by hand for the resort comes from about/<id>.json
-// ({"sv": [paragraphs], "en": [paragraphs]}); about/ids.json (made by the site build) says which resorts have one. The
-// build puts the same facts and text in the page for search engines (tools/build_site.py).
+// What the app has no data for: who the resort suits, what it is like, the season and good to know. It is written by hand per
+// resort in about/<id>.json: {"sv": {...}, "en": {...}} where each language has
+//   passar: [[who, why], ...]   who it suits       text: [paragraph, ...]   what it is like
+//   bra: [point, ...]           good to know       sasong: "when it is open"
+// about/ids.json (made by the site build) says which resorts have a file. A resort without one has no Om orten tab and no card
+// on the overview, rather than a page of thin text. The build puts the same text in the page for search engines.
 let aboutIds = null;
 const aboutIdList = () => aboutIds ||= fetch("about/ids.json").then(r => r.ok ? r.json() : []).catch(() => []);
-async function aboutText(id){
-  if (!(await aboutIdList()).includes(id)) return [];
-  try { const res = await fetch(`about/${id}.json`); return res.ok ? ((await res.json())[LANG] || []) : []; } catch { return []; }
+async function aboutData(id){
+  if (!(await aboutIdList()).includes(id)) return null;
+  try { const res = await fetch(`about/${id}.json`); const d = res.ok ? (await res.json())[LANG] : null; return d && (d.text?.length || d.passar?.length || d.bra?.length || d.sasong) ? d : null; } catch { return null; }
 }
-const polyM = pts => { let m = 0; for (let i = 1; i < pts.length; i++) m += distKm(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1]) * 1000; return m; };
-async function loadAbout(r, pl){
-  const box = $("#about");
-  if (!box) return;
-  const [cams, text] = await Promise.all([camData(r.id).then(d => d?.cams?.length || 0).catch(() => 0), aboutText(r.id)]);
+async function loadAbout(r){
+  const d = await aboutData(r.id);
   if (curId() !== r.id || !$("#about")) return;
-  const tour = isTour(r), vert = r.top - r.base;
-  const lifts = (pl?.lifts || []).map(([kind, name, pts]) => ({kind, name, m: polyM(pts)})).sort((a, b) => b.m - a.m);
-  const liftKm = lifts.reduce((a, l) => a + l.m, 0);
-  const parks = (pl?.pois || []).filter(p => p.type === "park").sort((a, b) => (a.d ?? 99) - (b.d ?? 99));
-  const tile = (k, v) => `<div><span>${k}</span><b>${v}</b></div>`;
-  const tiles = tour
-    ? [tile(T("Start", "Start"), uH(r.base)), tile(T("Topp", "Top"), uH(r.top)), tile(T("Höjdmeter upp", "Climb"), uH(vert))]
-    : [tile(T("Topp", "Top"), uH(r.top)), tile(T("Dalnivå", "Base"), uH(r.base)), tile(T("Höjdskillnad", "Vertical"), uH(vert)),
-       ...(lifts.length ? [tile(T("Liftar", "Lifts"), `${lifts.length} · ${kmText(liftKm)}`)] : [])];
-  const liftName = l => l.name || LIFT_NAMES[l.kind] || T("Lift", "Lift");
-  const liftTbl = lifts.length ? `<div><h4>${T("Liftar", "Lifts")}</h4><table class="abouttbl"><tr><th>${T("Lift", "Lift")}</th><th>${T("Typ", "Type")}</th><th>${T("Längd", "Length")}</th></tr>
-      ${lifts.slice(0, 5).map(l => `<tr><td>${esc(liftName(l))}</td><td>${esc(LIFT_NAMES[l.kind] || l.kind)}</td><td>${uH(Math.round(l.m / 5) * 5)}</td></tr>`).join("")}
-      ${lifts.length > 5 ? `<tr><td class="rest" colspan="3">${T(`och ${lifts.length - 5} till`, `and ${lifts.length - 5} more`)}</td></tr>` : ""}</table></div>` : "";
-  const near = parks[0];
-  const where = [
-    parks.length ? T(`Det finns ${parks.length === 1 ? "en parkering" : parks.length + " parkeringar"}${near && near.d != null ? `, den närmaste ${near.d < 0.3 ? "vid liftarna" : kmText(near.d * 1000) + " från orten"}` : ""}.`,
-                     `There ${parks.length === 1 ? "is one car park" : "are " + parks.length + " car parks"}${near && near.d != null ? `, the nearest ${near.d < 0.3 ? "by the lifts" : kmText(near.d * 1000) + " from the resort"}` : ""}.`) : "",
-    cams ? T(cams === 1 ? "En webbkamera visar läget i backen." : `${cams} webbkameror visar läget i backen.`, cams === 1 ? "One webcam shows the slopes." : `${cams} webcams show the slopes.`) : "",
-  ].filter(Boolean).join(" ");
-  const dir = `<a class="dirbtn" href="${tour ? gmapsDir(r.slat, r.slon) : gmapsDir(r.lat, r.lon)}" target="_blank" rel="noopener">${tour ? T("Vägbeskrivning till startplatsen", "Directions to the start") : T("Vägbeskrivning till backen", "Directions to the slopes")} ↗</a>`;
-  const faq = [
-    [T(`Hur högt är ${r.name}?`, `How high is ${r.name}?`),
-     tour ? T(`Toppen är ${uH(r.top)}, och turen startar på ${uH(r.base)}: ${uH(vert)} höjdmeter upp.`, `The top is ${uH(r.top)} and the tour starts at ${uH(r.base)}: ${uH(vert)} of climbing.`)
-          : T(`Högsta punkten är ${uH(r.top)} och dalnivån ${uH(r.base)}, alltså ${uH(vert)} höjdskillnad.`, `The top is ${uH(r.top)} and the base ${uH(r.base)}, a vertical of ${uH(vert)}.`)],
-    lifts.length ? [T(`Hur många liftar finns i ${r.name}?`, `How many lifts does ${r.name} have?`),
-     T(`${lifts.length} liftar med en sammanlagd längd på ${kmText(liftKm)}. Längst är ${liftName(lifts[0])} på ${uH(Math.round(lifts[0].m / 5) * 5)}.`,
-       `${lifts.length} lifts with a total length of ${kmText(liftKm)}. The longest is ${liftName(lifts[0])} at ${uH(Math.round(lifts[0].m / 5) * 5)}.`)] : null,
-    parks.length ? [T(`Var kan man parkera vid ${r.name}?`, `Where can you park at ${r.name}?`),
-     T(`${parks.length === 1 ? "Det finns en parkering" : `Det finns ${parks.length} parkeringar`}${near && near.d != null ? `, den närmaste ${near.d < 0.3 ? "vid liftarna" : kmText(near.d * 1000) + " från orten"}` : ""}. Se kartan för platserna.`,
-       `${parks.length === 1 ? "There is one car park" : `There are ${parks.length} car parks`}${near && near.d != null ? `, the nearest ${near.d < 0.3 ? "by the lifts" : kmText(near.d * 1000) + " from the resort"}` : ""}. See the map for where.`)] : null,
-  ].filter(Boolean);
+  const tabLink = $('#dtabs a[data-t="om"]');
+  if (!d){
+    if (tabLink) tabLink.hidden = true;
+    if ($("#dview")?.dataset.tab === "om") setTab("ov", false);
+    return;
+  }
+  if (tabLink) tabLink.hidden = false;
+  const who = d.passar || [], pts = d.bra || [], text = d.text || [];
+  $("#about").innerHTML = `<div class="aboutband"><h3>${T("Om", "About")} ${esc(r.name)}</h3><span>${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}</span></div>
+    <div class="aboutbody">
+      ${who.length ? `<div><h4>${T("Passar för", "Suits")}</h4><div class="aboutwho">${who.map(([k, v]) => `<div><b>${esc(k)}</b><p>${esc(v)}</p></div>`).join("")}</div></div>` : ""}
+      ${text.length ? `<div><h4>${T("Om orten", "The resort")}</h4>${text.map(t => `<p>${esc(t)}</p>`).join("")}</div>` : ""}
+      ${d.sasong ? `<div><h4>${T("Säsong", "Season")}</h4><p>${esc(d.sasong)}</p></div>` : ""}
+      ${pts.length ? `<div><h4>${T("Bra att veta", "Good to know")}</h4><ul class="aboutlist">${pts.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>` : ""}
+    </div>`;
   // The short version on the overview, with a way to the whole page
   const ov = $("#ov-about");
-  if (ov) ov.innerHTML = `<h3>${T("Om", "About")} ${esc(r.name)}</h3>${text[0] ? `<p>${esc(text[0])}</p>` : ""}
-    <div class="aboutfacts">${tiles.join("")}</div>
-    <button type="button" class="ovgo" data-go="om"><span>${T("Liftar, hitta hit och vanliga frågor", "Lifts, getting there and common questions")}</span><span class="more">${T("Mer om orten", "More about the resort")} →</span></button>`;
-  box.innerHTML = `<div class="aboutband"><h3>${T("Om", "About")} ${esc(r.name)}</h3><span>${esc(r.region)}${r.area !== "japan" ? ", " + esc(cname(r.country)) : ""}</span></div>
-    <div class="aboutbody">
-      <div class="aboutfacts">${tiles.join("")}</div>
-      ${text.length ? `<div><h4>${T("Om orten", "The resort")}</h4>${text.map(t => `<p>${esc(t)}</p>`).join("")}</div>` : ""}
-      ${liftTbl}
-      ${where ? `<div><h4>${T("Hitta hit", "Getting there")}</h4><p>${esc(where)}</p><p style="margin-top:10px">${dir}</p></div>` : `<div>${dir}</div>`}
-      <div><h4>${T("Vanliga frågor", "Common questions")}</h4><div class="aboutq">${faq.map(([q, a]) => `<div><b>${esc(q)}</b><p>${esc(a)}</p></div>`).join("")}</div></div>
-    </div>`;
+  if (ov){
+    ov.hidden = false;
+    ov.innerHTML = `<h3>${T("Om", "About")} ${esc(r.name)}</h3>${text[0] ? `<p>${esc(text[0])}</p>` : ""}
+      ${who.length ? `<div class="aboutchips"><span>${T("Passar för", "Suits")}</span>${who.map(([k]) => `<i>${esc(k)}</i>`).join("")}</div>` : ""}
+      <button type="button" class="ovgo" data-go="om"><span>${T("Säsong, bra att veta och mer", "Season, good to know and more")}</span><span class="more">${T("Mer om orten", "More about the resort")} →</span></button>`;
+  }
 }
 // The timelapse opens in a window over the page, as wide as the screen (bigger still with the phone turned sideways)
 function openCam(url, title){
