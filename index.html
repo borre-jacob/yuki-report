@@ -649,6 +649,8 @@ html.bigmap,html.bigmap body{overflow:hidden}
 .audit.stale .audhead b::after{content:" · " var(--upd);font-weight:400;color:var(--muted)}
 .poimapbox.big>.audit{flex:none;margin:0;border-width:1px 0 0;border-radius:14px 14px 0 0;max-height:32vh;overflow:auto}
 .poimapbox.big .pinnote{display:none}
+/* On a wide screen the review sits in a column to the right of the big map instead of under it */
+@media (min-width:900px){.poimapbox.big{flex-direction:row;align-items:stretch}.poimapbox.big>.audit{width:min(440px,38vw);max-height:none;height:auto;border-width:0 0 0 1px;border-radius:0}}
 .poimapbox:not(.big) .mapdraw,.drawing .mapdraw{display:none}
 .mapdraw{display:flex;flex-direction:column;gap:5px;align-items:flex-end;margin-top:6px!important}
 .mapdraw button{font:600 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:6px}
