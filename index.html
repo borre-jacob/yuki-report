@@ -5477,7 +5477,10 @@ function bigMap(on, box, map){
   const au = $("#audit");
   if (au){ bigAuditHome = [au.parentNode, au.nextSibling]; box.appendChild(au); }
   if (mp){ bigHome = [mp.parentNode, mp.nextSibling]; $("#poimap").appendChild(mp);
-    if (!mp._yrProp){ mp._yrProp = true; L.DomEvent.disableClickPropagation(mp); L.DomEvent.disableScrollPropagation(mp); } }
+    if (!mp._yrProp){ mp._yrProp = true; L.DomEvent.disableClickPropagation(mp); L.DomEvent.disableScrollPropagation(mp);
+      // A button that redraws the card (Undo) is gone from the page by the time its click reaches the map, and the map can then
+      // no longer tell the click began in the card, so it counted as a tap on the map and set a point. Stop the click here instead.
+      mp.addEventListener("click", e => e.stopPropagation()); } }
   const b = $("#mt-big"); b.textContent = "✕"; b.setAttribute("aria-pressed", "true"); b.title = T("Stäng stor karta", "Close big map");
   addEventListener("keydown", bigKey);
   setTimeout(() => map.invalidateSize(), 50);
