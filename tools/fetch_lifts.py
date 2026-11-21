@@ -2,7 +2,7 @@
 
 Usage: python3 tools/fetch_lifts.py index.html data/lifts
 Writes <dir>/norway.json = {"at": fetch time (UTC), "source": "fnugg.no", "resorts": {resort id: {...}}} where a resort is
-{"open": lifts open, "count": lifts in all, "path": Fnugg's page for the resort, "isOpen": the resort's open flag, "opens": "YYYY-MM-DD", "closes": "YYYY-MM-DD", "upd": Fnugg's update time}.
+{"open": lifts open, "count": lifts in all, "hours": {"0": [from, to, closed] ... "6" for Monday to Sunday}, "ex": {date: [from, to, closed]} for days that differ, "path": Fnugg's page for the resort, "isOpen": the resort's open flag, "opens": "YYYY-MM-DD", "closes": "YYYY-MM-DD", "upd": Fnugg's update time}.
 Fnugg (https://api.fnugg.no/docs/v1) is Norway's ski status service; its terms ask for a credit to fnugg.no wherever the data is
 shown (the app does that) and forbid copying fnugg.no itself. One request lists every resort; each of ours is matched to the
 nearest Fnugg resort within MAX_KM. Without an answer the file already in <dir> is kept (the workflow puts the published one there).
@@ -38,6 +38,7 @@ except Exception as e:
     sys.exit(0)
 
 day = lambda s: (s or "")[:10] or None
+today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 res = {}
 for r in ours:
     best = min(((km(r["lat"], r["lon"], h["location"]["lat"], h["location"]["lon"]), h) for h in hits if h.get("location")), key=lambda x: x[0], default=None)
@@ -45,7 +46,12 @@ for r in ours:
         continue
     h = best[1]
     lifts = h.get("lifts") or {}
-    res[r["id"]] = {"fnugg": h.get("name"), "path": h.get("site_path"), "open": lifts.get("open", 0), "count": lifts.get("count", 0), "isOpen": bool(h.get("resort_open")),
+    oh = h.get("opening_hours") or {}
+    wd = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    hours = {str(i): [oh[w].get("from") or "", oh[w].get("to") or "", bool(oh[w].get("closed"))] for i, w in enumerate(wd) if isinstance(oh.get(w), dict)}
+    ex = {day(e.get("date")): [e.get("from") or "", e.get("to") or "", bool(e.get("closed"))] for e in oh.get("exception_days") or []
+          if e.get("date") and day(e["date"]) >= today}
+    res[r["id"]] = {"fnugg": h.get("name"), "path": h.get("site_path"), "hours": hours, "ex": ex, "open": lifts.get("open", 0), "count": lifts.get("count", 0), "isOpen": bool(h.get("resort_open")),
                     "opens": day(h.get("resort_opening_date")), "closes": day(h.get("resort_closing_date")), "upd": h.get("last_updated")}
 at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 json.dump({"at": at, "source": "fnugg.no", "resorts": res}, open(os.path.join(out_dir, "norway.json"), "w"), separators=(",", ":"), ensure_ascii=False)

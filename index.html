@@ -2836,19 +2836,52 @@ async function loadCams(r){
 }
 // ---------- Lifts open and the season opening (Norway, from Fnugg) ----------
 // data/lifts/norway.json is fetched every few hours by the workflow (tools/fetch_lifts.py) from fnugg.no, which asks for a credit
-// wherever its data is shown. A resort that is open shows how many lifts are open; one that is not shows when it opens (Fnugg
-// uses 2050-01-01 for "not decided", and an opening date that has passed means the data is last season's), else just "closed".
+// wherever its data is shown. A resort that is open shows how many lifts are open, until when; after closing time, or before it
+// opens, when it opens next (from its opening hours). One that has not opened for the season shows the opening date (Fnugg uses
+// 2050-01-01 for "not decided", and a date that has passed is last season's).
 let liftsP = null;
 const liftsData = () => liftsP ||= fetch("data/lifts/norway.json").then(r => r.ok ? r.json() : null).catch(() => null);
+// Today and the coming days in Oslo, to match against the opening hours (Fnugg gives them per weekday, plus days that differ)
+const osloNow = () => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"}).formatToParts(new Date()).map(x => [x.type, x.value]));
+  const iso = `${p.year}-${p.month}-${p.day}`;
+  return {iso, min: +p.hour * 60 + +p.minute};
+};
+const isoPlus = (iso, k) => new Date(Date.parse(iso + "T12:00:00Z") + k * 864e5).toISOString().slice(0, 10);
+const dowOf = iso => (new Date(iso + "T12:00:00Z").getUTCDay() + 6) % 7;   // Monday is 0
+const mins = t => t ? +t.slice(0, 2) * 60 + +t.slice(3, 5) : null;
 async function loadLifts(r){
   const d = (await liftsData())?.resorts?.[r.id];
   const el = $("#liftstat");
   if (!d || !el || curId() !== r.id) return;
-  const today = new Date().toISOString().slice(0, 10), opens = d.opens && d.opens < "2049" ? d.opens : null;
+  const now = osloNow(), opens = d.opens && d.opens < "2049" ? d.opens : null;
+  const hrs = iso => d.ex?.[iso] || d.hours?.[dowOf(iso)] || null;                // [from, to, closed]
+  const isOpenDay = iso => { const h = hrs(iso); return !!h && !h[2] && mins(h[0]) != null && mins(h[1]) != null; };
   const dm = iso => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]}`;
-  const [cls, txt] = d.isOpen ? ["open", T(`${d.open} av ${d.count} liftar öppna`, `${d.open} of ${d.count} lifts open`)]
-    : opens && opens > today ? ["soon", T(`Öppnar ${dm(opens)}`, `Opens ${dm(opens)}`)]
-    : ["", T("Stängt just nu", "Closed right now")];
+  const wk = iso => new Date(iso + "T12:00:00Z").toLocaleDateString(LOCALE, {weekday: "long", timeZone: "UTC"});
+  const at = t => T(` kl. ${t}`, ` at ${t}`);
+  // The next day the lifts open (within a week), as text
+  const nextOpen = () => {
+    for (let k = 1; k <= 7; k++){
+      const iso = isoPlus(now.iso, k);
+      if (isOpenDay(iso)) return (k === 1 ? T("i morgon", "tomorrow") : wk(iso)) + at(hrs(iso)[0]);
+    }
+    return null;
+  };
+  let cls = "", txt;
+  if (d.isOpen){
+    const h = hrs(now.iso);
+    if (isOpenDay(now.iso) && now.min < mins(h[0])){ cls = "soon"; txt = T(`Öppnar idag${at(h[0])}`, `Opens today${at(h[0])}`); }
+    else if (isOpenDay(now.iso) && now.min < mins(h[1])){ cls = "open"; txt = T(`${d.open} av ${d.count} liftar öppna · till ${h[1]}`, `${d.open} of ${d.count} lifts open · until ${h[1]}`); }
+    else if (!h || (!h[2] && (h[0] === "" || h[1] === ""))){ cls = "open"; txt = T(`${d.open} av ${d.count} liftar öppna`, `${d.open} of ${d.count} lifts open`); }   // no hours known
+    else {
+      const nx = nextOpen();
+      txt = (isOpenDay(now.iso) ? T("Stängt för dagen", "Closed for the day") : T("Stängt idag", "Closed today")) + (nx ? T(` · öppnar ${nx}`, ` · opens ${nx}`) : "");
+    }
+  } else if (opens && opens > now.iso){
+    const h = hrs(opens);
+    cls = "soon"; txt = T(`Öppnar ${dm(opens)}${h && h[0] ? at(h[0]) : ""}`, `Opens ${dm(opens)}${h && h[0] ? at(h[0]) : ""}`);
+  } else txt = T("Stängt, öppningsdatum inte bestämt", "Closed, opening date not set");
   el.className = "liftstat " + cls; el.hidden = false;
   el.href = "https://fnugg.no" + (d.path || "/"); el.title = T("Källa: fnugg.no", "Source: fnugg.no");
   el.textContent = txt;
