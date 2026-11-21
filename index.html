@@ -656,7 +656,7 @@ html.bigmap,html.bigmap body{overflow:hidden}
 .mapdraw button{font:600 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:6px}
 .mapdraw button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
 /* In the big map the buttons are a card on top of the map, so they are clearly in front of it */
-.poimapbox.big #mypin{position:absolute;z-index:1200;left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 24px));bottom:30px;margin:0;padding:16px 18px;background:var(--surface);border:2px solid var(--snow);border-radius:16px;box-shadow:0 10px 32px rgba(13,27,46,.26);max-height:45%;overflow:auto;gap:8px 12px}
+.poimapbox.big #mypin{position:absolute;z-index:1200;left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 24px));bottom:30px;margin:0;padding:0 0 16px;background:var(--surface);border:0;border-radius:18px;box-shadow:0 10px 32px rgba(13,27,46,.26);max-height:45%;overflow:auto;gap:8px 12px}
 @media (max-width:1249px){.drawing .mslope{display:none}}
 .plhead{flex:1 1 100%;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .plhead b{font:700 17px var(--display)}
@@ -674,13 +674,20 @@ html.bigmap,html.bigmap body{overflow:hidden}
 #drawdone:disabled{opacity:.45}
 .pinbtn.gpx:disabled{opacity:.45}
 .mineh{display:none}
+/* The card on the big map gets a header band like the page's own sky and ridge, so it reads as part of the app and stands out from the map */
+.poimapbox.big #mypin{overflow-x:hidden;box-shadow:0 14px 44px rgba(7,16,32,.42),0 0 0 1px rgba(255,255,255,.35)}
+.poimapbox.big #mypin>*:not(.plhead){margin-left:18px;margin-right:18px}
+.poimapbox.big #mypin:not(:has(.plhead)){padding-top:16px}
+.poimapbox.big #mypin .plhead{margin:0 0 2px;padding:15px 18px 26px;align-items:center;color:#fff;background:var(--ridge) bottom/100% 44px no-repeat,linear-gradient(180deg,var(--sky-a) 0%,var(--sky-b) 62%,var(--sky-c) 100%)}
+.poimapbox.big #mypin .plhead b{font-size:18px;color:#fff;letter-spacing:.01em}
+.poimapbox.big #mypin .plstat{color:rgba(255,255,255,.82)}
 .poimapbox.big #mypin .mineh{display:flex}
 .poimapbox.big #mypin .minebtns.own,.poimapbox.big #mypin .minechoice{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .poimapbox.big #mypin .minechoice{border:0;padding:0;margin:0}
 .poimapbox.big #mypin .minechoice #chdraw{grid-column:1/-1}
 .poimapbox.big #mypin .minechoice[hidden]{display:none}
 .poimapbox.big #mypin .minebtns.own .pinbtn,.poimapbox.big #mypin .minechoice .pinbtn{padding:9px 12px}
-@media (max-width:520px){.poimapbox.big #mypin .pinbtn{padding:6px 8px;font-size:12px}.poimapbox.big #mypin .minebtns{gap:5px}.poimapbox.big #mypin{padding:14px 14px}}
+@media (max-width:520px){.poimapbox.big #mypin .pinbtn{padding:6px 8px;font-size:12px}.poimapbox.big #mypin .minebtns{gap:5px}.poimapbox.big #mypin{padding:0 0 14px}.poimapbox.big #mypin>*:not(.plhead){margin-left:14px;margin-right:14px}.poimapbox.big #mypin .plhead{padding:13px 14px 24px}.poimapbox.big #mypin:not(:has(.plhead)){padding-top:14px}}
 /* ===== Himmel-design: bergshimmel överst, vita kort, lätta stora siffror ===== */
 body{position:relative;background:var(--bg)}
 body::before{content:"";position:absolute;top:0;left:0;right:0;height:var(--skyh,380px);z-index:-1;pointer-events:none;
