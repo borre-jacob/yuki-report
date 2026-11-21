@@ -112,6 +112,32 @@ os.makedirs(os.path.join(out, "about"), exist_ok=True)
 json.dump(about_ids, open(os.path.join(out, "about", "ids.json"), "w"))
 
 
+try:
+    climate = json.load(open(os.path.join(src, "data", "climate.json")))
+except Exception:
+    climate = {}
+
+
+def about_facts(r, lang):
+    """Plain sentences for every resort: the heights, and the average snowfall from data/climate.json when the resort is in it."""
+    vert = r["top"] - r["base"]
+    out_ = [T(lang, f"Turen startar på {r['base']} m och toppen är {r['top']} m: {vert} m höjdmeter upp.",
+              f"The tour starts at {r['base']} m and the top is {r['top']} m: {vert} m of climbing.")
+            if r.get("kind") == "tour" else
+            T(lang, f"Dalnivån är {r['base']} m och toppen {r['top']} m, alltså {vert} m höjdskillnad.",
+              f"The base is {r['base']} m and the top {r['top']} m, a vertical of {vert} m.")]
+    c = climate.get("resorts", {}).get(r["id"])
+    if c:
+        months = ["oktober", "november", "december", "januari", "februari", "mars", "april", "maj"] if lang == "sv" else \
+                 ["October", "November", "December", "January", "February", "March", "April", "May"]
+        best = max(range(len(c["m"])), key=lambda i: c["m"][i])
+        out_.append(T(lang, f"I snitt faller cirka {c['s']} cm nysnö per säsong på ortens mellanhöjd ({round((r['base'] + r['top']) / 2)} m), mest i {months[best]} (cirka {c['m'][best]} cm). "
+                            f"Siffrorna är modellerade (Open-Meteo och ERA5) och gäller snitt för {climate['n']} säsonger, {climate['seasons']}.",
+                      f"On average about {c['s']} cm of new snow falls per season at the resort's mid height ({round((r['base'] + r['top']) / 2)} m), most in {months[best]} (about {c['m'][best]} cm). "
+                      f"The figures are modelled (Open-Meteo and ERA5), averaged over {climate['n']} seasons, {climate['seasons']}."))
+    return out_
+
+
 def about_text(r, lang):
     """The hand-written Om orten content of a resort (about/<id>.json) as (heading, [paragraph]) pairs, or [] without one."""
     try:
@@ -259,9 +285,9 @@ for r in resorts:
             parts.append("<p>" + E(T(lang, f"{ncam} webbkameror vid backen." if ncam > 1 else "En webbkamera vid backen.",
                                      f"{ncam} webcams at the slopes." if ncam > 1 else "One webcam at the slopes.")) + "</p>")
         ab = about_text(r, lang)
-        if ab:
-            parts.append(f"<h2>{E(T(lang, 'Om ' + r['name'], 'About ' + r['name']))}</h2>"
-                         + "".join(f"<h3>{E(h)}</h3>" + "".join(f"<p>{E(t)}</p>" for t in ps) for h, ps in ab))
+        parts.append(f"<h2>{E(T(lang, 'Om ' + r['name'], 'About ' + r['name']))}</h2>"
+                     + "".join(f"<p>{E(t)}</p>" for t in about_facts(r, lang))
+                     + "".join(f"<h3>{E(h)}</h3>" + "".join(f"<p>{E(t)}</p>" for t in ps) for h, ps in ab))
         parts.append("<p>" + E(T(lang, f"Yuki Report visar snöprognosen för {r['name']} timme för timme, snötyp och puderdagar, vad vädermodellerna säger, lavinläget, snödjupet och en karta med liftar och parkering.",
                                  f"Yuki Report shows the snow forecast for {r['name']} hour by hour, snow type and powder days, what the weather models say, the avalanche conditions, the snow depth and a map with lifts and parking.")) + "</p>")
         if same:
