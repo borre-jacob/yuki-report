@@ -11,7 +11,7 @@ The big inline style and script of index.html go to app.<hash>.css and app.<hash
 one cached copy. The name changes with the content, so a new version is never mixed with an old cached one.
 index.html in the repo stays one self-contained file for local testing.
 """
-import hashlib, html, json, os, re, shutil, sys
+import hashlib, html, json, os, re, shutil, subprocess, sys
 from datetime import datetime, timedelta, timezone
 
 SITE = "https://yukireport.com"
@@ -26,10 +26,29 @@ shutil.copytree(src, out, ignore=lambda d, names: [n for n in names if n in SKIP
 
 page = open(os.path.join(src, "index.html"), encoding="utf-8").read()
 
+# --- Minify ---
+# esbuild (pinned, fetched by npx on GitHub's runner) takes out comments and white space and shortens expressions, but never
+# renames anything, so the app behaves exactly as written. If esbuild is missing (a local build without node) or fails,
+# or its answer is not smaller, the file is published as it is.
+ESBUILD = ["npx", "--yes", "esbuild@0.24.0"]
+def minify(body, kind):
+    flags = ["--loader=js", "--minify-whitespace", "--minify-syntax"] if kind == "js" else ["--loader=css", "--minify"]
+    try:
+        r = subprocess.run(ESBUILD + flags, input=body.encode("utf-8"), capture_output=True, timeout=120)
+    except (OSError, subprocess.SubprocessError) as e:
+        print(f"No minifying of the {kind} ({type(e).__name__})", file=sys.stderr)
+        return body
+    small = r.stdout.decode("utf-8")
+    if r.returncode != 0 or not small.strip() or len(small) >= len(body):
+        print(f"No minifying of the {kind}: " + r.stderr.decode("utf-8", "replace")[:300], file=sys.stderr)
+        return body
+    print(f"Minified the {kind}: {len(body)} -> {len(small)} characters", file=sys.stderr)
+    return small
+
 # --- Move the main style and the app script out of the page ---
 def externalize(page, tag, pattern, ext):
     m = re.search(pattern, page, re.S)
-    body = m.group(1)
+    body = minify(m.group(1), ext)
     h = hashlib.sha256(body.encode()).hexdigest()[:10]
     name = f"app.{h}.{ext}"
     open(os.path.join(out, name), "w", encoding="utf-8").write(body)
